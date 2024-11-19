@@ -1,6 +1,6 @@
 import pygame
 
-cell_size = 50  # Size of each grid cell in pixels
+cell_size = 70  # Size of each grid cell in pixels
 
 
 

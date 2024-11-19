@@ -43,6 +43,12 @@ def visualize_environment(environment, step):
         energy_text = font.render(f"Energy: {int(agent.energy)}", True, BLACK)
         screen.blit(energy_text, (x, y - 20))  # Display text slightly above the agent
 
+        # Draw a square centered at the agent position representing visual fieldss
+        square_size = 5 * cell_size
+        top_left_x = x + cell_size // 2 - square_size // 2
+        top_left_y = y + cell_size // 2 - square_size // 2
+        square_rect = pygame.Rect(top_left_x, top_left_y, square_size, square_size)
+        pygame.draw.rect(screen, (173, 216, 255), square_rect, 2)
 
     # Draw foods
     for food in environment.foods:
@@ -59,34 +65,41 @@ def visualize_environment(environment, step):
 
     frame = pygame.surfarray.array3d(screen)
     return frame
+
+NUM_STEPS = 10000
+NUM_EPISODES = 3
+HUMAN_PLAY = True
+VISUALIZE = True
 env = Environment()
 clock = pygame.time.Clock()
-frames = []
+for ep in range(NUM_EPISODES):
+    observations = env.reset()
+    frames = []
+    # print("Obs", observations[0].shape)
+    for step in range(NUM_STEPS):
+        print(f"--- Step {step + 1} ---")
+        agent_actions = [None] * NUM_AGENTS  # Stores actions for each agent
+        if VISUALIZE:
+            frame = visualize_environment(env, step)
+            frames.append(frame.transpose((1, 0, 2)))
+        if HUMAN_PLAY:
+            while not all(agent_actions):
+                events = pygame.event.get()
+                for event in events:
+                    if event.type == pygame.QUIT:
+                        running = False
+                        break
 
-for step in range(NUM_STEPS):
-    print(f"--- Step {step + 1} ---")
-    agent_actions = [None] * NUM_AGENTS  # Stores actions for each agent
-    frame = visualize_environment(env, step)
-    # Loop until both agents have provided input
-    while not all(agent_actions):
-        # Update the display to show environment
-        
-        # clock.tick(1)  # Adjust the loop frequency
-        events = pygame.event.get()
-        
-        for event in events:
-            if event.type == pygame.QUIT:
-                running = False
-                break
+                # Get actions from keyboard for each agent
+                for i in range(NUM_AGENTS):
+                    agent_actions[i] = agent_actions[i] or get_agent_action(events, i)
 
-        # Get actions from keyboard for each agent
-        for i in range(NUM_AGENTS):
-            agent_actions[i] = agent_actions[i] or get_agent_action(events, i)
+        observations, rewards, done, _, _ = env.step(agent_actions)
+        # if rewards[0] != 0 or rewards[1] != 0:
+        #     print("reward", rewards)
+        if done:
+            break
 
-    frames.append(frame.transpose((1, 0, 2)))
-    done = env.step(agent_actions)
-    if done:
-        break
-
-clip = ImageSequenceClip(frames, fps=10)
-clip.write_videofile("simulation_video.mp4", codec="libx264")
+    if VISUALIZE:
+        clip = ImageSequenceClip(frames, fps=5)
+        clip.write_videofile(f"vids/ep{ep}.mp4", codec="libx264")

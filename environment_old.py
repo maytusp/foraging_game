@@ -12,7 +12,7 @@ NUM_AGENTS = 2  # Number of agents
 NUM_FOODS = 4  # Number of foods
 HOME_POSITION = (1, 1)  # Coordinates of the home
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
-AGENT_ATTRIBUTES = [10, 10, 10, 10]  # All agents have the same attributes
+AGENT_ATTRIBUTES = [5, 5, 5, 5]  # All agents have the same attributes
 AGENT_STRENGTH = 3
 AGENT_ENERGY = 30
 
@@ -51,10 +51,8 @@ class Agent:
                     obj = environment.grid[x, y]
                     if obj is None:
                         perception_data.append([0, 0, 0, 0])  # Empty grid
-                    elif isinstance(obj, Food): # Observe Food
-                        perception_data.append(obj.attribute)
-                    elif isinstance(obj, Agent): # Observe Agent
-                        perception_data.append(AGENT_ATTRIBUTES)  
+                    else:
+                        perception_data.append(obj.attribute)  # Food or other object attributes
                 else:
                     perception_data.append([0, 0, 0, 0])  # Out-of-bounds grid (treated as empty)
         
@@ -70,7 +68,7 @@ class Food:
         self.carried = [] # keep all agents that already picked up this food
         self.pre_carried = [] # keep all agents that try to pick up this food, no need to be successful
         self.attribute = self.generate_attributes(strength_required)
-        self.energy_score = 5 * strength_required
+        self.energy_score = 10 * strength_required
         self.id = id
         self.done = False
         self.reduced_strength = 0
@@ -98,7 +96,7 @@ class Environment:
         self.agents = [Agent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY) for i in range(NUM_AGENTS)]
         for agent in self.agents:
             self.grid[agent.position[0], agent.position[1]] = agent
-        self.foods = [Food(self.random_position(), food_id+2, food_id) for food_id in range(NUM_FOODS)]
+        self.foods = [Food(self.random_position(), random.randint(1, MAX_REQUIRED_STRENGTH), food_id) for food_id in range(NUM_FOODS)]
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
@@ -107,9 +105,6 @@ class Environment:
         return self.observe()
 
     def update_grid(self):
-        '''
-        Update grid position after agents move
-        '''
         self.grid = np.full((GRID_SIZE, GRID_SIZE), None)
         for agent in self.agents:
             if not(agent.done): # If agent is alive
@@ -117,15 +112,6 @@ class Environment:
         for food in self.foods:
             if not(food.done): # If food is not placed at home
                 self.grid[food.position[0], food.position[1]] = food
-                
-    def update_food(self):
-        '''
-        All agents have to pick up food at the same time step.
-        '''
-        for food in self.foods:
-            food.reduced_strength = 0 # clear reduced strenth due to combined strength
-            food.pre_carried.clear() # clear list
-            food.is_moved = False
 
     def min_dist(self,curr_pos, min_distance):
         satisfy = True
@@ -138,7 +124,7 @@ class Environment:
     def random_position(self):
         while True:
             pos = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3) and self.compute_dist(pos, HOME_POSITION) > 4:
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3):
                 self.prev_pos_list.append(pos)
                 return pos
 
@@ -154,9 +140,6 @@ class Environment:
         return agent_obs
 
     def step(self, agent_actions):
-        # Update food state: Clear all agents if not carried
-        self.update_food()
-
         # One step in the simulation
         # Gather each agent's chosen action for consensus on movement
         actions = []
@@ -185,7 +168,6 @@ class Environment:
                         print(f"Agent {agent.id} couldn't move; consensus required.")
                         continue
             if action in ["up", "down", "left", "right"]:
-                agent.energy -= 1
                 delta_pos = {'up': np.array([-1,0]),
                             'down': np.array([1,0]),
                             'left': np.array([0,-1]),
@@ -223,24 +205,29 @@ class Environment:
 
 
                     if move:
+                        # Move the food with the agent
+                        # print(f"{agent.id} moves to {new_agent_position}")
                         for agent_id in agent.carrying_food.carried:
                             old_position = self.agents[agent_id].position
                             new_position = self.agents[agent_id].position + delta_pos[action]
                             self.agents[agent_id].position = new_position
-                            loss = 0.2*min(self.agents[agent_id].strength, self.agents[agent_id].carrying_food.strength_required)
-                            self.agents[agent_id].energy -= loss # When carry food, agent lose more energy due to friction
+                            # print(f"agent {agent_id} moves to {new_position} from {old_position}")
                         if not(agent.carrying_food.is_moved):
                             # print(f"{agent.carrying_food.id} moves to {new_food_position}")
                             agent.carrying_food.position = new_food_position
                             agent.carrying_food.is_moved = True
-                        
+                        loss = (1 + 0.2*min(agent.strength, agent.carrying_food.strength_required))
+                        agent.energy -= loss # When carry food, agent lose more energy due to friction
 
                 elif not(agent.carrying_food):
                     if new_agent_position[0] < 0 or new_agent_position[1] < 0 or new_agent_position[0] > GRID_SIZE-1 or new_agent_position[1] > GRID_SIZE-1:
                         continue
 
                     if self.grid[new_agent_position[0], new_agent_position[1]] is None:
+                        agent.energy -= 1
                         agent.position += delta_pos[action]
+
+                self.update_grid()
 
             elif action == "pick_up" and agent.carrying_food is None:
                 for food in self.foods:
@@ -285,14 +272,12 @@ class Environment:
                     agent.carrying_food.carried = []
                     agent.carrying_food = None
                     
-            # Update grid state 
-            self.update_grid()
 
-            # End if any agent runs out of energy
-            if agent.energy <= 0:
-                agent.done = True
-                self.rewards += np.array([energy_punishment] * NUM_AGENTS)
-                return self.observe(), np.copy(self.rewards), True, None, None
+        # All agents have to pick up food at the same time step.
+        for food in self.foods:
+            food.reduced_strength = 0 # clear reduced strenth due to combined strength
+            food.pre_carried.clear() # clear list
+            food.is_moved = False
 
         # End conditions
         # End if all food items are collected
@@ -301,6 +286,10 @@ class Environment:
             self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
             return self.observe(), np.copy(self.rewards), True, None, None
 
-
+        # End if any agent runs out of energy
+        if agent.energy <= 0:
+            agent.done = True
+            self.rewards += np.array([energy_punishment] * NUM_AGENTS)
+            return self.observe(), np.copy(self.rewards), True, None, None
 
         return self.observe(), np.copy(self.rewards), False, None, None
