@@ -8,7 +8,7 @@ from keyboard_control import *
 
 # Environment Parameters
 GRID_SIZE = 10  # Size of the grid world
-NUM_AGENTS = 2  # Number of agents
+NUM_AGENTS = 1  # Number of agents
 NUM_FOODS = 4  # Number of foods
 HOME_POSITION = (1, 1)  # Coordinates of the home
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
@@ -37,26 +37,28 @@ class Agent:
         self.messages = []
         # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
     
-    def observe(self, environment):
+    def observe(self, environment): #TODO Check this again
         # Define the 5x5 field of view around the agent, excluding its center
         perception_data = []
-        for dx in range(-2, 3):
-            for dy in range(-2, 3):
+        for dy in range(-2, 3):
+            row = []
+            for dx in range(-2, 3):
                 if dx == 0 and dy == 0:
-                    perception_data.append([0, 0, 0, 0])  # agent's own position
+                    row.append([0, 0, 0, 0])  # agent's own position
                     continue
 
                 x, y = self.position[0] + dx, self.position[1] + dy
                 if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
                     obj = environment.grid[x, y]
                     if obj is None:
-                        perception_data.append([0, 0, 0, 0])  # Empty grid
+                        row.append([0, 0, 0, 0])  # Empty grid
                     elif isinstance(obj, Food): # Observe Food
-                        perception_data.append(obj.attribute)
+                        row.append(obj.attribute)
                     elif isinstance(obj, Agent): # Observe Agent
-                        perception_data.append(AGENT_ATTRIBUTES)  
+                        row.append(AGENT_ATTRIBUTES)  
                 else:
-                    perception_data.append([0, 0, 0, 0])  # Out-of-bounds grid (treated as empty)
+                    row.append([0, 0, 0, 0])  # Out-of-bounds grid (treated as empty)
+            perception_data.append(row)
         
         return np.array(perception_data)
 
@@ -149,9 +151,31 @@ class Environment:
     
     def observe(self):
         agent_obs = []
+        agent_loc = []
         for agent in self.agents:
             agent_obs.append(agent.observe(self))
-        return agent_obs
+            agent_loc.append(agent.position)
+        return {"image": agent_obs,"location": agent_loc}
+
+    def int_to_act(self, action):
+        '''
+        input: action integer tensor frm the moel, the value is from 0 to 5
+        output: action string that matches environment
+        '''
+        action = action.detach().cpu().numpy()
+        action_map = {0: "up", 
+                    1: "down", 
+                    2: "left",
+                    3: "right", 
+                    4: "pick_up",
+                    5: "drop", }
+        action_list = []
+        for i in range(len(action)): # loop over agents
+            action_int = action[i]
+            action_list.append(action_map[action_int])
+
+        return action_list
+
 
     def step(self, agent_actions):
         # Update food state: Clear all agents if not carried
@@ -284,7 +308,10 @@ class Environment:
                     self.rewards[agent.id] += drop_punishment
                     agent.carrying_food.carried = []
                     agent.carrying_food = None
-                    
+
+            else:
+                self.rewards[agent.id] -= 1 # Useless move punishment
+
             # Update grid state 
             self.update_grid()
 
@@ -297,10 +324,7 @@ class Environment:
         # End conditions
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
-            print("All food items are collected")
             self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
             return self.observe(), np.copy(self.rewards), True, None, None
-
-
 
         return self.observe(), np.copy(self.rewards), False, None, None
