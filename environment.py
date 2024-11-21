@@ -7,10 +7,10 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-GRID_SIZE = 10  # Size of the grid world
+GRID_SIZE = 5  # Size of the grid world
 NUM_AGENTS = 1  # Number of agents
-NUM_FOODS = 4  # Number of foods
-HOME_POSITION = (1, 1)  # Coordinates of the home
+NUM_FOODS = 1  # Number of foods
+HOME_POSITION = (0, 0)  # Coordinates of the home
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
 AGENT_ATTRIBUTES = [10, 10, 10, 10]  # All agents have the same attributes
 AGENT_STRENGTH = 3
@@ -140,7 +140,7 @@ class Environment:
     def random_position(self):
         while True:
             pos = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3) and self.compute_dist(pos, HOME_POSITION) > 4:
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,2) and self.compute_dist(pos, HOME_POSITION) > 2:
                 self.prev_pos_list.append(pos)
                 return pos
 
@@ -311,6 +311,7 @@ class Environment:
 
             else:
                 self.rewards[agent.id] -= 1 # Useless move punishment
+                agent.energy -= 1 # Useless move punishment
 
             # Update grid state 
             self.update_grid()

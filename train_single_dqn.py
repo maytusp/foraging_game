@@ -11,19 +11,22 @@ from constants import *
 from keyboard_control import *
 from environment import *
 
+import wandb
 
 
 # Constants
 
 ACTION_DIM = 6  # Action space size
 MESSAGE_DIM = 10  # Length of the message vector
-SEQ_LENGTH = 10  # Sequence length for LSTM
-BATCH_SIZE = 3
+SEQ_LENGTH = 5  # Sequence length for LSTM
+BATCH_SIZE = 16
 GAMMA = 0.99
-LR = 1e-3
-REPLAY_SIZE = 10000
-EPSILON_DECAY = 0.995
-MIN_EPSILON = 0.01
+LR = 1e-4
+REPLAY_SIZE = 1000
+# EPSILON_DECAY = 0.99999 # 0.995
+MAX_EPSILON = 0.8
+MIN_EPSILON = 0.2
+EXPLORE_STEPS = 1e4
 
 # Visual Observation
 INPUT_CHANNELS = 4
@@ -106,6 +109,7 @@ class LSTMDQLAgent:
         self.message_dim = message_dim
         self.hidden_dim = hidden_dim
         self.epsilon = 1.0
+        self.step = 0
 
         self.q_network = LSTM_QNetwork(INPUT_CHANNELS, IMAGE_SIZE, HIDDEN_DIM, action_dim, VOCAB_SIZE, message_dim).to(device)
         self.target_network = LSTM_QNetwork(INPUT_CHANNELS, IMAGE_SIZE, HIDDEN_DIM, action_dim, VOCAB_SIZE, message_dim).to(device)
@@ -174,9 +178,11 @@ class LSTMDQLAgent:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
+        self.step += 1
         # Epsilon decay
-        self.epsilon = max(MIN_EPSILON, self.epsilon * EPSILON_DECAY)
+        # self.epsilon = max(MIN_EPSILON, self.epsilon * EPSILON_DECAY)
+        self.epsilon = max(MIN_EPSILON, ((EXPLORE_STEPS - self.step)/EXPLORE_STEPS)*MAX_EPSILON)
+        return loss.item()
 
 
 # Environment Interaction
@@ -205,15 +211,14 @@ def train_lstm_dql(env, num_episodes):
 
             image_seq.append(next_obs["image"][0])
             loc_seq.append(next_obs["location"][0])
-            agent.train()
+            loss = agent.train()
 
             total_reward += sum(rewards)
             step += 1
-            if step % 100 == 0:
-                print(f"step = {step}")
-        agent.update_target_network()
-        print(f"Episode {episode + 1}/{num_episodes}, Total Reward: {total_reward}")
 
+        agent.update_target_network()
+        print(f"Episode {episode + 1}/{num_episodes}, Total Reward: {total_reward}, loss: {loss}")
+        
 
 # Main
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
