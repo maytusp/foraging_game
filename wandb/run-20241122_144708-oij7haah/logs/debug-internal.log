@@ -1,0 +1,11 @@
+{"time":"2024-11-22T14:47:08.344528+07:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-22T14:47:08.344574+07:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241122_144708-oij7haah/logs/debug-core.log"}
+{"time":"2024-11-22T14:47:08.468584+07:00","level":"INFO","msg":"created new stream","id":"oij7haah"}
+{"time":"2024-11-22T14:47:08.468778+07:00","level":"INFO","msg":"stream: started","id":"oij7haah"}
+{"time":"2024-11-22T14:47:08.468789+07:00","level":"INFO","msg":"writer: Do: started","stream_id":"oij7haah"}
+{"time":"2024-11-22T14:47:08.46881+07:00","level":"INFO","msg":"sender: started","stream_id":"oij7haah"}
+{"time":"2024-11-22T14:47:08.468788+07:00","level":"INFO","msg":"handler: started","stream_id":"oij7haah"}
+{"time":"2024-11-22T14:47:09.512138+07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-22T14:51:47.401242+07:00","level":"INFO","msg":"stream: closing","id":"oij7haah"}
+{"time":"2024-11-22T14:51:47.401933+07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-22T14:51:47.404535+07:00","level":"INFO","msg":"Stopped system monitor"}

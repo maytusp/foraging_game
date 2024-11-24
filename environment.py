@@ -201,6 +201,7 @@ class Environment:
         # print("food taken by multiagent", consensus_action.keys())
         # Process each agent’s action
         for agent, action in actions:
+            failed_action = False
             # If an agent is tied to other agents, i.e., picking the same food.
             # Consensus action has to be satisfied for all agents to perform action, move or drop food.  Otherwise, these actions have no effect.
             if agent.carrying_food:
@@ -257,10 +258,12 @@ class Environment:
                             # print(f"{agent.carrying_food.id} moves to {new_food_position}")
                             agent.carrying_food.position = new_food_position
                             agent.carrying_food.is_moved = True
-                        
+                    else:
+                        failed_action = True
 
                 elif not(agent.carrying_food):
                     if new_agent_position[0] < 0 or new_agent_position[1] < 0 or new_agent_position[0] > GRID_SIZE-1 or new_agent_position[1] > GRID_SIZE-1:
+                        failed_action = True
                         continue
 
                     if self.grid[new_agent_position[0], new_agent_position[1]] is None:
@@ -285,6 +288,9 @@ class Environment:
                         elif food.strength_required - food.reduced_strength > agent.strength and not food.carried:
                             food.reduced_strength += agent.strength
                             food.pre_carried.append(agent.id) # agent.id prepares to carry the food.
+                if agent.carrying_food == None:
+                    failed_action = True
+
 
             elif action == "drop" and agent.carrying_food:
                 # If agent drops food at home
@@ -308,10 +314,20 @@ class Environment:
                     self.rewards[agent.id] += drop_punishment
                     agent.carrying_food.carried = []
                     agent.carrying_food = None
+                    failed_action = True
 
-            else:
-                self.rewards[agent.id] -= 1 # Useless move punishment
-                agent.energy -= 1 # Useless move punishment
+            # Useless action
+            elif action == "pick_up" and agent.carrying_food is not None:
+                failed_action = True
+
+            # Useless action
+            elif action == "drop" and not(agent.carrying_food):
+                failed_action = True
+            
+            if failed_action:
+                self.rewards[agent.id] -= 5 # Useless move punishment and end
+                # agent.energy -= 3 # Useless move punishment
+                return self.observe(), np.copy(self.rewards), True, None, None
 
             # Update grid state 
             self.update_grid()
@@ -325,7 +341,9 @@ class Environment:
         # End conditions
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
-            self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
+            # self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
+            for agent in self.agents:
+                self.rewards[agent.id] += agent.energy
             return self.observe(), np.copy(self.rewards), True, None, None
 
         return self.observe(), np.copy(self.rewards), False, None, None

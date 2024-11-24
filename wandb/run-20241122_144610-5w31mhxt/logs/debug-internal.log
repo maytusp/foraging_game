@@ -1,0 +1,11 @@
+{"time":"2024-11-22T14:46:10.603701+07:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-22T14:46:10.603788+07:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241122_144610-5w31mhxt/logs/debug-core.log"}
+{"time":"2024-11-22T14:46:10.719523+07:00","level":"INFO","msg":"created new stream","id":"5w31mhxt"}
+{"time":"2024-11-22T14:46:10.719735+07:00","level":"INFO","msg":"stream: started","id":"5w31mhxt"}
+{"time":"2024-11-22T14:46:10.719917+07:00","level":"INFO","msg":"sender: started","stream_id":"5w31mhxt"}
+{"time":"2024-11-22T14:46:10.719923+07:00","level":"INFO","msg":"writer: Do: started","stream_id":"5w31mhxt"}
+{"time":"2024-11-22T14:46:10.71999+07:00","level":"INFO","msg":"handler: started","stream_id":"5w31mhxt"}
+{"time":"2024-11-22T14:46:11.754059+07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-22T14:47:00.899668+07:00","level":"INFO","msg":"stream: closing","id":"5w31mhxt"}
+{"time":"2024-11-22T14:47:00.900255+07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-22T14:47:00.905798+07:00","level":"INFO","msg":"Stopped system monitor"}

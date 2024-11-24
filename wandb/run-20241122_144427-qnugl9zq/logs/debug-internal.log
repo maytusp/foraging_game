@@ -1,0 +1,8 @@
+{"time":"2024-11-22T14:44:27.232776+07:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-22T14:44:27.232818+07:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241122_144427-qnugl9zq/logs/debug-core.log"}
+{"time":"2024-11-22T14:44:27.346944+07:00","level":"INFO","msg":"created new stream","id":"qnugl9zq"}
+{"time":"2024-11-22T14:44:27.347016+07:00","level":"INFO","msg":"stream: started","id":"qnugl9zq"}
+{"time":"2024-11-22T14:44:27.347055+07:00","level":"INFO","msg":"writer: Do: started","stream_id":"qnugl9zq"}
+{"time":"2024-11-22T14:44:27.347111+07:00","level":"INFO","msg":"sender: started","stream_id":"qnugl9zq"}
+{"time":"2024-11-22T14:44:27.347247+07:00","level":"INFO","msg":"handler: started","stream_id":"qnugl9zq"}
+{"time":"2024-11-22T14:44:27.659994+07:00","level":"INFO","msg":"stream: closing","id":"qnugl9zq"}

@@ -1,0 +1,16 @@
+{"time":"2024-11-22T14:40:45.655621+07:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-22T14:40:45.655709+07:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241122_144045-lebdtmst/logs/debug-core.log"}
+{"time":"2024-11-22T14:40:46.685318+07:00","level":"INFO","msg":"created new stream","id":"lebdtmst"}
+{"time":"2024-11-22T14:40:46.685532+07:00","level":"INFO","msg":"stream: started","id":"lebdtmst"}
+{"time":"2024-11-22T14:40:46.685876+07:00","level":"INFO","msg":"sender: started","stream_id":"lebdtmst"}
+{"time":"2024-11-22T14:40:46.685684+07:00","level":"INFO","msg":"handler: started","stream_id":"lebdtmst"}
+{"time":"2024-11-22T14:40:46.685458+07:00","level":"INFO","msg":"writer: Do: started","stream_id":"lebdtmst"}
+{"time":"2024-11-22T14:40:47.885869+07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-22T14:40:53.36589+07:00","level":"INFO","msg":"stream: closing","id":"lebdtmst"}
+{"time":"2024-11-22T14:40:53.36633+07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-22T14:40:53.366862+07:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-22T14:40:57.632595+07:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-22T14:40:58.430727+07:00","level":"INFO","msg":"handler: closed","stream_id":"lebdtmst"}
+{"time":"2024-11-22T14:40:58.430851+07:00","level":"INFO","msg":"sender: closed","stream_id":"lebdtmst"}
+{"time":"2024-11-22T14:40:58.430838+07:00","level":"INFO","msg":"writer: Close: closed","stream_id":"lebdtmst"}
+{"time":"2024-11-22T14:40:58.432245+07:00","level":"INFO","msg":"stream: closed","id":"lebdtmst"}

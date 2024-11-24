@@ -1,0 +1,16 @@
+{"time":"2024-11-22T14:44:35.860819+07:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-22T14:44:35.860924+07:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241122_144435-fxcdu9eb/logs/debug-core.log"}
+{"time":"2024-11-22T14:44:35.974151+07:00","level":"INFO","msg":"created new stream","id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:35.97421+07:00","level":"INFO","msg":"stream: started","id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:35.974228+07:00","level":"INFO","msg":"writer: Do: started","stream_id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:35.974239+07:00","level":"INFO","msg":"handler: started","stream_id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:35.974317+07:00","level":"INFO","msg":"sender: started","stream_id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:36.869934+07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-22T14:44:42.481292+07:00","level":"INFO","msg":"stream: closing","id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:42.481373+07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-22T14:44:42.482243+07:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-22T14:44:44.047471+07:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-22T14:44:44.867589+07:00","level":"INFO","msg":"handler: closed","stream_id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:44.867654+07:00","level":"INFO","msg":"sender: closed","stream_id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:44.867628+07:00","level":"INFO","msg":"writer: Close: closed","stream_id":"fxcdu9eb"}
+{"time":"2024-11-22T14:44:44.868265+07:00","level":"INFO","msg":"stream: closed","id":"fxcdu9eb"}

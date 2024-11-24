@@ -1,0 +1,11 @@
+{"time":"2024-11-22T15:32:53.812101+07:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-22T15:32:53.812165+07:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241122_153253-hudvlz47/logs/debug-core.log"}
+{"time":"2024-11-22T15:32:53.935937+07:00","level":"INFO","msg":"created new stream","id":"hudvlz47"}
+{"time":"2024-11-22T15:32:53.936095+07:00","level":"INFO","msg":"stream: started","id":"hudvlz47"}
+{"time":"2024-11-22T15:32:53.936282+07:00","level":"INFO","msg":"sender: started","stream_id":"hudvlz47"}
+{"time":"2024-11-22T15:32:53.936288+07:00","level":"INFO","msg":"writer: Do: started","stream_id":"hudvlz47"}
+{"time":"2024-11-22T15:32:53.936318+07:00","level":"INFO","msg":"handler: started","stream_id":"hudvlz47"}
+{"time":"2024-11-22T15:32:54.752383+07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-22T15:33:08.535347+07:00","level":"INFO","msg":"stream: closing","id":"hudvlz47"}
+{"time":"2024-11-22T15:33:08.53559+07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-22T15:33:08.535981+07:00","level":"INFO","msg":"Stopped system monitor"}
