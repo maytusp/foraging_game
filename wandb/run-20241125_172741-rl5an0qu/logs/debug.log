@@ -1,0 +1,26 @@
+2024-11-25 17:27:41,048 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Current SDK version is 0.18.7
+2024-11-25 17:27:41,048 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Configure stats pid to 65424
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Loading settings from /Users/user/.config/wandb/settings
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Loading settings from /Users/user/Projects/foraging_game/wandb/settings
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Loading settings from environment variables: {}
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Applying setup settings: {'mode': None, '_disable_service': None}
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Inferring run settings from compute environment: {'program_relpath': 'train_single_dqn.py', 'program_abspath': '/Users/user/Projects/foraging_game/train_single_dqn.py', 'program': 'train_single_dqn.py'}
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_setup.py:_flush():79] Applying login settings: {}
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_init.py:_log_setup():533] Logging user logs to /Users/user/Projects/foraging_game/wandb/run-20241125_172741-rl5an0qu/logs/debug.log
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_init.py:_log_setup():534] Logging internal logs to /Users/user/Projects/foraging_game/wandb/run-20241125_172741-rl5an0qu/logs/debug-internal.log
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_init.py:init():619] calling init triggers
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_init.py:init():626] wandb.init called with sweep_config: {}
+config: {'batch_size': 64, 'seq_length': 10, 'exploration_steps': 300000.0, 'buffer_size': 1000, 'max_eps': 0.8, 'min_eps': 0.2}
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_init.py:init():669] starting backend
+2024-11-25 17:27:41,049 INFO    MainThread:65424 [wandb_init.py:init():673] sending inform_init request
+2024-11-25 17:27:41,054 INFO    MainThread:65424 [backend.py:_multiprocessing_setup():104] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-11-25 17:27:41,054 INFO    MainThread:65424 [wandb_init.py:init():686] backend started and connected
+2024-11-25 17:27:41,064 INFO    MainThread:65424 [wandb_init.py:init():781] updated telemetry
+2024-11-25 17:27:41,104 INFO    MainThread:65424 [wandb_init.py:init():814] communicating run to backend with 90.0 second timeout
+2024-11-25 17:27:42,970 INFO    MainThread:65424 [wandb_init.py:init():867] starting run threads in backend
+2024-11-25 17:27:43,191 INFO    MainThread:65424 [wandb_run.py:_console_start():2456] atexit reg
+2024-11-25 17:27:43,191 INFO    MainThread:65424 [wandb_run.py:_redirect():2305] redirect: wrap_raw
+2024-11-25 17:27:43,191 INFO    MainThread:65424 [wandb_run.py:_redirect():2370] Wrapping output streams.
+2024-11-25 17:27:43,191 INFO    MainThread:65424 [wandb_run.py:_redirect():2395] Redirects installed.
+2024-11-25 17:27:43,194 INFO    MainThread:65424 [wandb_init.py:init():911] run started, returning control to user process
+2024-11-25 17:27:44,143 WARNING MsgRouterThr:65424 [router.py:message_loop():75] message_loop has been closed

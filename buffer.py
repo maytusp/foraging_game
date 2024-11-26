@@ -82,6 +82,9 @@ class EpisodeReplayBuffer:
 
         for episode in sampled_episodes:
             min_step = min(min_step, len(episode)) # get minimum step from sampled episodes
+        
+        # if min_step > 3:
+        #     print("min step", min_step)
 
         for episode in sampled_episodes:
             if min_step > self.lookup_step: # sample buffer with lookup_step size
@@ -92,7 +95,7 @@ class EpisodeReplayBuffer:
                 idx = np.random.randint(0, len(episode)-min_step+1) # sample buffer with minstep size
                 sample = episode.sample(random_update=True, lookup_step=min_step, idx=idx)
                 sampled_buffer.append(sample)
-
+ 
 
         return sampled_buffer, len(sampled_buffer[0]) # buffers, sequence_length
 

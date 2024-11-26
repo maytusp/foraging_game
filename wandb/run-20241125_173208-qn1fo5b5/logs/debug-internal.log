@@ -1,0 +1,16 @@
+{"time":"2024-11-25T17:32:08.363838+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:32:08.363937+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_173208-qn1fo5b5/logs/debug-core.log"}
+{"time":"2024-11-25T17:32:08.491845+08:00","level":"INFO","msg":"created new stream","id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:08.492058+08:00","level":"INFO","msg":"stream: started","id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:08.492259+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:08.49227+08:00","level":"INFO","msg":"sender: started","stream_id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:08.492319+08:00","level":"INFO","msg":"handler: started","stream_id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:09.57513+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:32:12.405325+08:00","level":"INFO","msg":"stream: closing","id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:12.405521+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:32:12.406035+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-25T17:32:13.918654+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-25T17:32:14.740946+08:00","level":"INFO","msg":"handler: closed","stream_id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:14.740969+08:00","level":"INFO","msg":"sender: closed","stream_id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:14.740958+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"qn1fo5b5"}
+{"time":"2024-11-25T17:32:14.741303+08:00","level":"INFO","msg":"stream: closed","id":"qn1fo5b5"}

@@ -1,0 +1,16 @@
+{"time":"2024-11-25T17:00:13.009934+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:00:13.009999+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_170012-cak9hk5i/logs/debug-core.log"}
+{"time":"2024-11-25T17:00:13.139274+08:00","level":"INFO","msg":"created new stream","id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:13.139331+08:00","level":"INFO","msg":"stream: started","id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:13.139384+08:00","level":"INFO","msg":"handler: started","stream_id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:13.139408+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:13.139407+08:00","level":"INFO","msg":"sender: started","stream_id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:14.103251+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:00:20.142884+08:00","level":"INFO","msg":"stream: closing","id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:20.142954+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:00:20.143793+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-25T17:00:21.763208+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-25T17:00:22.554112+08:00","level":"INFO","msg":"handler: closed","stream_id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:22.554124+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:22.554157+08:00","level":"INFO","msg":"sender: closed","stream_id":"cak9hk5i"}
+{"time":"2024-11-25T17:00:22.554301+08:00","level":"INFO","msg":"stream: closed","id":"cak9hk5i"}

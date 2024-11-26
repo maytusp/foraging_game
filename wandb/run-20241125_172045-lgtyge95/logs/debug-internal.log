@@ -1,0 +1,11 @@
+{"time":"2024-11-25T17:20:45.204181+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:20:45.204244+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_172045-lgtyge95/logs/debug-core.log"}
+{"time":"2024-11-25T17:20:45.320698+08:00","level":"INFO","msg":"created new stream","id":"lgtyge95"}
+{"time":"2024-11-25T17:20:45.320942+08:00","level":"INFO","msg":"stream: started","id":"lgtyge95"}
+{"time":"2024-11-25T17:20:45.321085+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"lgtyge95"}
+{"time":"2024-11-25T17:20:45.321+08:00","level":"INFO","msg":"sender: started","stream_id":"lgtyge95"}
+{"time":"2024-11-25T17:20:45.321142+08:00","level":"INFO","msg":"handler: started","stream_id":"lgtyge95"}
+{"time":"2024-11-25T17:20:46.457607+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:20:49.816841+08:00","level":"INFO","msg":"stream: closing","id":"lgtyge95"}
+{"time":"2024-11-25T17:20:49.817057+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:20:49.817439+08:00","level":"INFO","msg":"Stopped system monitor"}

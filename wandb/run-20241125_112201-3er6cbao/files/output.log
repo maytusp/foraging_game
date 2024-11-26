@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "test.py", line 85, in <module>
+    test(env, 100, "checkpoints/ckpt_480000.pth")
+  File "test.py", line 35, in test
+    agent = DQNAgent(ACTION_DIM, MESSAGE_DIM)
+  File "/Users/user/Projects/foraging_game/train_single_dqn.py", line 111, in __init__
+    self.q_network = LSTM_QNetwork(INPUT_CHANNELS, IMAGE_SIZE, HIDDEN_DIM, action_dim, VOCAB_SIZE, message_dim).to(device)
+NameError: name 'device' is not defined

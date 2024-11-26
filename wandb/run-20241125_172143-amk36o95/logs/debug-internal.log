@@ -1,0 +1,11 @@
+{"time":"2024-11-25T17:21:43.586032+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:21:43.586091+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_172143-amk36o95/logs/debug-core.log"}
+{"time":"2024-11-25T17:21:43.702584+08:00","level":"INFO","msg":"created new stream","id":"amk36o95"}
+{"time":"2024-11-25T17:21:43.702755+08:00","level":"INFO","msg":"stream: started","id":"amk36o95"}
+{"time":"2024-11-25T17:21:43.702797+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"amk36o95"}
+{"time":"2024-11-25T17:21:43.702989+08:00","level":"INFO","msg":"sender: started","stream_id":"amk36o95"}
+{"time":"2024-11-25T17:21:43.702996+08:00","level":"INFO","msg":"handler: started","stream_id":"amk36o95"}
+{"time":"2024-11-25T17:21:44.58514+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:21:47.176552+08:00","level":"INFO","msg":"stream: closing","id":"amk36o95"}
+{"time":"2024-11-25T17:21:47.1768+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:21:47.177232+08:00","level":"INFO","msg":"Stopped system monitor"}

@@ -1,0 +1,16 @@
+{"time":"2024-11-25T22:56:04.448895+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T22:56:04.448961+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_225604-mjgth2bt/logs/debug-core.log"}
+{"time":"2024-11-25T22:56:04.58063+08:00","level":"INFO","msg":"created new stream","id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:04.580874+08:00","level":"INFO","msg":"stream: started","id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:04.581173+08:00","level":"INFO","msg":"sender: started","stream_id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:04.581194+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:04.581236+08:00","level":"INFO","msg":"handler: started","stream_id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:05.68013+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T22:56:07.532237+08:00","level":"INFO","msg":"stream: closing","id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:07.532441+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T22:56:07.53289+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-25T22:56:09.057487+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-25T22:56:10.0717+08:00","level":"INFO","msg":"handler: closed","stream_id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:10.071742+08:00","level":"INFO","msg":"sender: closed","stream_id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:10.071729+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"mjgth2bt"}
+{"time":"2024-11-25T22:56:10.072035+08:00","level":"INFO","msg":"stream: closed","id":"mjgth2bt"}

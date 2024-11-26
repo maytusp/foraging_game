@@ -1,0 +1,16 @@
+{"time":"2024-11-25T22:51:28.024509+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T22:51:28.024556+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_225128-fzdynsl2/logs/debug-core.log"}
+{"time":"2024-11-25T22:51:28.148496+08:00","level":"INFO","msg":"created new stream","id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:28.14855+08:00","level":"INFO","msg":"stream: started","id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:28.148786+08:00","level":"INFO","msg":"handler: started","stream_id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:28.148865+08:00","level":"INFO","msg":"sender: started","stream_id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:28.148867+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:29.227537+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T22:51:31.921007+08:00","level":"INFO","msg":"stream: closing","id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:31.921318+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T22:51:31.921904+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-25T22:51:33.597353+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-25T22:51:37.643667+08:00","level":"INFO","msg":"handler: closed","stream_id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:37.643692+08:00","level":"INFO","msg":"sender: closed","stream_id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:37.643688+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"fzdynsl2"}
+{"time":"2024-11-25T22:51:37.643963+08:00","level":"INFO","msg":"stream: closed","id":"fzdynsl2"}

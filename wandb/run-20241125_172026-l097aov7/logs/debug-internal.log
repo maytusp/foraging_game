@@ -1,0 +1,11 @@
+{"time":"2024-11-25T17:20:26.457622+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:20:26.457689+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_172026-l097aov7/logs/debug-core.log"}
+{"time":"2024-11-25T17:20:26.574429+08:00","level":"INFO","msg":"created new stream","id":"l097aov7"}
+{"time":"2024-11-25T17:20:26.574675+08:00","level":"INFO","msg":"stream: started","id":"l097aov7"}
+{"time":"2024-11-25T17:20:26.574922+08:00","level":"INFO","msg":"sender: started","stream_id":"l097aov7"}
+{"time":"2024-11-25T17:20:26.574933+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"l097aov7"}
+{"time":"2024-11-25T17:20:26.574986+08:00","level":"INFO","msg":"handler: started","stream_id":"l097aov7"}
+{"time":"2024-11-25T17:20:27.539505+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:20:30.161522+08:00","level":"INFO","msg":"stream: closing","id":"l097aov7"}
+{"time":"2024-11-25T17:20:30.161784+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:20:30.162246+08:00","level":"INFO","msg":"Stopped system monitor"}

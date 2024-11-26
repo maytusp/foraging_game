@@ -1,3 +1,21 @@
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import random
+from collections import namedtuple, deque
+import time
+
+from nets import *
+from constants import *
+from keyboard_control import *
+from environment import *
+from buffer import *
+from train_single_dqn import *
+
+import wandb
+import os
+
 def test(env, num_episodes, load_path):
     wandb.init(
         entity="maytusp",
@@ -64,5 +82,4 @@ def test(env, num_episodes, load_path):
 # Main
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 env = Environment()
-# train_lstm_dql(env, 100000)
-test(env, 100, "checkpoints/ckpt_3580000.pth")
+test(env, 100, "checkpoints/ckpt_480000.pth")

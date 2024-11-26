@@ -1,0 +1,16 @@
+{"time":"2024-11-25T17:33:54.307779+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:33:54.307842+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_173354-ooh7ktnu/logs/debug-core.log"}
+{"time":"2024-11-25T17:33:54.424423+08:00","level":"INFO","msg":"created new stream","id":"ooh7ktnu"}
+{"time":"2024-11-25T17:33:54.424471+08:00","level":"INFO","msg":"stream: started","id":"ooh7ktnu"}
+{"time":"2024-11-25T17:33:54.424488+08:00","level":"INFO","msg":"sender: started","stream_id":"ooh7ktnu"}
+{"time":"2024-11-25T17:33:54.424493+08:00","level":"INFO","msg":"handler: started","stream_id":"ooh7ktnu"}
+{"time":"2024-11-25T17:33:54.424531+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"ooh7ktnu"}
+{"time":"2024-11-25T17:33:55.739231+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:33:58.688147+08:00","level":"INFO","msg":"stream: closing","id":"ooh7ktnu"}
+{"time":"2024-11-25T17:33:58.688191+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:33:58.688683+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-25T17:34:00.386927+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-25T17:34:01.232349+08:00","level":"INFO","msg":"handler: closed","stream_id":"ooh7ktnu"}
+{"time":"2024-11-25T17:34:01.232381+08:00","level":"INFO","msg":"sender: closed","stream_id":"ooh7ktnu"}
+{"time":"2024-11-25T17:34:01.232374+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"ooh7ktnu"}
+{"time":"2024-11-25T17:34:01.232707+08:00","level":"INFO","msg":"stream: closed","id":"ooh7ktnu"}

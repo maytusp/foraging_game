@@ -1,0 +1,11 @@
+{"time":"2024-11-25T17:18:48.577578+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T17:18:48.577636+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_171848-ztp4q8hr/logs/debug-core.log"}
+{"time":"2024-11-25T17:18:48.692778+08:00","level":"INFO","msg":"created new stream","id":"ztp4q8hr"}
+{"time":"2024-11-25T17:18:48.693009+08:00","level":"INFO","msg":"stream: started","id":"ztp4q8hr"}
+{"time":"2024-11-25T17:18:48.693178+08:00","level":"INFO","msg":"handler: started","stream_id":"ztp4q8hr"}
+{"time":"2024-11-25T17:18:48.693247+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"ztp4q8hr"}
+{"time":"2024-11-25T17:18:48.693248+08:00","level":"INFO","msg":"sender: started","stream_id":"ztp4q8hr"}
+{"time":"2024-11-25T17:18:49.866014+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T17:18:54.533429+08:00","level":"INFO","msg":"stream: closing","id":"ztp4q8hr"}
+{"time":"2024-11-25T17:18:54.533694+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T17:18:54.534135+08:00","level":"INFO","msg":"Stopped system monitor"}

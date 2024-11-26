@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "train_single_dqn.py", line 365, in <module>
+    # train_drqn(env, 100000)
+  File "train_single_dqn.py", line 312, in test_drqn
+    if visualize:
+NameError: name 'visualize_environment' is not defined

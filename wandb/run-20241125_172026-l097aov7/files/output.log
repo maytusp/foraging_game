@@ -1,0 +1,264 @@
+train_single_dqn.py:130: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:277.)
+  image_seq_input = torch.tensor(image_seq, dtype=torch.float32).unsqueeze(0).to(device)
+Episode 1/100000, Total Reward: 0, loss: None
+Episode 2/100000, Total Reward: 0, loss: None
+Episode 3/100000, Total Reward: 0, loss: None
+Episode 4/100000, Total Reward: 0, loss: None
+Episode 5/100000, Total Reward: 0, loss: None
+Episode 6/100000, Total Reward: 0, loss: None
+Episode 7/100000, Total Reward: 0, loss: None
+Episode 8/100000, Total Reward: 0, loss: None
+Episode 9/100000, Total Reward: 0, loss: None
+Episode 10/100000, Total Reward: 0, loss: None
+Episode 11/100000, Total Reward: 0, loss: None
+Episode 12/100000, Total Reward: 0, loss: None
+Episode 13/100000, Total Reward: 0, loss: None
+Episode 14/100000, Total Reward: 0, loss: None
+Episode 15/100000, Total Reward: 0, loss: None
+Episode 16/100000, Total Reward: 0, loss: None
+Episode 17/100000, Total Reward: 0, loss: None
+Episode 18/100000, Total Reward: 0, loss: None
+Episode 19/100000, Total Reward: 0, loss: None
+Episode 20/100000, Total Reward: 0, loss: None
+Episode 21/100000, Total Reward: 0, loss: None
+Episode 22/100000, Total Reward: 0, loss: None
+Episode 23/100000, Total Reward: 0, loss: None
+Episode 24/100000, Total Reward: 0, loss: None
+Episode 25/100000, Total Reward: 0, loss: None
+Episode 26/100000, Total Reward: 0, loss: None
+Episode 27/100000, Total Reward: 0, loss: None
+Episode 28/100000, Total Reward: 0, loss: None
+Episode 29/100000, Total Reward: 0, loss: None
+Episode 30/100000, Total Reward: 0, loss: None
+Episode 31/100000, Total Reward: 0, loss: None
+Episode 32/100000, Total Reward: 0, loss: None
+Episode 33/100000, Total Reward: 0, loss: None
+Episode 34/100000, Total Reward: 0, loss: None
+Episode 35/100000, Total Reward: 0, loss: None
+Episode 36/100000, Total Reward: 0, loss: None
+Episode 37/100000, Total Reward: 0, loss: None
+Episode 38/100000, Total Reward: 0, loss: None
+Episode 39/100000, Total Reward: 0, loss: None
+Episode 40/100000, Total Reward: 0, loss: None
+Episode 41/100000, Total Reward: 0, loss: None
+Episode 42/100000, Total Reward: 0, loss: None
+Episode 43/100000, Total Reward: 0, loss: None
+Episode 44/100000, Total Reward: 0, loss: None
+Episode 45/100000, Total Reward: 0, loss: None
+Episode 46/100000, Total Reward: 0, loss: None
+Episode 47/100000, Total Reward: 0, loss: None
+Episode 48/100000, Total Reward: 0, loss: None
+Episode 49/100000, Total Reward: 0, loss: None
+Episode 50/100000, Total Reward: 0, loss: None
+Episode 51/100000, Total Reward: 0, loss: None
+Episode 52/100000, Total Reward: 0, loss: None
+Episode 53/100000, Total Reward: 0, loss: None
+Episode 54/100000, Total Reward: 0, loss: None
+Episode 55/100000, Total Reward: 0, loss: None
+Episode 56/100000, Total Reward: 0, loss: None
+Episode 57/100000, Total Reward: 0, loss: None
+Episode 58/100000, Total Reward: 0, loss: None
+Episode 59/100000, Total Reward: 0, loss: None
+Episode 60/100000, Total Reward: 0, loss: None
+Episode 61/100000, Total Reward: 0, loss: None
+Episode 62/100000, Total Reward: 0, loss: None
+Episode 63/100000, Total Reward: 0, loss: None
+Episode 64/100000, Total Reward: 0, loss: None
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/loss.py:535: UserWarning: Using a target size (torch.Size([64, 64])) that is different to the input size (torch.Size([64])). This will likely lead to incorrect results due to broadcasting. Please ensure they have the same size.
+  return F.mse_loss(input, target, reduction=self.reduction)
+Episode 65/100000, Total Reward: -5, loss: 20.44837188720703
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 66/100000, Total Reward: 5, loss: 16.341638565063477
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 67/100000, Total Reward: -5, loss: 21.750904083251953
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 68/100000, Total Reward: -5, loss: 22.513538360595703
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 69/100000, Total Reward: 5, loss: 22.270030975341797
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 70/100000, Total Reward: -5, loss: 18.35582160949707
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 71/100000, Total Reward: -5, loss: 19.527202606201172
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 72/100000, Total Reward: -5, loss: 20.309165954589844
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 73/100000, Total Reward: -5, loss: 18.342830657958984
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 74/100000, Total Reward: -5, loss: 18.73175048828125
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 75/100000, Total Reward: -5, loss: 19.514007568359375
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 76/100000, Total Reward: -5, loss: 18.341489791870117
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 77/100000, Total Reward: -5, loss: 20.307992935180664
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 78/100000, Total Reward: -5, loss: 19.526277542114258
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 79/100000, Total Reward: -5, loss: 19.135284423828125
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 80/100000, Total Reward: -5, loss: 19.915414810180664
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 81/100000, Total Reward: -5, loss: 19.13899803161621
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 82/100000, Total Reward: -5, loss: 17.966062545776367
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+x torch.Size([64])
+q_targets torch.Size([64, 64])
+q_values torch.Size([64])
+Episode 83/100000, Total Reward: -5, loss: 21.482810974121094
+x torch.Size([64])
+Traceback (most recent call last):
+  File "train_single_dqn.py", line 371, in <module>
+    train_drqn(env, 100000)
+  File "train_single_dqn.py", line 264, in train_drqn
+    loss = agent.train()
+  File "train_single_dqn.py", line 195, in train
+    action_q, _, _ = self.q_network(images, locations) # This is Q(s,)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "train_single_dqn.py", line 92, in forward
+    obs_encoded = self.observation_encoder(obs)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/user/Projects/foraging_game/nets.py", line 23, in forward
+    x = self.conv(x)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+KeyboardInterrupt

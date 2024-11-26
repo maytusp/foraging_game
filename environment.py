@@ -7,9 +7,9 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-GRID_SIZE = 5  # Size of the grid world
+GRID_SIZE = 6  # Size of the grid world
 NUM_AGENTS = 1  # Number of agents
-NUM_FOODS = 1  # Number of foods
+NUM_FOODS = 2  # Number of foods
 HOME_POSITION = (0, 0)  # Coordinates of the home
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
 AGENT_ATTRIBUTES = [10, 10, 10, 10]  # All agents have the same attributes
@@ -100,7 +100,8 @@ class Environment:
         self.agents = [Agent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY) for i in range(NUM_AGENTS)]
         for agent in self.agents:
             self.grid[agent.position[0], agent.position[1]] = agent
-        self.foods = [Food(self.random_position(), food_id+2, food_id) for food_id in range(NUM_FOODS)]
+        # self.foods = [Food(self.random_position(), food_id+2, food_id) for food_id in range(NUM_FOODS)]
+        self.foods = [Food(self.random_position(), 1, food_id) for food_id in range(NUM_FOODS)]
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
@@ -325,9 +326,10 @@ class Environment:
                 failed_action = True
             
             if failed_action:
-                self.rewards[agent.id] -= 5 # Useless move punishment and end
-                # agent.energy -= 3 # Useless move punishment
-                return self.observe(), np.copy(self.rewards), True, None, None
+                # self.rewards[agent.id] -= 5 # Useless move punishment and end
+                agent.energy -= 1 # Useless move punishment
+                # print("FAILED")
+                return self.observe(), np.copy(self.rewards), False, None, None
 
             # Update grid state 
             self.update_grid()

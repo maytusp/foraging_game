@@ -1,0 +1,16 @@
+{"time":"2024-11-25T22:50:54.528268+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-25T22:50:54.528349+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241125_225054-bq66dgp2/logs/debug-core.log"}
+{"time":"2024-11-25T22:50:54.655287+08:00","level":"INFO","msg":"created new stream","id":"bq66dgp2"}
+{"time":"2024-11-25T22:50:54.655339+08:00","level":"INFO","msg":"stream: started","id":"bq66dgp2"}
+{"time":"2024-11-25T22:50:54.655384+08:00","level":"INFO","msg":"handler: started","stream_id":"bq66dgp2"}
+{"time":"2024-11-25T22:50:54.655393+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"bq66dgp2"}
+{"time":"2024-11-25T22:50:54.655418+08:00","level":"INFO","msg":"sender: started","stream_id":"bq66dgp2"}
+{"time":"2024-11-25T22:50:55.698483+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-25T22:51:02.61825+08:00","level":"INFO","msg":"stream: closing","id":"bq66dgp2"}
+{"time":"2024-11-25T22:51:02.618294+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-25T22:51:02.619708+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-25T22:51:04.388976+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-25T22:51:05.192121+08:00","level":"INFO","msg":"handler: closed","stream_id":"bq66dgp2"}
+{"time":"2024-11-25T22:51:05.192258+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"bq66dgp2"}
+{"time":"2024-11-25T22:51:05.192774+08:00","level":"INFO","msg":"sender: closed","stream_id":"bq66dgp2"}
+{"time":"2024-11-25T22:51:05.192832+08:00","level":"INFO","msg":"stream: closed","id":"bq66dgp2"}
