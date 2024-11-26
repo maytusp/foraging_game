@@ -1,0 +1,16 @@
+{"time":"2024-11-26T14:26:34.293485+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-26T14:26:34.293556+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241126_142634-q6bvxdkl/logs/debug-core.log"}
+{"time":"2024-11-26T14:26:34.409057+08:00","level":"INFO","msg":"created new stream","id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:34.409622+08:00","level":"INFO","msg":"stream: started","id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:34.409896+08:00","level":"INFO","msg":"sender: started","stream_id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:34.409895+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:34.409957+08:00","level":"INFO","msg":"handler: started","stream_id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:35.131838+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-26T14:26:36.208903+08:00","level":"INFO","msg":"stream: closing","id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:36.209175+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-26T14:26:36.209517+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-26T14:26:37.569992+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-26T14:26:38.307271+08:00","level":"INFO","msg":"handler: closed","stream_id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:38.307355+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:38.307388+08:00","level":"INFO","msg":"sender: closed","stream_id":"q6bvxdkl"}
+{"time":"2024-11-26T14:26:38.307908+08:00","level":"INFO","msg":"stream: closed","id":"q6bvxdkl"}

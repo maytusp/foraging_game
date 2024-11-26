@@ -1,0 +1,16 @@
+{"time":"2024-11-26T14:21:38.129454+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-11-26T14:21:38.129519+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241126_142138-dluin9ke/logs/debug-core.log"}
+{"time":"2024-11-26T14:21:38.255981+08:00","level":"INFO","msg":"created new stream","id":"dluin9ke"}
+{"time":"2024-11-26T14:21:38.256032+08:00","level":"INFO","msg":"stream: started","id":"dluin9ke"}
+{"time":"2024-11-26T14:21:38.256072+08:00","level":"INFO","msg":"sender: started","stream_id":"dluin9ke"}
+{"time":"2024-11-26T14:21:38.256083+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"dluin9ke"}
+{"time":"2024-11-26T14:21:38.256109+08:00","level":"INFO","msg":"handler: started","stream_id":"dluin9ke"}
+{"time":"2024-11-26T14:21:39.221513+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-26T14:21:43.834928+08:00","level":"INFO","msg":"stream: closing","id":"dluin9ke"}
+{"time":"2024-11-26T14:21:43.834969+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-26T14:21:43.835339+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-11-26T14:21:48.253748+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-11-26T14:21:48.94011+08:00","level":"INFO","msg":"handler: closed","stream_id":"dluin9ke"}
+{"time":"2024-11-26T14:21:48.940152+08:00","level":"INFO","msg":"sender: closed","stream_id":"dluin9ke"}
+{"time":"2024-11-26T14:21:48.940143+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"dluin9ke"}
+{"time":"2024-11-26T14:21:48.940445+08:00","level":"INFO","msg":"stream: closed","id":"dluin9ke"}

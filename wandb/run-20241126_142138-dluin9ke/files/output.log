@@ -1,0 +1,13 @@
+Episode 1/100000, Total Reward: 0, loss: None
+Traceback (most recent call last):
+  File "main.py", line 379, in <module>
+    train_drqn(env, 100000)
+  File "main.py", line 267, in train_drqn
+    next_obs, rewards, done, _, _ = env.step(env_action)
+  File "/Users/user/Projects/foraging_game/environment.py", line 359, in step
+    return self.observe(), np.copy(self.rewards), False, None, None
+  File "/Users/user/Projects/foraging_game/environment.py", line 165, in observe
+    agent_obs.append(agent.observe(self))
+  File "/Users/user/Projects/foraging_game/environment.py", line 71, in observe
+    return np.array(perception_data)
+ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 2 dimensions. The detected shape was (5, 5) + inhomogeneous part.

@@ -12,7 +12,7 @@ NUM_AGENTS = 1  # Number of agents
 NUM_FOODS = 2  # Number of foods
 HOME_POSITION = (0, 0)  # Coordinates of the home
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
-AGENT_ATTRIBUTES = [10, 10, 10, 10]  # All agents have the same attributes
+AGENT_ATTRIBUTES = [10, 10, 10, 0]  # All agents have the same attributes
 AGENT_STRENGTH = 3
 AGENT_ENERGY = 30
 
@@ -53,9 +53,21 @@ class Agent:
                     if obj is None:
                         row.append([0, 0, 0, 0])  # Empty grid
                     elif isinstance(obj, Food): # Observe Food
-                        row.append(obj.attribute)
+                        if len(obj.carried) > 0:
+                            obs =  list(obj.attribute[:-1])
+                            carry = [1]
+                            obs_attribute = obs + carry # if food is carried
+                        else:
+                            obs_attribute = obj.attribute
+
+                        row.append(obs_attribute)
                     elif isinstance(obj, Agent): # Observe Agent
-                        row.append(AGENT_ATTRIBUTES)  
+                        if obj.carrying_food is not None:
+                            obs_attribute = AGENT_ATTRIBUTES[:-1] + [1] # if agent is carrying food
+                        else:
+                            obs_attribute = AGENT_ATTRIBUTES
+                        print("agent", obs_attribute)
+                        row.append(obs_attribute)
                 else:
                     row.append([0, 0, 0, 0])  # Out-of-bounds grid (treated as empty)
             perception_data.append(row)
@@ -80,12 +92,12 @@ class Food:
     def generate_attributes(self, strength_required):
         # Return unique attributes based on the food's strength requirement
         attribute_mapping = {
-            1: [1, 1, 1, 1], # Spinach
-            2: [1, 1, 2, 2], # Watermelon
-            3: [1, 3, 3, 3], # Strawberry
-            4: [2, 4, 1, 4], # Chicken
-            5: [2, 6, 4, 3], # Pig
-            6: [2, 3, 8, 3], # Cattle
+            1: [1, 1, 1, 0], # Spinach
+            2: [1, 2, 2, 0], # Watermelon
+            3: [1, 2, 3, 0], # Strawberry
+            4: [2, 4, 4, 0], # Chicken
+            5: [2, 5, 5, 0], # Pig
+            6: [2, 6, 6, 0], # Cattle
 
         }
         return np.array(attribute_mapping.get(strength_required, [1, 1, 1, 1]))
@@ -343,7 +355,7 @@ class Environment:
         # End conditions
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
-            # self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
+            self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
             for agent in self.agents:
                 self.rewards[agent.id] += agent.energy
             return self.observe(), np.copy(self.rewards), True, None, None

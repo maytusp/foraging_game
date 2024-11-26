@@ -1,0 +1,39 @@
+{
+  "os":  "macOS-14.7.1-arm64-arm-64bit",
+  "python":  "3.8.19",
+  "startedAt":  "2024-11-26T06:26:55.622106Z",
+  "program":  "main.py",
+  "codePath":  "main.py",
+  "git":  {
+    "remote":  "https://github.com/maytusp/foraging_game.git",
+    "commit":  "f418529f26f2d0c0541713a0034d8e1a47e5cdb9"
+  },
+  "email":  "maytusp@gmail.com",
+  "root":  "/Users/user/Projects/foraging_game",
+  "host":  "E-LOSX2P5Q6L4.local",
+  "username":  "n70579mp",
+  "executable":  "/Users/user/anaconda3/envs/robot/bin/python",
+  "codePathLocal":  "main.py",
+  "cpu_count":  8,
+  "cpu_count_logical":  8,
+  "disk":  {
+    "/":  {
+      "total":  "245107195904",
+      "used":  "199861264384"
+    }
+  },
+  "memory":  {
+    "total":  "8589934592"
+  },
+  "cpu":  {
+    "count":  8,
+    "countLogical":  8
+  },
+  "apple":  {
+    "name":  "Apple M1",
+    "ecpuCores":  4,
+    "pcpuCores":  4,
+    "gpuCores":  7,
+    "memoryGb":  8
+  }
+}
