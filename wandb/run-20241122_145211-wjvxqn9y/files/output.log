@@ -1,9 +1,0 @@
-EPISODE: 0
-Traceback (most recent call last):
-  File "train_single_dqn.py", line 334, in <module>
-    test(env, 100, "checkpoints/ckpt_3580000.pth")
-  File "train_single_dqn.py", line 301, in test
-    action, message = agent.select_action(image_seq[-SEQ_LENGTH:], loc_seq[-SEQ_LENGTH:], explore=False)
-  File "train_single_dqn.py", line 143, in select_action
-    image_seq_input = torch.tensor(image_seq, dtype=torch.float32).unsqueeze(0).to(device)
-KeyboardInterrupt

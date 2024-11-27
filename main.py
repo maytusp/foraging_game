@@ -15,28 +15,30 @@ from buffer import *
 import wandb
 import os
 
-
-
+mode = "train" # train, test
+exp_name = "27_nov_norm_input"
+wandb_log = False
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+ckpt_path = f"checkpoints/{exp_name}/ckpt_10000.pth"
 
 # Save parameters
-MODEL_SAVE_EVERY = 20000 # 500 steps
-MODEL_SAVED_DIR = "checkpoints"
+MODEL_SAVE_EVERY = 10000 # 500 steps
+MODEL_SAVED_DIR = f"checkpoints/{exp_name}/"
 os.makedirs(MODEL_SAVED_DIR, exist_ok=True)
 
 # Constants
 MAX_STEPS = 30
 ACTION_DIM = 6  # Action space size
 MESSAGE_DIM = 10  # Length of the message vector
-SEQ_LENGTH = MAX_STEPS // 3 # Sequence length for LSTM
-BATCH_SIZE = 64
+SEQ_LENGTH = 30 # Sequence length for LSTM
+BATCH_SIZE = 3
 GAMMA = 0.99
 LR = 1e-4
-REPLAY_SIZE = 1000 # 1000 episodes
-# EPSILON_DECAY = 0.99999 # 0.995
+REPLAY_SIZE = 200 # episodes
 MAX_EPSILON = 0.8
 MIN_EPSILON = 0.2
-EXPLORE_STEPS = 3e5
-UPDATE_TARGET_EVERY = 10
+EXPLORE_STEPS = 3e3
+UPDATE_TARGET_EVERY = 20
 
 # Visual Observation
 INPUT_CHANNELS = 4
@@ -50,8 +52,9 @@ HIDDEN_DIM = 128
 NUM_LSTM_LAYER = 1
 #EVAL
 VISUALIZE = True
-VIDEO_SAVED_DIR = "vids/drqn_config1/"
+VIDEO_SAVED_DIR = f"vids/{exp_name}/"
 os.makedirs(VIDEO_SAVED_DIR, exist_ok=True)
+
 
 
 if VISUALIZE:
@@ -74,10 +77,17 @@ class LSTM_QNetwork(nn.Module):
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.action_head = MLP([hidden_dim, hidden_dim, action_dim])
         
+
+    def input_norm(self, obs, location):
+        obs = obs / 10
+        location = location / GRID_SIZE
+        return obs, location
+
     # without message
     def forward(self, obs, location, hidden=None):
         # obs: (batch_size, L, 5, 5, C)
         # location: (batch_size, L, 2)
+        obs, location = input_norm(obs, location)
         
         if obs.shape[-1] == INPUT_CHANNELS: # If obs shape = [B, L, W, H, C] change to [B, L, C, W, H]
             obs = torch.permute(obs, (0,1,4,2,3))
@@ -190,29 +200,26 @@ class DQNAgent:
         # Compute Q-targets
         with torch.no_grad():
             next_action_q, _, _ = self.target_network(next_images, next_locations)
-            # print(f"next_images {next_images.shape}")
-            # print(f"next_action_q {next_action_q.shape}")
             max_next_q = torch.max(next_action_q, dim=2)[0] 
-            # print(f"max_next_q {max_next_q.shape}")
             q_targets = rewards + (1 - dones) * GAMMA * max_next_q
+            print(dones)
+            print((1 - dones) * GAMMA * max_next_q)
 
         # Compute Q-values
         action_q, _, _ = self.q_network(images, locations) # This is Q(s,)
-        # print(f"action_q {action_q.shape}")
         actions = actions.contiguous().view(B*T, -1) # (B, T) --> (B*T)
         action_q = action_q.contiguous().view(B*T, -1) # (B, T, num actions) --> (B*T, num actions)
         q_values = action_q.gather(1, actions).squeeze(1) # Compute Q(s,a)
         q_values = q_values.view(B,T)
-        # print(f"q_targets {q_targets.shape}")
-        # print(f"q_values {q_values.shape}")
+
         # Loss and Optimization
         loss = nn.MSELoss()(q_values, q_targets)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         self.grad_step += 1
+
         # Epsilon decay
-        # self.epsilon = max(MIN_EPSILON, self.epsilon * EPSILON_DECAY)
         self.epsilon = max(MIN_EPSILON, ((EXPLORE_STEPS - self.grad_step)/EXPLORE_STEPS)*MAX_EPSILON)
 
         if self.grad_step % UPDATE_TARGET_EVERY == 0:
@@ -226,21 +233,22 @@ class DQNAgent:
 
 # Environment Interaction
 def train_drqn(env, num_episodes):
-    wandb.init(
-        entity="maytusp",
-        # set the wandb project where this run will be logged
-        project="train_drqn",
-        name=f"done if useless action",
-        # track hyperparameters and run metadata
-        config={
-            "batch_size": BATCH_SIZE,
-            "seq_length" : SEQ_LENGTH,
-            "exploration_steps" : EXPLORE_STEPS,
-            "buffer_size" : REPLAY_SIZE,
-            "max_eps" : MAX_EPSILON,
-            "min_eps" : MIN_EPSILON,
-        }
-    )
+    if wandb_log:
+        wandb.init(
+            entity="maytusp",
+            # set the wandb project where this run will be logged
+            project="train_drqn",
+            name=f"{exp_name}",
+            # track hyperparameters and run metadata
+            config={
+                "batch_size": BATCH_SIZE,
+                "seq_length" : SEQ_LENGTH,
+                "exploration_steps" : EXPLORE_STEPS,
+                "buffer_size" : REPLAY_SIZE,
+                "max_eps" : MAX_EPSILON,
+                "min_eps" : MIN_EPSILON,
+            }
+        )
     agent = DQNAgent(ACTION_DIM, MESSAGE_DIM)
     for episode in range(num_episodes):
         episode_data = EpisodeData()
@@ -260,7 +268,7 @@ def train_drqn(env, num_episodes):
         # init hidden
         h = torch.randn(1, NUM_LSTM_LAYER, HIDDEN_DIM).to(device)
         c = torch.randn(1, NUM_LSTM_LAYER, HIDDEN_DIM).to(device)
-        while not done:
+        while not done or ep_step == MAX_STEPS:
             action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=True)
 
             env_action = env.int_to_act(action)
@@ -271,7 +279,7 @@ def train_drqn(env, num_episodes):
                             next_obs['image'][0], next_obs['location'][0], done))
 
             loss = agent.train()
-            
+
             if loss is not None:
                 total_reward += sum(rewards)
                 cum_loss += loss
@@ -285,34 +293,34 @@ def train_drqn(env, num_episodes):
 
         # each replay sample contains full episode
         agent.replay_buffer.add(episode_data)
-                                
-        if grad_step > 0:
+
+        if grad_step > 0 and wandb_log:
             wandb.log(
                 {"loss": cum_loss / grad_step,
                 "reward": total_reward,
                 "epsilon": agent.epsilon}
             )
 
-        
         print(f"Episode {episode + 1}/{num_episodes}, Total Reward: {total_reward}, loss: {loss}")
 
 
 def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
-    wandb.init(
-        entity="maytusp",
-        # set the wandb project where this run will be logged
-        project="test_drqn",
-        name=f"done if useless action",
-        # track hyperparameters and run metadata
-        config={
-            "batch_size": BATCH_SIZE,
-            "seq_length" : SEQ_LENGTH,
-            "exploration_steps" : EXPLORE_STEPS,
-            "buffer_size" : REPLAY_SIZE,
-            "max_eps" : MAX_EPSILON,
-            "min_eps" : MIN_EPSILON,
-        }
-    )
+    if wandb_log:
+        wandb.init(
+            entity="maytusp",
+            # set the wandb project where this run will be logged
+            project="test_drqn",
+            name=f"{exp_name}",
+            # track hyperparameters and run metadata
+            config={
+                "batch_size": BATCH_SIZE,
+                "seq_length" : SEQ_LENGTH,
+                "exploration_steps" : EXPLORE_STEPS,
+                "buffer_size" : REPLAY_SIZE,
+                "max_eps" : MAX_EPSILON,
+                "min_eps" : MIN_EPSILON,
+            }
+        )
     agent = DQNAgent(ACTION_DIM, MESSAGE_DIM)
     agent.q_network.load_state_dict(torch.load(checkpoint_path, map_location=device))
     agent.q_network.eval()
@@ -340,8 +348,8 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
         h = torch.randn(1, NUM_LSTM_LAYER, HIDDEN_DIM).to(device)
         c = torch.randn(1, NUM_LSTM_LAYER, HIDDEN_DIM).to(device)
 
-        while not done:
-            action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=True)
+        while not done or ep_step == MAX_STEPS:
+            action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=False)
 
             env_action = env.int_to_act(action)
             next_obs, rewards, done, _, _ = env.step(env_action)
@@ -359,7 +367,7 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
             ep_step += 1
             total_reward += sum(rewards)
 
-        if grad_step > 0:
+        if grad_step > 0 and wandb_log:
             wandb.log(
                 {
                 "reward": total_reward,
@@ -369,12 +377,13 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
         
         print(f"Episode {episode + 1}/{num_episodes}, Total Reward: {total_reward}")
 
-        if visualize and total_reward > -30:
+        if visualize and total_reward >= -30:
             clip = ImageSequenceClip(frames, fps=5)
             clip.write_videofile(os.path.join(VIDEO_SAVED_DIR, f"ep_{episode + 1}.mp4"), codec="libx264")
             
 if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     env = Environment()
-    train_drqn(env, 100000)
-    # test_drqn(env, 100, "checkpoints/ckpt_480000.pth")
+    if mode == "train":
+        train_drqn(env, 100000)
+    elif mode == "test":
+        test_drqn(env, 100, ckpt_path)

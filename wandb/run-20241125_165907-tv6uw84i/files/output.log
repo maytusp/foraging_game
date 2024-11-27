@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "train_single_dqn.py", line 368, in <module>
-    test_drqn(env, 100, "checkpoints/ckpt_480000.pth")
-  File "train_single_dqn.py", line 315, in test_drqn
-    frame = visualize_environment(env, step)
-NameError: name 'step' is not defined

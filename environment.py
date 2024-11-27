@@ -21,7 +21,7 @@ HOME_SIZE = 2
 
 # Reward Hyperparameters
 energy_punishment = -30
-collect_all_reward = 200
+collect_all_reward = 30
 pickup_reward = 10
 drop_punishment = -10
 drop_reward = 1 # multiplying with energy
@@ -55,7 +55,7 @@ class Agent:
                     elif isinstance(obj, Food): # Observe Food
                         if len(obj.carried) > 0:
                             obs =  list(obj.attribute[:-1])
-                            carry = [1]
+                            carry = [10]
                             obs_attribute = obs + carry # if food is carried
                         else:
                             obs_attribute = obj.attribute
@@ -63,7 +63,7 @@ class Agent:
                         row.append(obs_attribute)
                     elif isinstance(obj, Agent): # Observe Agent
                         if obj.carrying_food is not None:
-                            obs_attribute = AGENT_ATTRIBUTES[:-1] + [1] # if agent is carrying food
+                            obs_attribute = AGENT_ATTRIBUTES[:-1] + [10] # if agent is carrying food
                         else:
                             obs_attribute = AGENT_ATTRIBUTES
                         print("agent", obs_attribute)
@@ -199,6 +199,12 @@ class Environment:
         actions = []
         self.rewards = np.array([0] * NUM_AGENTS)
         for i, agent in enumerate(self.agents):
+            # End if any agent runs out of energy
+            if agent.energy <= 0:
+                agent.done = True
+                self.rewards += np.array([energy_punishment] * NUM_AGENTS)
+                return self.observe(), np.copy(self.rewards), True, None, None
+
             if agent.done:
                 continue
 
@@ -338,19 +344,14 @@ class Environment:
                 failed_action = True
             
             if failed_action:
-                # self.rewards[agent.id] -= 5 # Useless move punishment and end
+                self.rewards[agent.id] -= 1 # Useless move punishment and end
                 agent.energy -= 1 # Useless move punishment
-                # print("FAILED")
                 return self.observe(), np.copy(self.rewards), False, None, None
 
             # Update grid state 
             self.update_grid()
 
-            # End if any agent runs out of energy
-            if agent.energy <= 0:
-                agent.done = True
-                self.rewards += np.array([energy_punishment] * NUM_AGENTS)
-                return self.observe(), np.copy(self.rewards), True, None, None
+
 
         # End conditions
         # End if all food items are collected
