@@ -51,7 +51,7 @@ EMBED_DIM = 64
 HIDDEN_DIM = 128
 NUM_LSTM_LAYER = 1
 #EVAL
-VISUALIZE = True
+VISUALIZE = False
 VIDEO_SAVED_DIR = f"vids/{exp_name}/"
 os.makedirs(VIDEO_SAVED_DIR, exist_ok=True)
 
@@ -87,7 +87,7 @@ class LSTM_QNetwork(nn.Module):
     def forward(self, obs, location, hidden=None):
         # obs: (batch_size, L, 5, 5, C)
         # location: (batch_size, L, 2)
-        obs, location = input_norm(obs, location)
+        obs, location = self.input_norm(obs, location)
         
         if obs.shape[-1] == INPUT_CHANNELS: # If obs shape = [B, L, W, H, C] change to [B, L, C, W, H]
             obs = torch.permute(obs, (0,1,4,2,3))
@@ -202,8 +202,8 @@ class DQNAgent:
             next_action_q, _, _ = self.target_network(next_images, next_locations)
             max_next_q = torch.max(next_action_q, dim=2)[0] 
             q_targets = rewards + (1 - dones) * GAMMA * max_next_q
-            print(dones)
-            print((1 - dones) * GAMMA * max_next_q)
+            # print(dones)
+            # print((1 - dones) * GAMMA * max_next_q)
 
         # Compute Q-values
         action_q, _, _ = self.q_network(images, locations) # This is Q(s,)
