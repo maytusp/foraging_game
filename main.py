@@ -30,8 +30,8 @@ os.makedirs(MODEL_SAVED_DIR, exist_ok=True)
 MAX_STEPS = 30
 ACTION_DIM = 6  # Action space size
 MESSAGE_DIM = 10  # Length of the message vector
-SEQ_LENGTH = 30 # Sequence length for LSTM
-BATCH_SIZE = 3
+SEQ_LENGTH = 10 # Sequence length for LSTM
+BATCH_SIZE = 128
 GAMMA = 0.99
 LR = 1e-4
 REPLAY_SIZE = 200 # episodes
@@ -216,6 +216,7 @@ class DQNAgent:
         loss = nn.MSELoss()(q_values, q_targets)
         self.optimizer.zero_grad()
         loss.backward()
+        nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=1.0)
         self.optimizer.step()
         self.grad_step += 1
 
