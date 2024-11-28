@@ -8,13 +8,13 @@ class CNNEncoder(nn.Module):
     def __init__(self, input_channels, hidden_dim):
         super(CNNEncoder, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(input_channels, input_channels*2, kernel_size=2, stride=1, padding=1),
+            nn.Conv2d(input_channels, input_channels*2, kernel_size=2, stride=1),
             nn.ReLU(),
-            nn.Conv2d(input_channels*2, input_channels*4, kernel_size=2, stride=1, padding=1),
+            nn.Conv2d(input_channels*2, input_channels*4, kernel_size=2, stride=1),
             nn.ReLU(),
-            nn.Conv2d(input_channels*4, input_channels*8, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(input_channels*4, input_channels*8, kernel_size=2, stride=1),
             nn.ReLU(),
-            nn.Conv2d(input_channels*8, input_channels*8, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(input_channels*8, input_channels*8, kernel_size=2, stride=1),
             nn.ReLU()
         )
         self.flatten = nn.Flatten()
@@ -36,6 +36,7 @@ class MLP(nn.Module):
 
     def forward(self, x):
         return self.model(x)
+
 
 class TransformerEncoder(nn.Module):
     def __init__(self, vocab_size, embed_dim, num_heads, num_layers, max_len):

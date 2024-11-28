@@ -7,24 +7,30 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-GRID_SIZE = 6  # Size of the grid world
+GRID_SIZE = 5  # Size of the grid world
 NUM_AGENTS = 1  # Number of agents
 NUM_FOODS = 2  # Number of foods
 HOME_POSITION = (0, 0)  # Coordinates of the home
+HOME_SIZE = 2
+HOME_GRID_X = {HOME_POSITION[0] + i for i in range(HOME_SIZE)}
+HOME_GRID_Y = {HOME_POSITION[1] + i for i in range(HOME_SIZE)}
+
+# print("HOME GRID X,Y", HOME_GRID_X, HOME_GRID_Y)
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
-AGENT_ATTRIBUTES = [10, 10, 10, 0]  # All agents have the same attributes
+AGENT_ATTRIBUTES = [255, 255, 255, 0]  # All agents have the same attributes
+HOME_ATTRIBUTES = [0, 0, 255, 0]
 AGENT_STRENGTH = 3
 AGENT_ENERGY = 30
 
 MAX_REQUIRED_STRENGTH = 6
-HOME_SIZE = 2
+
 
 # Reward Hyperparameters
-energy_punishment = -30
-collect_all_reward = 30
-pickup_reward = 10
-drop_punishment = -10
-drop_reward = 1 # multiplying with energy
+energy_punishment = -3
+collect_all_reward = 3
+pickup_reward = 2
+drop_punishment = -2
+drop_reward = 0.5 # multiplying with energy
 # Define the classes
 class Agent:
     def __init__(self, id, position, strength, max_energy):
@@ -40,33 +46,39 @@ class Agent:
     def observe(self, environment): #TODO Check this again
         # Define the 5x5 field of view around the agent, excluding its center
         perception_data = []
-        for dy in range(-2, 3):
+        for dx in range(-2, 3):
             row = []
-            for dx in range(-2, 3):
-                if dx == 0 and dy == 0:
-                    row.append([0, 0, 0, 0])  # agent's own position
+            for dy in range(-2, 3):
+                if dx == 0 and dy == 0: # agent's own position
+                    if self.carrying_food is not None:
+                        obs_attribute = AGENT_ATTRIBUTES[:-1] + [255] # if agent is carrying food
+                    else:
+                        obs_attribute = AGENT_ATTRIBUTES
+                    row.append(obs_attribute)
                     continue
 
                 x, y = self.position[0] + dx, self.position[1] + dy
                 if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
                     obj = environment.grid[x, y]
                     if obj is None:
-                        row.append([0, 0, 0, 0])  # Empty grid
+                        if x in HOME_GRID_X and y in HOME_GRID_Y:
+                            row.append(HOME_ATTRIBUTES)  # home grid
+                        else:
+                            row.append([0, 0, 0, 0])  # Empty grid
                     elif isinstance(obj, Food): # Observe Food
                         if len(obj.carried) > 0:
                             obs =  list(obj.attribute[:-1])
-                            carry = [10]
+                            carry = [255]
                             obs_attribute = obs + carry # if food is carried
                         else:
                             obs_attribute = obj.attribute
 
                         row.append(obs_attribute)
-                    elif isinstance(obj, Agent): # Observe Agent
+                    elif isinstance(obj, Agent): # Observe another agent
                         if obj.carrying_food is not None:
-                            obs_attribute = AGENT_ATTRIBUTES[:-1] + [10] # if agent is carrying food
+                            obs_attribute = AGENT_ATTRIBUTES[:-1] + [255] # if agent is carrying food
                         else:
                             obs_attribute = AGENT_ATTRIBUTES
-                        print("agent", obs_attribute)
                         row.append(obs_attribute)
                 else:
                     row.append([0, 0, 0, 0])  # Out-of-bounds grid (treated as empty)
@@ -92,12 +104,12 @@ class Food:
     def generate_attributes(self, strength_required):
         # Return unique attributes based on the food's strength requirement
         attribute_mapping = {
-            1: [1, 1, 1, 0], # Spinach
-            2: [1, 2, 2, 0], # Watermelon
-            3: [1, 2, 3, 0], # Strawberry
-            4: [2, 4, 4, 0], # Chicken
-            5: [2, 5, 5, 0], # Pig
-            6: [2, 6, 6, 0], # Cattle
+            1: [0, 255, 0, 0], # Spinach
+            2: [255, 0, 0, 0], # Watermelon
+            3: [186, 11, 11, 0], # Strawberry
+            4: [255, 132, 185, 0], # Chicken
+            5: [255, 185, 235, 0], # Pig
+            6: [148, 76, 14, 0], # Cattle
 
         }
         return np.array(attribute_mapping.get(strength_required, [1, 1, 1, 1]))

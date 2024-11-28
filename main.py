@@ -16,10 +16,10 @@ import wandb
 import os
 
 mode = "train" # train, test
-exp_name = "27_nov_norm_input"
+exp_name = "gradclip"
 wandb_log = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-ckpt_path = f"checkpoints/{exp_name}/ckpt_10000.pth"
+ckpt_path = f"checkpoints/{exp_name}/ckpt_80000.pth"
 
 # Save parameters
 MODEL_SAVE_EVERY = 10000 # 500 steps
@@ -37,7 +37,7 @@ LR = 1e-4
 REPLAY_SIZE = 200 # episodes
 MAX_EPSILON = 0.8
 MIN_EPSILON = 0.2
-EXPLORE_STEPS = 3e3
+EXPLORE_STEPS = 3e4
 UPDATE_TARGET_EVERY = 20
 
 # Visual Observation
@@ -51,10 +51,9 @@ EMBED_DIM = 64
 HIDDEN_DIM = 128
 NUM_LSTM_LAYER = 1
 #EVAL
-VISUALIZE = False
+VISUALIZE = True
 VIDEO_SAVED_DIR = f"vids/{exp_name}/"
 os.makedirs(VIDEO_SAVED_DIR, exist_ok=True)
-
 
 
 if VISUALIZE:
@@ -70,7 +69,7 @@ class LSTM_QNetwork(nn.Module):
         obs_feat = self.observation_encoder(torch.zeros(1, input_channels, image_size, image_size))
         obs_feat_dim = obs_feat.shape[1]
         loc_feat_dim = obs_feat_dim // 2
-        self.location_encoder = MLP(dims=[2, 64, loc_feat_dim])  # Location encoding
+        self.location_encoder =  nn.Linear(2, loc_feat_dim, bias=False) # Location encoding
         input_dim = obs_feat_dim + loc_feat_dim
         self.lstm = nn.LSTM(input_dim, hidden_dim, batch_first=True)
 
@@ -79,7 +78,7 @@ class LSTM_QNetwork(nn.Module):
         
 
     def input_norm(self, obs, location):
-        obs = obs / 10
+        obs = obs / 255
         location = location / GRID_SIZE
         return obs, location
 
@@ -187,6 +186,7 @@ class DQNAgent:
         
         B = images.shape[0]
         T = images.shape[1]
+        
         # print("__________________________")
         # print("batch.images", images.shape)
         # print("batch.locations", locations.shape)
@@ -343,26 +343,32 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
         if visualize:
             frame = visualize_environment(env, ep_step)
             frames.append(frame.transpose((1, 0, 2)))
+            time.sleep(2)
 
         # init hidden
         h = torch.randn(1, NUM_LSTM_LAYER, HIDDEN_DIM).to(device)
         c = torch.randn(1, NUM_LSTM_LAYER, HIDDEN_DIM).to(device)
 
         while not done or ep_step == MAX_STEPS:
-            action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=False)
+            
+            action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=True)
 
             env_action = env.int_to_act(action)
             next_obs, rewards, done, _, _ = env.step(env_action)
             
             rec_action = action.detach().cpu().numpy()[0]
 
-            if visualize:
-                frame = visualize_environment(env, ep_step)
-                frames.append(frame.transpose((1, 0, 2)))
 
             if not(done):
                 image = [next_obs["image"][0]]
                 loc = [next_obs["location"][0]]
+
+            if visualize:
+                print("image \n", np.sum(image[0], axis=2))
+                print("loc \n", next_obs["location"][0])
+                frame = visualize_environment(env, ep_step)
+                frames.append(frame.transpose((1, 0, 2)))
+                time.sleep(1)
 
             ep_step += 1
             total_reward += sum(rewards)
@@ -377,7 +383,7 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
         
         print(f"Episode {episode + 1}/{num_episodes}, Total Reward: {total_reward}")
 
-        if visualize and total_reward >= -30:
+        if visualize: # and total_reward > 5:
             clip = ImageSequenceClip(frames, fps=5)
             clip.write_videofile(os.path.join(VIDEO_SAVED_DIR, f"ep_{episode + 1}.mp4"), codec="libx264")
             
@@ -386,4 +392,4 @@ if __name__ == "__main__":
     if mode == "train":
         train_drqn(env, 100000)
     elif mode == "test":
-        test_drqn(env, 100, ckpt_path)
+        test_drqn(env, 1000, ckpt_path)

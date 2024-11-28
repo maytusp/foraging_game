@@ -96,6 +96,8 @@ if __name__ == "__main__":
                         agent_actions[i] = agent_actions[i] or get_agent_action(events, i)
 
             observations, rewards, done, _, _ = env.step(agent_actions)
+            print(observations['image'][0].shape)
+            print(np.sum(observations['image'][0], axis=2))
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if done:
