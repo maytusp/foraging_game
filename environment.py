@@ -35,8 +35,8 @@ MAX_REQUIRED_STRENGTH = 6
 # Reward Hyperparameters
 energy_punishment = 0
 collect_all_reward = 0
-pickup_reward = 0.1
-drop_punishment = -0.1
+pickup_reward = 0
+drop_punishment = 0
 drop_reward_factor = 0.1 # multiplying with energy
 energy_reward_factor = 0.01
 
