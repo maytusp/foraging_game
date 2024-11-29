@@ -95,12 +95,13 @@ if __name__ == "__main__":
                     for i in range(NUM_AGENTS):
                         agent_actions[i] = agent_actions[i] or get_agent_action(events, i)
 
-            observations, rewards, done, _, _ = env.step(agent_actions)
-            print(observations['image'][0].shape)
-            print(np.sum(observations['image'][0], axis=2))
+            observations, rewards, done, _, _ = env.step(agent_actions[0], int_action=False)
+            print("reward", rewards)
+            print(np.sum(observations['image'], axis=0))
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if done:
+                print("return", env.cumulative_reward)
                 break
 
         if VISUALIZE:

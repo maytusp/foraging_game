@@ -13,115 +13,32 @@ from keyboard_control import *
 # Environment Parameters
 GRID_SIZE = 5  # Size of the grid world
 NUM_AGENTS = 1  # Number of agents
-NUM_FOODS = 2  # Number of foods
+NUM_FOODS = 1  # Number of foods
 HOME_POSITION = (0, 0)  # Coordinates of the home
 HOME_SIZE = 2
 HOME_GRID_X = {HOME_POSITION[0] + i for i in range(HOME_SIZE)}
 HOME_GRID_Y = {HOME_POSITION[1] + i for i in range(HOME_SIZE)}
 
-NUM_CHANNELS = 4
+NUM_CHANNELS = 1
 NUM_ACTIONS = 6
 
 # print("HOME GRID X,Y", HOME_GRID_X, HOME_GRID_Y)
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
-AGENT_ATTRIBUTES = [255, 255, 255, 0]  # All agents have the same attributes
-HOME_ATTRIBUTES = [0, 0, 255, 0]
+AGENT_ATTRIBUTES = [150]  # All agents have the same attributes
+HOME_ATTRIBUTES = [100]
 AGENT_STRENGTH = 3
-AGENT_ENERGY = 500
+AGENT_ENERGY = 15
 
 MAX_REQUIRED_STRENGTH = 6
 
 
 # Reward Hyperparameters
 energy_punishment = 0
-collect_all_reward = 5
-pickup_reward = 0.2
-drop_punishment = -0.2
-drop_reward = 1 # multiplying with energy
-
-
-# Define the classes
-class Agent:
-    def __init__(self, id, position, strength, max_energy):
-        self.id = id
-        self.position = position
-        self.strength = strength
-        self.energy = max_energy
-        self.carrying_food = None
-        self.done = False
-        self.messages = []
-        # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
-    
-    def observe(self, environment): #TODO Check this again
-        # Define the 5x5 field of view around the agent, excluding its center
-        perception_data = []
-        for dx in range(-2, 3):
-            row = []
-            for dy in range(-2, 3):
-                if dx == 0 and dy == 0: # agent's own position
-                    if self.carrying_food is not None:
-                        obs_attribute = AGENT_ATTRIBUTES[:-1] + [255] # if agent is carrying food
-                    else:
-                        obs_attribute = AGENT_ATTRIBUTES
-                    row.append(obs_attribute)
-                    continue
-
-                x, y = self.position[0] + dx, self.position[1] + dy
-                if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
-                    obj = environment.grid[x, y]
-                    if obj is None:
-                        if x in HOME_GRID_X and y in HOME_GRID_Y:
-                            row.append(HOME_ATTRIBUTES)  # home grid
-                        else:
-                            row.append([0, 0, 0, 0])  # Empty grid
-                    elif isinstance(obj, Food): # Observe Food
-                        if len(obj.carried) > 0:
-                            obs =  list(obj.attribute[:-1])
-                            carry = [255]
-                            obs_attribute = obs + carry # if food is carried
-                        else:
-                            obs_attribute = obj.attribute
-
-                        row.append(obs_attribute)
-                    elif isinstance(obj, Agent): # Observe another agent
-                        if obj.carrying_food is not None:
-                            obs_attribute = AGENT_ATTRIBUTES[:-1] + [255] # if agent is carrying food
-                        else:
-                            obs_attribute = AGENT_ATTRIBUTES
-                        row.append(obs_attribute)
-                else:
-                    row.append([100, 100, 100, 100])  # Out-of-bounds grid (treated as empty)
-            perception_data.append(row)
-        
-        return np.array(perception_data)
-
-    def send_message(self, env):
-        return env.message[0,:] #TODO Use neural network to send message
-
-class Food:
-    def __init__(self, position, strength_required, id):
-        self.position = position
-        self.strength_required = strength_required
-        self.carried = [] # keep all agents that already picked up this food
-        self.pre_carried = [] # keep all agents that try to pick up this food, no need to be successful
-        self.attribute = self.generate_attributes(strength_required)
-        self.energy_score = 5 * strength_required
-        self.id = id
-        self.done = False
-        self.reduced_strength = 0
-
-    def generate_attributes(self, strength_required):
-        # Return unique attributes based on the food's strength requirement
-        attribute_mapping = {
-            1: [0, 255, 0, 0], # Spinach
-            2: [255, 0, 0, 0], # Watermelon
-            3: [186, 11, 11, 0], # Strawberry
-            4: [255, 132, 185, 0], # Chicken
-            5: [255, 185, 235, 0], # Pig
-            6: [148, 76, 14, 0], # Cattle
-
-        }
-        return np.array(attribute_mapping.get(strength_required, [1, 1, 1, 1]))
+collect_all_reward = 0
+pickup_reward = 0.1
+drop_punishment = -0.1
+drop_reward_factor = 0.1 # multiplying with energy
+energy_reward_factor = 0.01
 
 class Environment(gym.Env):
     def __init__(self, truncated=False, torch_order=True):
@@ -138,10 +55,15 @@ class Environment(gym.Env):
         self.action_space = spaces.Discrete(NUM_ACTIONS)
 
     def reset(self, seed=42, options=None):
+        self.episode_length = 0
+        self.cumulative_reward = 0
+        self.done = False
+        self.info = {}
+
         self.grid = np.full((GRID_SIZE, GRID_SIZE), None)
         self.prev_pos_list = []
         # Initialize agents with uniform attributes
-        self.agents = [Agent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY) for i in range(NUM_AGENTS)]
+        self.agents = [EnvAgent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY) for i in range(NUM_AGENTS)]
         for agent in self.agents:
             self.grid[agent.position[0], agent.position[1]] = agent
         # self.foods = [Food(self.random_position(), food_id+2, food_id) for food_id in range(NUM_FOODS)]
@@ -236,7 +158,7 @@ class Environment(gym.Env):
             return action_list
 
 
-    def step(self, agent_actions):
+    def step(self, agent_actions, int_action=True):
         # Update food state: Clear all agents if not carried
         self.update_food()
 
@@ -249,14 +171,21 @@ class Environment(gym.Env):
             if agent.energy <= 0:
                 agent.done = True
                 self.rewards += np.array([energy_punishment] * NUM_AGENTS)
-                return self.observe(), np.copy(self.rewards)[0], True, self.truncated, self.info
+                self.done = True
+                # return self.observe(), np.copy(self.rewards)[0], True, self.truncated, self.info
 
             if agent.done:
                 continue
-            if NUM_AGENTS==1:
-                action = self.int_to_act(agent_actions)
+            if int_action:
+                if NUM_AGENTS==1:
+                    action = self.int_to_act(agent_actions)
+                else:
+                    action = self.int_to_act(agent_actions[i]) # integer action to string action
             else:
-                action = self.int_to_act(agent_actions[i]) # integer action to string action
+                if NUM_AGENTS==1:
+                    action = agent_actions
+                else:
+                    action = agent_actions[i] # integer action to string action
             actions.append((agent, action))
 
         # Consensus action is for agents taking the same food items
@@ -305,7 +234,7 @@ class Environment(gym.Env):
                             break
 
                         check_grid = self.grid[new_pos[0], new_pos[1]]
-                        if isinstance(check_grid, Agent) and (check_grid.id not in agent.carrying_food.carried) or \
+                        if isinstance(check_grid, EnvAgent) and (check_grid.id not in agent.carrying_food.carried) or \
                             isinstance(check_grid, Food) and (check_grid.id != agent.carrying_food.id):
                             move = False
                             # print(f"{agent.id}'s move = False because new_pos number {id}")
@@ -321,9 +250,10 @@ class Environment(gym.Env):
                             self.agents[agent_id].position = new_position
                             loss = 0.2*min(self.agents[agent_id].strength, self.agents[agent_id].carrying_food.strength_required)
                             self.agents[agent_id].energy -= loss # When carry food, agent lose more energy due to friction
-                            old_home_dist = self.compute_dist(old_position, HOME_POSITION)
-                            new_home_dist = self.compute_dist(new_position, HOME_POSITION)
-                            self.rewards[agent_id] += 0.2*(old_home_dist-new_home_dist)
+                            # step_reward
+                            # old_home_dist = self.compute_dist(old_position, HOME_POSITION)
+                            # new_home_dist = self.compute_dist(new_position, HOME_POSITION)
+                            # self.rewards[agent_id] += 0.2*(old_home_dist-new_home_dist)
 
                         if not(agent.carrying_food.is_moved):
                             # print(f"{agent.carrying_food.id} moves to {new_food_position}")
@@ -348,6 +278,7 @@ class Environment(gym.Env):
                             food.carried += food.pre_carried
                             food.carried.append(agent.id)
                             for agent_id in food.carried:
+                                # step_reward
                                 self.agents[agent_id].carrying_food = food
                                 self.rewards[agent_id] += pickup_reward
                             food.pre_carried.clear()
@@ -374,14 +305,16 @@ class Environment(gym.Env):
                     self.collected_foods.add(agent.carrying_food.id)
                     
                     for agent_id in agent.carrying_food.carried:
+                        # step_reward
                         self.agents[agent_id].energy += self.agents[agent_id].carrying_food.energy_score # TODO this is wrong another agent has to get energy too
-                        self.rewards[agent_id] += self.agents[agent_id].carrying_food.energy_score * drop_reward # TODO this is wrong another agent has to get energy too
+                        self.rewards[agent_id] += self.agents[agent_id].carrying_food.energy_score * drop_reward_factor # TODO this is wrong another agent has to get energy too
                         
                         self.agents[agent_id].carrying_food.carried = []
                         self.agents[agent_id].carrying_food = None
 
                     
                 else:
+                    # step_reward
                     self.rewards[agent.id] += drop_punishment
                     agent.carrying_food.carried = []
                     agent.carrying_food = None
@@ -396,9 +329,9 @@ class Environment(gym.Env):
                 failed_action = True
             
             if failed_action:
-                self.rewards[agent.id] -= 0.1 # Useless move punishment and end
+                # step_reward
+                # self.rewards[agent.id] -= 0.1 # Useless move punishment and end
                 agent.energy -= 1 # Useless move punishment
-                return self.observe(), np.copy(self.rewards)[0], False,  self.truncated, self.info
 
             # Update grid state 
             self.update_grid()
@@ -408,9 +341,110 @@ class Environment(gym.Env):
         # End conditions
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
+            # terminal_reward
             self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
-            # for agent in self.agents:
-            #     self.rewards[agent.id] += agent.energy
-            return self.observe(), np.copy(self.rewards)[0], True,  self.truncated, self.info
+            self.done = True
+            for agent in self.agents:
+                self.rewards[agent.id] += energy_reward_factor * agent.energy
+            # return self.observe(), np.copy(self.rewards)[0], True,  self.truncated, self.info
+        self.cumulative_reward += np.sum(np.copy(self.rewards))
+        self.episode_length += 1
+        if self.done:
+            self.info = {"episode": {
+                            "r": self.cumulative_reward,
+                            "l": self.episode_length,
+                            },
+                        }
+                                         
+                                
+        return self.observe(), np.copy(self.rewards), self.done, self.truncated, self.info
 
-        return self.observe(), np.copy(self.rewards)[0], False, self.truncated, self.info
+# Define the classes
+class EnvAgent:
+    def __init__(self, id, position, strength, max_energy):
+        self.id = id
+        self.position = position
+        self.strength = strength
+        self.energy = max_energy
+        self.carrying_food = None
+        self.done = False
+        self.messages = []
+        # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
+    
+    def observe(self, environment): #TODO Check this again
+        # Define the 5x5 field of view around the agent, excluding its center
+        perception_data = []
+        for dx in range(-2, 3):
+            row = []
+            for dy in range(-2, 3):
+                if dx == 0 and dy == 0: # agent's own position
+                    if self.carrying_food is not None:
+                        obs_attribute = list(map(lambda x:x+33, AGENT_ATTRIBUTES)) # if agent is carrying food
+                    else:
+                        obs_attribute = AGENT_ATTRIBUTES
+                    row.append(obs_attribute)
+                    continue
+
+                x, y = self.position[0] + dx, self.position[1] + dy
+                if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
+                    obj = environment.grid[x, y]
+                    if obj is None:
+                        if x in HOME_GRID_X and y in HOME_GRID_Y:
+                            row.append(HOME_ATTRIBUTES)  # home grid
+                        else:
+                            row.append([0])  # Empty grid
+                    elif isinstance(obj, Food): # Observe Food
+                        if len(obj.carried) > 0:
+                            obs_attribute = list(map(lambda x:x+33, obj.attribute)) # if food is carried
+                        else:
+                            obs_attribute = obj.attribute
+
+                        row.append(obs_attribute)
+                    elif isinstance(obj, EnvAgent): # Observe another agent
+                        if obj.carrying_food is not None:
+                            obs_attribute = list(map(lambda x:x+33, AGENT_ATTRIBUTES)) # if agent is carrying food
+                        else:
+                            obs_attribute = AGENT_ATTRIBUTES
+                        row.append(obs_attribute)
+                else:
+                    row.append([255])  # Out-of-bounds grid (treated as empty)
+            perception_data.append(row)
+        
+        return np.array(perception_data)
+
+    def send_message(self, env):
+        return env.message[0,:] #TODO Use neural network to send message
+
+class Food:
+    def __init__(self, position, strength_required, id):
+        self.position = position
+        self.strength_required = strength_required
+        self.carried = [] # keep all agents that already picked up this food
+        self.pre_carried = [] # keep all agents that try to pick up this food, no need to be successful
+        self.attribute = self.generate_attributes(strength_required)
+        self.energy_score = 5 * strength_required
+        self.id = id
+        self.done = False
+        self.reduced_strength = 0
+
+    def generate_attributes(self, strength_required):
+        # Return unique attributes based on the food's strength requirement
+        # attribute_mapping = {
+        #     1: [0, 255, 0, 0], # Spinach
+        #     2: [255, 0, 0, 0], # Watermelon
+        #     3: [186, 11, 11, 0], # Strawberry
+        #     4: [255, 132, 185, 0], # Chicken
+        #     5: [255, 185, 235, 0], # Pig
+        #     6: [148, 76, 14, 0], # Cattle
+
+        # }
+        attribute_mapping = {
+            1: [10], # Spinach
+            2: [20], # Watermelon
+            3: [30], # Strawberry
+            4: [40], # Chicken
+            5: [50], # Pig
+            6: [60], # Cattle
+
+        }
+        return np.array(attribute_mapping.get(strength_required, [1, 1, 1, 1]))

@@ -30,6 +30,9 @@ from buffer import *
 
 @dataclass
 class Args:
+    save_dir = "checkpoints/ppo"
+    os.makedirs(save_dir, exist_ok=True)
+    save_frequency = 10000
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
     seed: int = 1
@@ -40,9 +43,9 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "PPO Foraging Game"
+    wandb_project_name: str = "PPO-MLP Foraging Game"
     """the wandb's project name"""
-    wandb_entity: str = maytusp
+    wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
@@ -82,7 +85,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     """number of action"""
-    num_channels = 4
+    num_channels = 1
     """number of channels in observation (non rgb case)"""
     num_obs_grid = 5
     """number of observation grid"""
@@ -111,24 +114,31 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     return layer
 
 
-class Agent(nn.Module):
+class PPOLSTMAgent(nn.Module):
     def __init__(self, envs):
         super().__init__()
-        self.network = nn.Sequential(
-            layer_init(nn.Conv2d(4, 32, 2, stride=1)),
-            nn.ReLU(),
-            layer_init(nn.Conv2d(32, 64, 2, stride=1)),
-            nn.ReLU(),
-            layer_init(nn.Conv2d(64, 64, 2, stride=1)),
-            nn.ReLU(),
-            nn.Flatten()
-        )
-        feat = self.network(torch.zeros((1,4,5,5)))
-        feat_dim = feat.shape[1]
-        self.nonlinear = nn.Sequential(layer_init(nn.Linear(feat_dim, 512)), 
-                                            nn.ReLU()
-        )
-        self.lstm = nn.LSTM(512, 128)
+        # self.network = nn.Sequential(
+        #     layer_init(nn.Conv2d(4, 32, 2, stride=1)),
+        #     nn.ReLU(),
+        #     layer_init(nn.Conv2d(32, 64, 2, stride=1)),
+        #     nn.ReLU(),
+        #     layer_init(nn.Conv2d(64, 64, 2, stride=1)),
+        #     nn.ReLU(),
+        #     nn.Flatten()
+        # )
+        # feat = self.network(torch.zeros((1,1,5,5)))
+        # feat_dim = feat.shape[1]
+        self.nonlinear = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
+                                        layer_init(nn.Linear(25, 256)), 
+                                        nn.ReLU(),
+                                        layer_init(nn.Linear(256, 256)),
+                                        nn.ReLU(),
+                                        layer_init(nn.Linear(256, 256)),
+                                        nn.ReLU(),
+                                        layer_init(nn.Linear(256, 256)),
+                                        nn.ReLU(),
+                                        )       
+        self.lstm = nn.LSTM(256, 128)
         for name, param in self.lstm.named_parameters():
             if "bias" in name:
                 nn.init.constant_(param, 0)
@@ -138,7 +148,8 @@ class Agent(nn.Module):
         self.critic = layer_init(nn.Linear(128, 1), std=1)
 
     def get_states(self, x, lstm_state, done):
-        hidden = self.nonlinear(self.network(x / 255.0))
+        # hidden = self.nonlinear(self.network(x / 255.0)) # CNN
+        hidden = self.nonlinear(x / 255.0) # MLP
 
         # LSTM logic
         batch_size = lstm_state[0].shape[1]
@@ -209,7 +220,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
     print("envs.single_observation_space", envs.single_observation_space)
     print("envs.single_action_space.n", envs.single_action_space.n)
-    agent = Agent(envs).to(device)
+    agent = PPOLSTMAgent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -262,10 +273,15 @@ if __name__ == "__main__":
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
 
+            if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
+                save_path = os.path.join(args.save_dir, f"model_step_{global_step}.pt")
+                torch.save(agent.state_dict(), save_path)
+                print(f"Model saved to {save_path}")
+            
             if "final_info" in infos:
                 for info in infos["final_info"]:
                     if info and "episode" in info:
-                        print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                        # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
                         writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                         writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
@@ -377,5 +393,8 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
+    final_save_path = os.path.join(args.save_dir, "final_model.pt")
+    torch.save(agent.state_dict(), final_save_path)
+    print(f"Final model saved to {final_save_path}")
     envs.close()
     writer.close()
