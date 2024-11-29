@@ -101,3 +101,43 @@ class EpisodeReplayBuffer:
 
     def __len__(self):
         return len(self.buffer)
+
+
+
+# Classical Replay Buffer
+class ReplayBuffer:
+    def __init__(self, max_epi_num, max_epi_len, lookup_step):
+        self.buffer = deque(maxlen=max_epi_num)
+
+    def add(self, episode_data):
+        self.buffer.append(episode_data)
+
+    def sample(self, batch_size):
+        sampled_buffer = []
+
+        ##################### RANDOM UPDATE ############################
+        sampled_episodes = random.sample(self.buffer, batch_size)
+        
+        min_step = self.max_epi_len
+
+        for episode in sampled_episodes:
+            min_step = min(min_step, len(episode)) # get minimum step from sampled episodes
+        
+        # if min_step > 3:
+        #     print("min step", min_step)
+
+        for episode in sampled_episodes:
+            if min_step > self.lookup_step: # sample buffer with lookup_step size
+                idx = np.random.randint(0, len(episode)-self.lookup_step+1)
+                sample = episode.sample(random_update=True, lookup_step=self.lookup_step, idx=idx)
+                sampled_buffer.append(sample)
+            else:
+                idx = np.random.randint(0, len(episode)-min_step+1) # sample buffer with minstep size
+                sample = episode.sample(random_update=True, lookup_step=min_step, idx=idx)
+                sampled_buffer.append(sample)
+            
+
+        return sampled_buffer, len(sampled_buffer[0]) # buffers, sequence_length
+
+    def __len__(self):
+        return len(self.buffer)

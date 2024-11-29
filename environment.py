@@ -1,7 +1,11 @@
+#TODO 29 Nov: I modified it to output like single agent environment to work with Gym format. This has to be modified after we get single env to work
+
 import pygame
 import numpy as np
 import random
 import time
+import gymnasium as gym
+from gymnasium import spaces
 
 from constants import *
 from keyboard_control import *
@@ -15,22 +19,27 @@ HOME_SIZE = 2
 HOME_GRID_X = {HOME_POSITION[0] + i for i in range(HOME_SIZE)}
 HOME_GRID_Y = {HOME_POSITION[1] + i for i in range(HOME_SIZE)}
 
+NUM_CHANNELS = 4
+NUM_ACTIONS = 6
+
 # print("HOME GRID X,Y", HOME_GRID_X, HOME_GRID_Y)
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
 AGENT_ATTRIBUTES = [255, 255, 255, 0]  # All agents have the same attributes
 HOME_ATTRIBUTES = [0, 0, 255, 0]
 AGENT_STRENGTH = 3
-AGENT_ENERGY = 30
+AGENT_ENERGY = 500
 
 MAX_REQUIRED_STRENGTH = 6
 
 
 # Reward Hyperparameters
-energy_punishment = -3
-collect_all_reward = 3
-pickup_reward = 2
-drop_punishment = -2
-drop_reward = 0.5 # multiplying with energy
+energy_punishment = 0
+collect_all_reward = 5
+pickup_reward = 0.2
+drop_punishment = -0.2
+drop_reward = 1 # multiplying with energy
+
+
 # Define the classes
 class Agent:
     def __init__(self, id, position, strength, max_energy):
@@ -81,7 +90,7 @@ class Agent:
                             obs_attribute = AGENT_ATTRIBUTES
                         row.append(obs_attribute)
                 else:
-                    row.append([0, 0, 0, 0])  # Out-of-bounds grid (treated as empty)
+                    row.append([100, 100, 100, 100])  # Out-of-bounds grid (treated as empty)
             perception_data.append(row)
         
         return np.array(perception_data)
@@ -114,10 +123,21 @@ class Food:
         }
         return np.array(attribute_mapping.get(strength_required, [1, 1, 1, 1]))
 
-class Environment:
-    def __init__(self):
-        self.reset()
-    def reset(self):
+class Environment(gym.Env):
+    def __init__(self, truncated=False, torch_order=True):
+        self.truncated = truncated
+        self.torch_order = torch_order
+        self.info = {}
+        self.image_shape = (NUM_CHANNELS,5,5) if self.torch_order else (5,5,NUM_CHANNELS)
+        self.observation_space = spaces.Dict(
+            {
+                "image": spaces.Box(0, 255, shape=self.image_shape, dtype=np.float32),
+                "location": spaces.Box(0, GRID_SIZE, shape=(2,), dtype=np.float32),
+            }
+        )
+        self.action_space = spaces.Discrete(NUM_ACTIONS)
+
+    def reset(self, seed=42, options=None):
         self.grid = np.full((GRID_SIZE, GRID_SIZE), None)
         self.prev_pos_list = []
         # Initialize agents with uniform attributes
@@ -131,7 +151,7 @@ class Environment:
 
         self.collected_foods = set()
         self.message = np.zeros((NUM_AGENTS, MAX_MESSAGE_LENGTH)) # Message that each agent sends, each agent receive N-1 agents' messages
-        return self.observe()
+        return self.observe(), self.info
 
     def update_grid(self):
         '''
@@ -175,19 +195,30 @@ class Environment:
         return np.linalg.norm(pos1 - pos2)
     
     def observe(self):
+        '''
+        torch_order: (C, W, H)
+        '''
         agent_obs = []
         agent_loc = []
-        for agent in self.agents:
-            agent_obs.append(agent.observe(self))
-            agent_loc.append(agent.position)
-        return {"image": agent_obs,"location": agent_loc}
+        if NUM_AGENTS==1:
+            image = self.agents[0].observe(self)
+            if self.torch_order:
+                image = np.transpose(image, (2,0,1))
+            return {"image": image, "location": self.agents[0].position}
+        else:
+            for agent in self.agents:
+                image = agent.observe(self)
+                if self.torch_order:
+                    image = np.transpose(image, (2,0,1))
+                agent_obs.append(image)
+                agent_loc.append(agent.position)
+            return {"image": agent_obs,"location": agent_loc}
 
     def int_to_act(self, action):
         '''
         input: action integer tensor frm the moel, the value is from 0 to 5
         output: action string that matches environment
         '''
-        action = action.detach().cpu().numpy()
         action_map = {0: "up", 
                     1: "down", 
                     2: "left",
@@ -195,11 +226,14 @@ class Environment:
                     4: "pick_up",
                     5: "drop", }
         action_list = []
-        for i in range(len(action)): # loop over agents
-            action_int = action[i]
-            action_list.append(action_map[action_int])
+        if NUM_AGENTS==1:
+            return action_map[action]
+        else:
+            for i in range(len(action)): # loop over agents
+                action_int = action[i]
+                action_list.append(action_map[action_int])
 
-        return action_list
+            return action_list
 
 
     def step(self, agent_actions):
@@ -209,18 +243,20 @@ class Environment:
         # One step in the simulation
         # Gather each agent's chosen action for consensus on movement
         actions = []
-        self.rewards = np.array([0] * NUM_AGENTS)
+        self.rewards = np.zeros((NUM_AGENTS))
         for i, agent in enumerate(self.agents):
             # End if any agent runs out of energy
             if agent.energy <= 0:
                 agent.done = True
                 self.rewards += np.array([energy_punishment] * NUM_AGENTS)
-                return self.observe(), np.copy(self.rewards), True, None, None
+                return self.observe(), np.copy(self.rewards)[0], True, self.truncated, self.info
 
             if agent.done:
                 continue
-
-            action = agent_actions[i]
+            if NUM_AGENTS==1:
+                action = self.int_to_act(agent_actions)
+            else:
+                action = self.int_to_act(agent_actions[i]) # integer action to string action
             actions.append((agent, action))
 
         # Consensus action is for agents taking the same food items
@@ -285,6 +321,10 @@ class Environment:
                             self.agents[agent_id].position = new_position
                             loss = 0.2*min(self.agents[agent_id].strength, self.agents[agent_id].carrying_food.strength_required)
                             self.agents[agent_id].energy -= loss # When carry food, agent lose more energy due to friction
+                            old_home_dist = self.compute_dist(old_position, HOME_POSITION)
+                            new_home_dist = self.compute_dist(new_position, HOME_POSITION)
+                            self.rewards[agent_id] += 0.2*(old_home_dist-new_home_dist)
+
                         if not(agent.carrying_food.is_moved):
                             # print(f"{agent.carrying_food.id} moves to {new_food_position}")
                             agent.carrying_food.position = new_food_position
@@ -356,9 +396,9 @@ class Environment:
                 failed_action = True
             
             if failed_action:
-                self.rewards[agent.id] -= 1 # Useless move punishment and end
+                self.rewards[agent.id] -= 0.1 # Useless move punishment and end
                 agent.energy -= 1 # Useless move punishment
-                return self.observe(), np.copy(self.rewards), False, None, None
+                return self.observe(), np.copy(self.rewards)[0], False,  self.truncated, self.info
 
             # Update grid state 
             self.update_grid()
@@ -369,8 +409,8 @@ class Environment:
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
             self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
-            for agent in self.agents:
-                self.rewards[agent.id] += agent.energy
-            return self.observe(), np.copy(self.rewards), True, None, None
+            # for agent in self.agents:
+            #     self.rewards[agent.id] += agent.energy
+            return self.observe(), np.copy(self.rewards)[0], True,  self.truncated, self.info
 
-        return self.observe(), np.copy(self.rewards), False, None, None
+        return self.observe(), np.copy(self.rewards)[0], False, self.truncated, self.info

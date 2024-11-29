@@ -16,7 +16,7 @@ import wandb
 import os
 
 mode = "train" # train, test
-exp_name = "gradclip"
+exp_name = "home_ob"
 wandb_log = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ckpt_path = f"checkpoints/{exp_name}/ckpt_80000.pth"
@@ -31,11 +31,11 @@ MAX_STEPS = 30
 ACTION_DIM = 6  # Action space size
 MESSAGE_DIM = 10  # Length of the message vector
 SEQ_LENGTH = 10 # Sequence length for LSTM
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 GAMMA = 0.99
 LR = 1e-4
-REPLAY_SIZE = 200 # episodes
-MAX_EPSILON = 0.8
+REPLAY_SIZE = 1000 # episodes
+MAX_EPSILON = 1.0
 MIN_EPSILON = 0.2
 EXPLORE_STEPS = 3e4
 UPDATE_TARGET_EVERY = 20
@@ -48,7 +48,7 @@ IMAGE_SIZE = 5
 VOCAB_SIZE = 32
 EMBED_DIM = 64
 
-HIDDEN_DIM = 128
+HIDDEN_DIM = 64
 NUM_LSTM_LAYER = 1
 #EVAL
 VISUALIZE = True
@@ -62,19 +62,23 @@ if VISUALIZE:
 
 # Define the LSTM-based Q-Network without message
 class LSTM_QNetwork(nn.Module):
-    def __init__(self, input_channels, image_size, hidden_dim, action_dim, vocab_size, message_dim):
+    def __init__(self, input_channels, image_size, hidden_dim, action_dim, vocab_size, message_dim, cnn_skip=True):
         super(LSTM_QNetwork, self).__init__()
         self.observation_encoder = CNNEncoder(input_channels, hidden_dim)
         # For calculating input size
         obs_feat = self.observation_encoder(torch.zeros(1, input_channels, image_size, image_size))
         obs_feat_dim = obs_feat.shape[1]
-        loc_feat_dim = obs_feat_dim // 2
+        loc_feat_dim = obs_feat_dim
         self.location_encoder =  nn.Linear(2, loc_feat_dim, bias=False) # Location encoding
         input_dim = obs_feat_dim + loc_feat_dim
         self.lstm = nn.LSTM(input_dim, hidden_dim, batch_first=True)
 
         self.fc = nn.Linear(hidden_dim, hidden_dim)
-        self.action_head = MLP([hidden_dim, hidden_dim, action_dim])
+        self.cnn_skip = cnn_skip
+        if cnn_skip:
+            self.action_head = MLP([hidden_dim+obs_feat_dim+loc_feat_dim, hidden_dim, action_dim])
+        else:
+            self.action_head = MLP([hidden_dim, hidden_dim, action_dim])
         
 
     def input_norm(self, obs, location):
@@ -109,11 +113,17 @@ class LSTM_QNetwork(nn.Module):
         combined = torch.cat((obs_encoded, loc_encoded), dim=2)
         lstm_out, hidden = self.lstm(combined, hidden)
 
-        lstm_out = lstm_out.contiguous().view(B*T, lstm_out.shape[2])
+        lstm_out = lstm_out.contiguous().view(B*T, -1)
         lstm_out = torch.relu(self.fc(lstm_out))
 
-        action_q = self.action_head(lstm_out)
-        action_q = action_q.view(B, T, action_q.shape[1])
+        if self.cnn_skip:
+            combined = combined.contiguous().view(B*T, -1)
+            head_input = torch.cat((lstm_out, combined), dim=1)
+            action_q = self.action_head(head_input)
+            action_q = action_q.view(B, T, action_q.shape[1])
+        else:
+            action_q = self.action_head(lstm_out)
+            action_q = action_q.view(B, T, action_q.shape[1])
 
         return action_q, None, hidden
 
@@ -179,7 +189,7 @@ class DQNAgent:
         images = torch.tensor(np.array(images), dtype=torch.float32).to(device)
         locations =  torch.tensor(np.array(locations), dtype=torch.float32).to(device)
         actions =  torch.tensor(np.array(actions), dtype=torch.int64).to(device)
-        rewards =  torch.tensor(np.array(rewards)).to(device)
+        rewards =  torch.tensor(np.array(rewards), dtype=torch.float32).to(device)
         next_images =  torch.tensor(np.array(next_images), dtype=torch.float32).to(device)
         next_locations =  torch.tensor(np.array(next_locations), dtype=torch.float32).to(device)
         dones =  torch.tensor(np.array(dones)).to(torch.int).to(device)
@@ -272,8 +282,7 @@ def train_drqn(env, num_episodes):
         while not done or ep_step == MAX_STEPS:
             action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=True)
 
-            env_action = env.int_to_act(action)
-            next_obs, rewards, done, _, _ = env.step(env_action)
+            next_obs, rewards, done, _, _ = env.step(action)
             
             rec_action = action.detach().cpu().numpy()[0]
             episode_data.put((obs['image'][0], obs['location'][0], rec_action, rewards[0], 
@@ -289,7 +298,7 @@ def train_drqn(env, num_episodes):
             if not(done):
                 image = [next_obs["image"][0]]
                 loc = [next_obs["location"][0]]
-
+            # print(f"step:{ep_step}: {rewards}")
             ep_step += 1
 
         # each replay sample contains full episode
@@ -354,8 +363,7 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
             
             action, message, (h,c) = agent.select_action(image, loc, (h,c), explore=True)
 
-            env_action = env.int_to_act(action)
-            next_obs, rewards, done, _, _ = env.step(env_action)
+            next_obs, rewards, done, _, _ = env.step(action)
             
             rec_action = action.detach().cpu().numpy()[0]
 
@@ -370,7 +378,7 @@ def test_drqn(env, num_episodes, checkpoint_path, visualize=True):
                 frame = visualize_environment(env, ep_step)
                 frames.append(frame.transpose((1, 0, 2)))
                 time.sleep(1)
-
+            
             ep_step += 1
             total_reward += sum(rewards)
 
