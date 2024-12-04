@@ -97,8 +97,8 @@ if __name__ == "__main__":
             if env.num_agents == 1:
                 agent_actions = agent_actions[0]
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=False)
-            print("reward", rewards)
-            print(observations)
+            # print("reward", rewards)
+            # print(observations)
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if dones[0]:

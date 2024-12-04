@@ -184,9 +184,8 @@ class Environment(ParallelEnv):
                 agent.done = True
                 for j in range(len(self.possible_agents)):
                     self.dones[j] = True
+                break
 
-            if agent.done:
-                continue
             if int_action:
                 if len(self.possible_agents)==1:
                     action = self.int_to_act(agent_actions)
@@ -205,9 +204,11 @@ class Environment(ParallelEnv):
         for food in self.foods:
             if len(food.carried) > 1:
                 first_id = food.carried[0]
-                consensus_action[food.id] = actions[first_id][1] if all(a[1] == actions[first_id][1] for a in actions if a[0].id in food.carried) else None
-        # print("food taken by multiagent", consensus_action.keys())
-        # Process each agent’s action
+                try:
+                    consensus_action[food.id] = actions[first_id][1] if all(a[1] == actions[first_id][1] for k, a in actions.items() if a[0].id in food.carried) else None
+                except: # In case agent.done
+                    pass
+
         for action_key in actions.keys():
             (agent, action) = actions[action_key]
             failed_action = False
@@ -217,6 +218,8 @@ class Environment(ParallelEnv):
                 if agent.carrying_food.id in consensus_action:
                     if consensus_action[agent.carrying_food.id] is None:
                         print(f"Agent {agent.id} couldn't move; consensus required.")
+                        failed_action = True
+                        agent.energy -= 1
                         continue
             if action in ["up", "down", "left", "right"]:
                 agent.energy -= 1

@@ -38,9 +38,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "PPO-MLP Foraging Game"
+    wandb_project_name: str = "IPPO MA Foraging Game"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -260,10 +260,11 @@ if __name__ == "__main__":
                 save_path = os.path.join(args.save_dir, f"model_step_{global_step}.pt")
                 torch.save(agent.state_dict(), save_path)
                 print(f"Model saved to {save_path}")
-            
-            if "final_info" in infos:
-                for info in infos["final_info"]:
-                    if info and "episode" in info:
+
+            for info in infos:
+                if "terminal_observation" in info:
+                    # for info in each_infos:
+                    if "episode" in info:
                         # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
                         writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                         writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
