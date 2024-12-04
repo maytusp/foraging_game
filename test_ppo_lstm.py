@@ -31,7 +31,7 @@ from train_ppo_lstm import *
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ppo/model_step_80000.pt"
+    ckpt_path = "checkpoints/ppo/final_model.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     [make_env(args.env_id, i, args.capture_video, run_name) for i in range(1)],
     )
 
-    agent = Agent(envs).to(device)
+    agent = PPOLSTMAgent(envs).to(device)
     agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
     agent.eval()
 
@@ -102,6 +102,7 @@ if __name__ == "__main__":
         torch.zeros(agent.lstm.num_layers, 1, agent.lstm.hidden_size).to(device),
         torch.zeros(agent.lstm.num_layers, 1, agent.lstm.hidden_size).to(device),
     )
+    average_sr = 0
     for episode_id in range(1, args.total_episodes + 1):
         
         next_obs_dict, _ = envs.reset(seed=args.seed)
@@ -131,5 +132,9 @@ if __name__ == "__main__":
             clip = ImageSequenceClip(frames, fps=5)
             clip.write_videofile(os.path.join(args.video_save_dir, f"ep_{episode_id}_return={returns}.mp4"), codec="libx264")
         print(f"Total Reward: {returns}")
+        if returns > 0:
+            average_sr += 1
+
+    print(f"Average SR: {average_sr / args.total_episodes}")
     envs.close()
     # writer.close()

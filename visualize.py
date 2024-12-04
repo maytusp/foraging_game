@@ -16,7 +16,7 @@ def visualize_environment(environment, step):
     # Initialize pygame if not already initialized
     pygame.init()
     font = pygame.font.SysFont(None, 24)
-    screen_size = GRID_SIZE * cell_size
+    screen_size = environment.grid_size * cell_size
     screen = pygame.display.set_mode((screen_size, screen_size))
     pygame.display.set_caption(f"Environment at Step {step}")
 
@@ -36,7 +36,7 @@ def visualize_environment(environment, step):
             pygame.draw.rect(screen, HOME_COLOR, home_rect)
 
     # Draw agents
-    for agent_id, agent in enumerate(environment.agents):
+    for agent_id, agent in enumerate(environment.agent_maps):
         x, y = agent.position[1] * cell_size, agent.position[0] * cell_size
         screen.blit(agent_images[agent_id], (x, y))
         
@@ -53,7 +53,7 @@ def visualize_environment(environment, step):
     # Draw foods
     for food in environment.foods:
         x, y = food.position[1] * cell_size, food.position[0] * cell_size
-        index = food.strength_required - 1
+        index = food.food_type - 1
         screen.blit(food_images[index], (x, y))
         
         if len(food.carried) > 0:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         # print("Obs", observations[0].shape)
         for step in range(NUM_STEPS):
             print(f"--- Step {step + 1} ---")
-            agent_actions = [None] * NUM_AGENTS  # Stores actions for each agent
+            agent_actions = [None] * env.num_agents  # Stores actions for each agent
             if VISUALIZE:
                 frame = visualize_environment(env, step)
                 frames.append(frame.transpose((1, 0, 2)))
@@ -92,16 +92,17 @@ if __name__ == "__main__":
                             break
 
                     # Get actions from keyboard for each agent
-                    for i in range(NUM_AGENTS):
+                    for i in range(env.num_agents):
                         agent_actions[i] = agent_actions[i] or get_agent_action(events, i)
-
-            observations, rewards, done, _, _ = env.step(agent_actions[0], int_action=False)
+            if env.num_agents == 1:
+                agent_actions = agent_actions[0]
+            observations, rewards, dones, _, _ = env.step(agent_actions, int_action=False)
             print("reward", rewards)
-            print(np.sum(observations['image'], axis=0))
+            print(observations)
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
-            if done:
-                print("return", env.cumulative_reward)
+            if dones[0]:
+                print("return", env.cumulative_rewards)
                 break
 
         if VISUALIZE:
