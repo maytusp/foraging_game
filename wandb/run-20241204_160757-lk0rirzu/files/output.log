@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "train_marl_ppo.py", line 241, in <module>
+    obs[step] = next_obs
+TypeError: can't assign a numpy.ndarray to a torch.FloatTensor

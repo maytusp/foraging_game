@@ -1,0 +1,11 @@
+{"time":"2024-12-05T19:12:27.461673+08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-12-05T19:12:27.461721+08:00","level":"INFO","msg":"created symlink","path":"/Users/user/Projects/foraging_game/wandb/run-20241205_191227-wba7u0b4/logs/debug-core.log"}
+{"time":"2024-12-05T19:12:27.58211+08:00","level":"INFO","msg":"created new stream","id":"wba7u0b4"}
+{"time":"2024-12-05T19:12:27.58218+08:00","level":"INFO","msg":"stream: started","id":"wba7u0b4"}
+{"time":"2024-12-05T19:12:27.5822+08:00","level":"INFO","msg":"handler: started","stream_id":"wba7u0b4"}
+{"time":"2024-12-05T19:12:27.582228+08:00","level":"INFO","msg":"sender: started","stream_id":"wba7u0b4"}
+{"time":"2024-12-05T19:12:27.582228+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"wba7u0b4"}
+{"time":"2024-12-05T19:12:28.571175+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-05T19:12:39.163+08:00","level":"INFO","msg":"stream: closing","id":"wba7u0b4"}
+{"time":"2024-12-05T19:12:39.16305+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-05T19:12:39.163524+08:00","level":"INFO","msg":"Stopped system monitor"}

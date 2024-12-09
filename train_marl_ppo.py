@@ -15,19 +15,15 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-
-from nets import *
-from constants import *
-from keyboard_control import *
 from environment import *
-from buffer import *
 from utils import *
+from models import PPOLSTMAgent, PPOLSTMCommAgent
 
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ippo"
+    save_dir = "checkpoints/sanity_check"
     os.makedirs(save_dir, exist_ok=True)
     save_frequency = 10000
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -38,7 +34,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "IPPO MA Foraging Game"
     """the wandb's project name"""
@@ -97,69 +93,6 @@ class Args:
 
 
 
-
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
-    return layer
-
-
-class PPOLSTMAgent(nn.Module):
-    def __init__(self, num_actions):
-        super().__init__()
-        self.nonlinear = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
-                                        layer_init(nn.Linear(25, 256)), 
-                                        nn.ReLU(),
-                                        layer_init(nn.Linear(256, 256)),
-                                        nn.ReLU(),
-                                        layer_init(nn.Linear(256, 256)),
-                                        nn.ReLU(),
-                                        layer_init(nn.Linear(256, 256)),
-                                        nn.ReLU(),
-                                        )       
-        self.lstm = nn.LSTM(256, 128)
-        for name, param in self.lstm.named_parameters():
-            if "bias" in name:
-                nn.init.constant_(param, 0)
-            elif "weight" in name:
-                nn.init.orthogonal_(param, 1.0)
-        self.actor = layer_init(nn.Linear(128, num_actions), std=0.01)
-        self.critic = layer_init(nn.Linear(128, 1), std=1)
-
-    def get_states(self, x, lstm_state, done):
-        # hidden = self.nonlinear(self.network(x / 255.0)) # CNN
-        hidden = self.nonlinear(x / 255.0) # MLP
-
-        # LSTM logic
-        batch_size = lstm_state[0].shape[1]
-        hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
-        done = done.reshape((-1, batch_size))
-        new_hidden = []
-        for h, d in zip(hidden, done):
-            h, lstm_state = self.lstm(
-                h.unsqueeze(0),
-                (
-                    (1.0 - d).view(1, -1, 1) * lstm_state[0],
-                    (1.0 - d).view(1, -1, 1) * lstm_state[1],
-                ),
-            )
-            new_hidden += [h]
-        new_hidden = torch.flatten(torch.cat(new_hidden), 0, 1)
-        return new_hidden, lstm_state
-
-    def get_value(self, x, lstm_state, done):
-        hidden, _ = self.get_states(x, lstm_state, done)
-        return self.critic(hidden)
-
-    def get_action_and_value(self, x, lstm_state, done, action=None):
-        hidden, lstm_state = self.get_states(x, lstm_state, done)
-        logits = self.actor(hidden)
-        probs = Categorical(logits=logits)
-        if action is None:
-            action = probs.sample()
-        return action, probs.log_prob(action), probs.entropy(), self.critic(hidden), lstm_state
-
-
 if __name__ == "__main__":
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
@@ -211,6 +144,8 @@ if __name__ == "__main__":
     # ALGO Logic: Storage setup
     obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device)
     locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device)
+    eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device)
+    message = torch.zeros((args.num_steps, args.num_envs, 1)).to(device)
     actions = torch.zeros((args.num_steps, args.num_envs)).to(device)
     logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -221,7 +156,7 @@ if __name__ == "__main__":
     global_step = 0
     start_time = time.time()
     next_obs_dict, _ = envs.reset(seed=args.seed)
-    next_obs, next_locs, next_eners = batchify_obs(next_obs_dict, device)
+    next_obs, next_locs, next_eners = extract_dict(next_obs_dict, device)
     next_done = torch.zeros(args.num_envs).to(device)
     next_lstm_state = (
         torch.zeros(agent.lstm.num_layers, args.num_envs, agent.lstm.hidden_size).to(device),
@@ -251,7 +186,7 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             env_action = action.cpu().numpy()
             next_obs_dict, reward, terminations, truncations, infos = envs.step(env_action)
-            next_obs, next_locs, next_eners = next_obs_dict["image"], next_obs_dict["location"], next_obs_dict["energy"]
+            next_obs, next_locs, next_eners = extract_dict(next_obs_dict, device)
             next_done = np.logical_or(terminations, truncations)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
@@ -306,6 +241,7 @@ if __name__ == "__main__":
 
         clipfracs = []
         for epoch in range(args.update_epochs):
+
             np.random.shuffle(envinds)
             for start in range(0, args.num_envs, envsperbatch):
                 end = start + envsperbatch

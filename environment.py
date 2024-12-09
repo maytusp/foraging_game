@@ -12,15 +12,10 @@ from keyboard_control import *
 
 # Environment Parameters
 NUM_FOODS = 6  # Number of foods
-ENERGY_FACTOR = 20
-HOME_POSITION = (0, 0)  # Coordinates of the home
-HOME_SIZE = 2
-HOME_GRID_X = {HOME_POSITION[0] + i for i in range(HOME_SIZE)}
-HOME_GRID_Y = {HOME_POSITION[1] + i for i in range(HOME_SIZE)}
-
+ENERGY_FACTOR = 10
 NUM_ACTIONS = 6
 
-# print("HOME GRID X,Y", HOME_GRID_X, HOME_GRID_Y)
+# print("HOME GRID X,Y", self.home_grid_x, self.home_grid_y)
 MAX_MESSAGE_LENGTH = 10  # Example message length limit
 AGENT_ATTRIBUTES = [150]  # All agents have the same attributes
 HOME_ATTRIBUTES = [100]
@@ -35,32 +30,50 @@ energy_punishment = 0
 collect_all_reward = 0
 pickup_reward = 0
 drop_punishment = 0
-drop_reward_factor = 0.1 # multiplying with energy
-energy_reward_factor = 0.01
+drop_reward_factor = 1 # multiplying with energy
+energy_reward_factor = 1
+
+# energy parameter
+pick_up_energy_factor = 0.1
 
 class Environment(ParallelEnv):
     metadata = {"name": "multi_foraging"}
-    def __init__(self, truncated=False, torch_order=True, num_agents=2):
+    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False):
+        self.use_message = use_message
+        self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
         self.grid_size = 10
         self.image_size = 5
         self.num_channels = 1
+        self.n_words = n_words
         self.torch_order = torch_order
         self.truncated = {i:truncated for i in range(num_agents)}
         self.infos = {}
         self.image_shape = (self.num_channels,self.image_size,self.image_size) if self.torch_order else (self.image_size,self.image_size,self.num_channels)
         self.single_observation_space = spaces.Dict(
             {"image": spaces.Box(0, 255, shape=self.image_shape, dtype=np.float32),
-                "location": spaces.Box(0, self.grid_size, shape=(2,), dtype=np.float32),
-                "energy": spaces.Box(0, 500, shape=(1,), dtype=np.float32),
+            "location": spaces.Box(0, self.grid_size, shape=(2,), dtype=np.float32),
+            "energy": spaces.Box(0, 500, shape=(1,), dtype=np.float32)
             })
-        self.single_action_space = spaces.Discrete(NUM_ACTIONS)
+        if self.use_message:
+            self.single_observation_space["message"] = spaces.Box(0, n_words-1, shape=(message_length,), dtype=np.int64)
+            self.single_action_space = spaces.Dict({"action":spaces.Discrete(NUM_ACTIONS), "message":spaces.Discrete(n_words)})
+        else:
+            self.single_action_space = spaces.Discrete(NUM_ACTIONS)
+
         self.observation_spaces = spaces.Dict({i: self.single_observation_space for i in range(num_agents)})
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
-        
+        self.home_size = 2
+        self.reward_denom = 100 # normalize reward
 
     def reset(self, seed=42, options=None):
+        np.random.seed(seed)
+        home_rand_pos = np.random.randint(self.grid_size-self.home_size, size=2)
+        self.home_position = (home_rand_pos[0], home_rand_pos[1])  # Coordinates of the home
+        self.home_grid_x = {self.home_position[0] + i for i in range(self.home_size)}
+        self.home_grid_y = {self.home_position[1] + i for i in range(self.home_size)}
+
         self.episode_lengths = {i:0 for i in range(len(self.possible_agents))}
         self.cumulative_rewards = {i:0 for i in range(len(self.possible_agents))}
         self.dones = {i:False for i in range(len(self.possible_agents))}
@@ -84,7 +97,7 @@ class Environment(ParallelEnv):
             self.grid[food.position[0], food.position[1]] = food
 
         self.collected_foods = set()
-        self.message = np.zeros((len(self.possible_agents), MAX_MESSAGE_LENGTH)) # Message that each agent sends, each agent receive N-1 agents' messages
+        self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
         return self.observe(), self.infos
 
     def observation_space(self, agent_id):
@@ -125,7 +138,7 @@ class Environment(ParallelEnv):
     def random_position(self):
         while True:
             pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,2) and self.compute_dist(pos, HOME_POSITION) > 2:
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,2) and self.compute_dist(pos, self.home_position) > 2:
                 self.prev_pos_list.append(pos)
                 return pos
 
@@ -152,6 +165,9 @@ class Environment(ParallelEnv):
                 agent_obs[i]['image'] = image
                 agent_obs[i]['location'] = agent.position
                 agent_obs[i]['energy'] = np.array([agent.energy])
+                if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
+                    agent_obs[i]['message'] = self.sent_message[i]
+            # print("agent_obs", agent_obs)
             return agent_obs
 
     def int_to_act(self, action):
@@ -165,34 +181,45 @@ class Environment(ParallelEnv):
                     3: "right", 
                     4: "pick_up",
                     5: "drop", }
-
         return action_map[action]
+        
+    def extract_message(self, message, agent_id):
+        received_message = [msg for i, msg in enumerate(message) if i != agent_id]
+        return np.array(received_message)
 
+    def normalize_reward(self, reward):
+        norm_reward = {}
+        for key, item in reward.items():
+            norm_reward[key] = item / self.reward_denom
+        return norm_reward
 
-
-    def step(self, agent_actions, int_action=True):
+    def step(self, agent_action_dict, int_action=True):
         # Update food state: Clear all agents if not carried
         self.update_food()
-    
+
         # One step in the simulation
         # Gather each agent's chosen action for consensus on movement
         actions = {}
         self.rewards = {i:0 for i in self.agents}
         for i, agent in enumerate(self.agent_maps):
+            if self.use_message: # Tuple TODO
+                agent_actions, received_message = agent_action_dict[i]["action"], agent_action_dict
             # End if any agent runs out of energy
-            if agent.energy <= 0:
+            if agent.energy <= 0: #TODO Change this to the end
                 agent.done = True
                 for j in range(len(self.possible_agents)):
                     self.dones[j] = True
                 break
+            
+            if self.use_message and received_message is not None:
+                self.sent_message[i] = self.extract_message(received_message, i)
 
             if int_action:
                 if len(self.possible_agents)==1:
                     action = self.int_to_act(agent_actions)
                 else:
-                    action = self.int_to_act(agent_actions[i]) # integer action to string action
+                    action = self.int_to_act(agent_actions) # integer action to string action
             else:
-                
                 if len(self.possible_agents)==1:
                     action = agent_actions
                 else:
@@ -221,6 +248,7 @@ class Environment(ParallelEnv):
                         failed_action = True
                         agent.energy -= 1
                         continue
+                    
             if action in ["up", "down", "left", "right"]:
                 agent.energy -= 1
                 delta_pos = {'up': np.array([-1,0]),
@@ -266,9 +294,10 @@ class Environment(ParallelEnv):
                             self.agent_maps[agent_id].position = new_position
                             loss = 0.2*min(self.agent_maps[agent_id].strength, self.agent_maps[agent_id].carrying_food.strength_required)
                             self.agent_maps[agent_id].energy -= loss # When carry food, agent lose more energy due to friction
+                            self.rewards[agent_id] -= loss+1
                             # step_reward
-                            # old_home_dist = self.compute_dist(old_position, HOME_POSITION)
-                            # new_home_dist = self.compute_dist(new_position, HOME_POSITION)
+                            # old_home_dist = self.compute_dist(old_position, self.home_position)
+                            # new_home_dist = self.compute_dist(new_position, self.home_position)
                             # self.rewards[agent_id] += 0.2*(old_home_dist-new_home_dist)
 
                         if not(agent.carrying_food.is_moved):
@@ -296,7 +325,7 @@ class Environment(ParallelEnv):
                             for agent_id in food.carried:
                                 # step_reward
                                 self.agent_maps[agent_id].carrying_food = food
-                                self.rewards[agent_id] += pickup_reward
+                                self.agent_maps[agent_id].energy -= pick_up_energy_factor*food.energy_score
                             food.pre_carried.clear()
                             # print(f"Agents {food.carried} picked up food at {food.position}")
                             break
@@ -312,8 +341,8 @@ class Environment(ParallelEnv):
 
             elif action == "drop" and agent.carrying_food:
                 # If agent drops food at home
-                if (agent.carrying_food.position[0] in range(HOME_POSITION[0], HOME_POSITION[0] + HOME_SIZE) and 
-                    agent.carrying_food.position[1] in range(HOME_POSITION[1], HOME_POSITION[1] + HOME_SIZE)):
+                if (agent.carrying_food.position[0] in range(self.home_position[0], self.home_position[0] + self.home_size) and 
+                    agent.carrying_food.position[1] in range(self.home_position[1], self.home_position[1] + self.home_size)):
                     
                     # Dismiss the dropped food item at home
                     agent.carrying_food.position = (-2000,-2000)
@@ -344,6 +373,7 @@ class Environment(ParallelEnv):
             
             if failed_action:
                 agent.energy -= 1 # Useless move punishment
+                self.rewards[agent.id] -= 1
 
             # Update grid state 
             self.update_grid()
@@ -371,8 +401,9 @@ class Environment(ParallelEnv):
                                 "l": self.episode_lengths[agent.id],
                                 },
                             }
-                                         
-                                
+    
+        # normalize reward
+        self.rewards = self.normalize_reward(self.rewards)
         return self.observe(), self.rewards, self.dones, self.truncated, self.infos
 
 # Define the classes
@@ -384,7 +415,6 @@ class EnvAgent:
         self.energy = max_energy
         self.carrying_food = None
         self.done = False
-        self.messages = []
         self.grid_size = grid_size
         # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
     
@@ -406,7 +436,7 @@ class EnvAgent:
                 if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
                     obj = environment.grid[x, y]
                     if obj is None:
-                        if x in HOME_GRID_X and y in HOME_GRID_Y:
+                        if x in environment.home_grid_x and y in environment.home_grid_y:
                             row.append(HOME_ATTRIBUTES)  # home grid
                         else:
                             row.append([0])  # Empty grid
@@ -429,8 +459,6 @@ class EnvAgent:
         
         return np.array(perception_data)
 
-    def send_message(self, env):
-        return env.message[0,:] #TODO Use neural network to send message
 
 class Food:
     def __init__(self, position, food_type, id):

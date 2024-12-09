@@ -13,8 +13,8 @@ from keyboard_control import *
 # Environment Parameters
 GRID_SIZE = 10  # Size of the grid world
 NUM_AGENTS = 1  # Number of agents
-NUM_FOODS = 5  # Number of foods
-ENERGY_FACTOR = 20
+NUM_FOODS = 6  # Number of foods
+ENERGY_FACTOR = 10
 HOME_POSITION = (0, 0)  # Coordinates of the home
 HOME_SIZE = 2
 HOME_GRID_X = {HOME_POSITION[0] + i for i in range(HOME_SIZE)}
@@ -35,6 +35,7 @@ MAX_REQUIRED_STRENGTH = 6
 
 # Reward Hyperparameters
 energy_punishment = 0
+loss_every_move = 0.01
 collect_all_reward = 0
 pickup_reward = 0
 drop_punishment = 0
@@ -42,10 +43,14 @@ drop_reward_factor = 0.1 # multiplying with energy
 energy_reward_factor = 0.01
 
 class Environment(gym.Env):
-    def __init__(self, truncated=False, torch_order=True):
-        self.truncated = truncated
+    def __init__(self, truncated=False, torch_order=True, num_agents=1):
+        self.num_agents = num_agents
+        self.grid_size = 10
+        self.image_size = 5
+        self.num_channels = 1
         self.torch_order = torch_order
         self.info = {}
+        self.truncated = truncated
         self.image_shape = (NUM_CHANNELS,5,5) if self.torch_order else (5,5,NUM_CHANNELS)
         self.observation_space = spaces.Dict(
             {
@@ -64,11 +69,14 @@ class Environment(gym.Env):
         self.grid = np.full((GRID_SIZE, GRID_SIZE), None)
         self.prev_pos_list = []
         # Initialize agents with uniform attributes
-        self.agents = [EnvAgent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY) for i in range(NUM_AGENTS)]
-        for agent in self.agents:
+        self.agent_maps = [EnvAgent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY) for i in range(NUM_AGENTS)]
+        for agent in self.agent_maps:
             self.grid[agent.position[0], agent.position[1]] = agent
-        # self.foods = [Food(self.random_position(), food_id+2, food_id) for food_id in range(NUM_FOODS)]
-        self.foods = [Food(self.random_position(), 1, food_id) for food_id in range(NUM_FOODS)]
+        #  position, food_type, id)
+        self.foods = [Food(position=self.random_position(), 
+                            food_type = food_id+1,
+                            id=food_id) for food_id in range(NUM_FOODS)
+                            ]
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
@@ -81,7 +89,7 @@ class Environment(gym.Env):
         Update grid position after agents move
         '''
         self.grid = np.full((GRID_SIZE, GRID_SIZE), None)
-        for agent in self.agents:
+        for agent in self.agent_maps:
             if not(agent.done): # If agent is alive
                 self.grid[agent.position[0], agent.position[1]] = agent
         for food in self.foods:
@@ -124,12 +132,12 @@ class Environment(gym.Env):
         agent_obs = []
         agent_loc = []
         if NUM_AGENTS==1:
-            image = self.agents[0].observe(self)
+            image = self.agent_maps[0].observe(self)
             if self.torch_order:
                 image = np.transpose(image, (2,0,1))
-            return {"image": image, "location": self.agents[0].position}
+            return {"image": image, "location": self.agent_maps[0].position}
         else:
-            for agent in self.agents:
+            for agent in self.agent_maps:
                 image = agent.observe(self)
                 if self.torch_order:
                     image = np.transpose(image, (2,0,1))
@@ -167,7 +175,7 @@ class Environment(gym.Env):
         # Gather each agent's chosen action for consensus on movement
         actions = []
         self.rewards = np.zeros((NUM_AGENTS))
-        for i, agent in enumerate(self.agents):
+        for i, agent in enumerate(self.agent_maps):
             # End if any agent runs out of energy
             if agent.energy <= 0:
                 agent.done = True
@@ -226,7 +234,7 @@ class Environment(gym.Env):
                     new_pos_list = [new_food_position]
                      # the new position of each element has to be unoccupieds
                     for agent_id in agent.carrying_food.carried:
-                        new_pos_list.append(self.agents[agent_id].position + delta_pos[action])
+                        new_pos_list.append(self.agent_maps[agent_id].position + delta_pos[action])
 
                     for id,new_pos in enumerate(new_pos_list):
                         if new_pos[0] < 0 or new_pos[1] < 0 or new_pos[0] > GRID_SIZE-1 or new_pos[1] > GRID_SIZE-1:
@@ -246,11 +254,12 @@ class Environment(gym.Env):
 
                     if move:
                         for agent_id in agent.carrying_food.carried:
-                            old_position = self.agents[agent_id].position
-                            new_position = self.agents[agent_id].position + delta_pos[action]
-                            self.agents[agent_id].position = new_position
-                            loss = 0.2*min(self.agents[agent_id].strength, self.agents[agent_id].carrying_food.strength_required)
-                            self.agents[agent_id].energy -= loss # When carry food, agent lose more energy due to friction
+                            old_position = self.agent_maps[agent_id].position
+                            new_position = self.agent_maps[agent_id].position + delta_pos[action]
+                            self.agent_maps[agent_id].position = new_position
+                            loss = 0.2*min(self.agent_maps[agent_id].strength, self.agent_maps[agent_id].carrying_food.strength_required)
+                            self.agent_maps[agent_id].energy -= loss # When carry food, agent lose more energy due to friction
+                            self.rewards[agent.id] -= 0.1*loss
                             # step_reward
                             # old_home_dist = self.compute_dist(old_position, HOME_POSITION)
                             # new_home_dist = self.compute_dist(new_position, HOME_POSITION)
@@ -280,8 +289,9 @@ class Environment(gym.Env):
                             food.carried.append(agent.id)
                             for agent_id in food.carried:
                                 # step_reward
-                                self.agents[agent_id].carrying_food = food
-                                self.rewards[agent_id] += pickup_reward
+                                self.agent_maps[agent_id].carrying_food = food
+                                # self.rewards[agent_id] += pickup_reward
+                                self.agent_maps[agent_id].energy -= 0.1*food.energy_score # Carrying food takes 10% of the energy score it will get
                             food.pre_carried.clear()
                             # print(f"Agents {food.carried} picked up food at {food.position}")
                             break
@@ -307,11 +317,11 @@ class Environment(gym.Env):
                     
                     for agent_id in agent.carrying_food.carried:
                         # step_reward
-                        self.agents[agent_id].energy += self.agents[agent_id].carrying_food.energy_score # TODO this is wrong another agent has to get energy too
-                        self.rewards[agent_id] += self.agents[agent_id].carrying_food.energy_score * drop_reward_factor # TODO this is wrong another agent has to get energy too
+                        self.agent_maps[agent_id].energy += self.agent_maps[agent_id].carrying_food.energy_score # TODO this is wrong another agent has to get energy too
+                        self.rewards[agent_id] += self.agent_maps[agent_id].carrying_food.energy_score * drop_reward_factor # TODO this is wrong another agent has to get energy too
                         
-                        self.agents[agent_id].carrying_food.carried = []
-                        self.agents[agent_id].carrying_food = None
+                        self.agent_maps[agent_id].carrying_food.carried = []
+                        self.agent_maps[agent_id].carrying_food = None
 
                     
                 else:
@@ -331,9 +341,9 @@ class Environment(gym.Env):
             
             if failed_action:
                 # step_reward
-                # self.rewards[agent.id] -= 0.1 # Useless move punishment and end
+                self.rewards[agent.id] += loss_every_move
                 agent.energy -= 1 # Useless move punishment
-
+            
             # Update grid state 
             self.update_grid()
 
@@ -345,7 +355,7 @@ class Environment(gym.Env):
             # terminal_reward
             self.rewards += np.array([collect_all_reward] * NUM_AGENTS)
             self.done = True
-            for agent in self.agents:
+            for agent in self.agent_maps:
                 self.rewards[agent.id] += energy_reward_factor * agent.energy
             # return self.observe(), np.copy(self.rewards)[0], True,  self.truncated, self.info
         self.cumulative_reward += np.sum(np.copy(self.rewards))
@@ -417,28 +427,27 @@ class EnvAgent:
         return env.message[0,:] #TODO Use neural network to send message
 
 class Food:
-    def __init__(self, position, strength_required, id):
+    def __init__(self, position, food_type, id):
+        self.type_to_strength_map = {
+                                    1:3, # Spinach
+                                    2:3,  # Watermelon
+                                    3:3, # Strawberry
+                                    4:6,  # Chicken
+                                    5:6,  # Pig
+                                    6:6 # Cattle
+                                    }
         self.position = position
-        self.strength_required = strength_required
+        self.food_type = food_type
+        self.strength_required = self.type_to_strength_map[food_type]
         self.carried = [] # keep all agents that already picked up this food
         self.pre_carried = [] # keep all agents that try to pick up this food, no need to be successful
-        self.attribute = self.generate_attributes(strength_required)
-        self.energy_score = ENERGY_FACTOR * strength_required
+        self.attribute = self.generate_attributes(food_type)
+        self.energy_score = ENERGY_FACTOR * self.strength_required
         self.id = id
         self.done = False
         self.reduced_strength = 0
 
-    def generate_attributes(self, strength_required):
-        # Return unique attributes based on the food's strength requirement
-        # attribute_mapping = {
-        #     1: [0, 255, 0, 0], # Spinach
-        #     2: [255, 0, 0, 0], # Watermelon
-        #     3: [186, 11, 11, 0], # Strawberry
-        #     4: [255, 132, 185, 0], # Chicken
-        #     5: [255, 185, 235, 0], # Pig
-        #     6: [148, 76, 14, 0], # Cattle
-
-        # }
+    def generate_attributes(self, food_type):
         attribute_mapping = {
             1: [10], # Spinach
             2: [20], # Watermelon
@@ -448,4 +457,4 @@ class Food:
             6: [60], # Cattle
 
         }
-        return np.array(attribute_mapping.get(strength_required, [1, 1, 1, 1]))
+        return np.array(attribute_mapping.get(food_type, [1, 1, 1, 1]))

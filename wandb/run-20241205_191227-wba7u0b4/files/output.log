@@ -1,0 +1,22 @@
+envs.single_observation_space Dict('image': Box(0.0, 255.0, (1, 5, 5), float32), 'location': Box(0.0, 10.0, (2,), float32))
+envs.single_action_space.n 6
+SPS: 282
+SPS: 259
+Traceback (most recent call last):
+  File "train_single_ppo.py", line 285, in <module>
+    writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/utils/tensorboard/writer.py", line 396, in add_scalar
+    self._get_file_writer().add_summary(summary, global_step, walltime)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/utils/tensorboard/writer.py", line 114, in add_summary
+    self.add_event(event, global_step, walltime)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/torch/utils/tensorboard/writer.py", line 98, in add_event
+    self.event_writer.add_event(event)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/tensorboard/summary/writer/event_file_writer.py", line 117, in add_event
+    self._async_writer.write(event.SerializeToString())
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/site-packages/tensorboard/summary/writer/event_file_writer.py", line 174, in write
+    self._byte_queue.put(bytestring)
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/queue.py", line 139, in put
+    self.not_full.wait()
+  File "/Users/user/anaconda3/envs/robot/lib/python3.8/threading.py", line 302, in wait
+    waiter.acquire()
+KeyboardInterrupt

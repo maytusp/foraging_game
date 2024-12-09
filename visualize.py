@@ -1,6 +1,6 @@
 from constants import *
 from keyboard_control import *
-from environment import *
+from environment_single import *
 
 import numpy as np
 import random
@@ -30,9 +30,9 @@ def visualize_environment(environment, step):
             pygame.draw.rect(screen, BLACK, rect, 1)
 
     # Draw home area
-    for i in range(HOME_SIZE):
-        for j in range(HOME_SIZE):
-            home_rect = pygame.Rect((HOME_POSITION[1] + j) * cell_size, (HOME_POSITION[0] + i) * cell_size, cell_size, cell_size)
+    for i in range(environment.home_size):
+        for j in range(environment.home_size):
+            home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
             pygame.draw.rect(screen, HOME_COLOR, home_rect)
 
     # Draw agents
@@ -59,7 +59,7 @@ def visualize_environment(environment, step):
         if len(food.carried) > 0:
             # Display "pick up" message above the food
             pickup_text = font.render("Pick Up", True, (0, 255, 0))  # Green text
-            screen.blit(pickup_text, (x, y - 20))  # Display text slightly above the food
+            screen.blit(pickup_text, (x, y+20))  # Display text slightly above the food
 
     pygame.display.flip()
 
@@ -101,9 +101,13 @@ if __name__ == "__main__":
             # print(observations)
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
-            if dones[0]:
-                print("return", env.cumulative_rewards)
-                break
+            if isinstance(dones,bool):
+                if dones:
+                    break
+            else: 
+                if dones[0]:
+                    print("return", env.cumulative_rewards)
+                    break
 
         if VISUALIZE:
             clip = ImageSequenceClip(frames, fps=5)
