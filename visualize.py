@@ -1,6 +1,6 @@
 from constants import *
 from keyboard_control import *
-from environment_single import *
+# from environment_single import *
 
 import numpy as np
 import random
@@ -29,11 +29,11 @@ def visualize_environment(environment, step):
             rect = pygame.Rect(x, y, cell_size, cell_size)
             pygame.draw.rect(screen, BLACK, rect, 1)
 
-    # Draw home area
-    for i in range(environment.home_size):
-        for j in range(environment.home_size):
-            home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
-            pygame.draw.rect(screen, HOME_COLOR, home_rect)
+    # # Draw home area
+    # for i in range(environment.home_size):
+    #     for j in range(environment.home_size):
+    #         home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
+    #         pygame.draw.rect(screen, HOME_COLOR, home_rect)
 
     # Draw agents
     for agent_id, agent in enumerate(environment.agent_maps):
@@ -71,7 +71,9 @@ if __name__ == "__main__":
     NUM_EPISODES = 3
     HUMAN_PLAY = True
     VISUALIZE = True
+    from environment_pickup import *
     env = Environment()
+    print("YEAH")
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
@@ -98,7 +100,8 @@ if __name__ == "__main__":
                 agent_actions = agent_actions[0]
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=False)
             # print("reward", rewards)
-            # print(observations)
+            print(f"agent1: {observations[0]['image']}")
+            print(f"agent2: {observations[1]['image']}")
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if isinstance(dones,bool):

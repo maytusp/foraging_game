@@ -147,18 +147,9 @@ class PPOLSTMCommAgent(nn.Module):
         if action is None:
             action = action_probs.sample()
 
-        message_logits = self.actor(hidden)
+        message_logits = self.message_head(hidden)
         message_probs = Categorical(logits=message_logits)
         if message is None:
             message = message_probs.sample()
 
-        # print(f"action_logits {action_logits.shape}")
-        # print(f"action_probs {action_probs}")
-        # print(f"action {action.shape}")
-        # print(f"action_probs.log_prob(action) {action_probs.log_prob(action).shape}")
-        # print("___________________________")
-        # print(f"message_logits {message_logits.shape}")
-        # print(f"message_probs {message_probs}")
-        # print(f"message {message.shape}")
-        # print(f"message_probs.log_prob(message) { message_probs.log_prob(message).shape}")
         return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state
