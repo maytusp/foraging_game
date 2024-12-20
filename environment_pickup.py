@@ -1,4 +1,4 @@
-#TODO: Add energy as observation
+# Edit: 20Dec2024
 import pygame
 import numpy as np
 import random

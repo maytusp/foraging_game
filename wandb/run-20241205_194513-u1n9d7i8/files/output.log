@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "train_marl_ppo.py", line 225, in <module>
-    next_obs, next_locs, next_eners = batchify_obs(next_obs_dict, device)
-  File "/Users/user/Projects/foraging_game/utils.py", line 8, in batchify_obs
-    obs = np.array([obs_dict[a]['image'] for a in obs_dict])
-  File "/Users/user/Projects/foraging_game/utils.py", line 8, in <listcomp>
-    obs = np.array([obs_dict[a]['image'] for a in obs_dict])
-IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices
