@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment import *
+from environment_pickup import *
 from utils import *
 from models import PPOLSTMAgent, PPOLSTMCommAgent
 
@@ -145,7 +145,6 @@ if __name__ == "__main__":
     obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device)
     locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device)
     eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device)
-    message = torch.zeros((args.num_steps, args.num_envs, 1)).to(device)
     actions = torch.zeros((args.num_steps, args.num_envs)).to(device)
     logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -174,11 +173,13 @@ if __name__ == "__main__":
         for step in range(0, args.num_steps):
             global_step += args.num_envs
             obs[step] = next_obs
+            locs[step] = next_locs
+            eners[step] = next_eners
             dones[step] = next_done
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, logprob, _, value, next_lstm_state = agent.get_action_and_value(next_obs, next_lstm_state, next_done)
+                action, logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners), next_lstm_state, next_done)
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
@@ -207,7 +208,7 @@ if __name__ == "__main__":
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(
-                next_obs,
+                (next_obs, next_locs, next_eners),
                 next_lstm_state,
                 next_done,
             ).reshape(1, -1)
@@ -226,6 +227,8 @@ if __name__ == "__main__":
 
         # flatten the batch
         b_obs = obs.reshape((-1,args.num_channels, args.num_obs_grid, args.num_obs_grid))
+        b_locs = locs.reshape(-1, 2)
+        b_eners = eners.reshape(-1, 1)
         b_logprobs = logprobs.reshape(-1)
         b_actions = actions.reshape((-1))
         b_dones = dones.reshape(-1)
@@ -249,7 +252,7 @@ if __name__ == "__main__":
                 mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
 
                 _, newlogprob, entropy, newvalue, _ = agent.get_action_and_value(
-                    b_obs[mb_inds],
+                     (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds]), 
                     (initial_lstm_state[0][:, mbenvinds], initial_lstm_state[1][:, mbenvinds]),
                     b_dones[mb_inds],
                     b_actions.long()[mb_inds],

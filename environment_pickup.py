@@ -215,6 +215,8 @@ class Environment(ParallelEnv):
         for i, agent in enumerate(self.agent_maps):
             if self.use_message: # Tuple TODO
                 agent_actions, received_message = agent_action_dict[i]["action"], agent_action_dict
+            else:
+                agent_actions = agent_action_dict[i]
             
             if self.use_message and received_message is not None:
                 self.sent_message[i] = self.extract_message(received_message, i)

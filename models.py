@@ -14,9 +14,18 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 
 
 class PPOLSTMAgent(nn.Module):
-    def __init__(self, num_actions):
+    '''
+    Agent with communication
+    Observations: [image, location, energy, message]
+    '''
+    def __init__(self, num_actions, grid_size=10, max_energy=200):
         super().__init__()
-        self.nonlinear = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
+        self.grid_size = grid_size
+        self.max_energy = max_energy
+        self.image_feat_dim = 256
+        self.loc_dim = 2
+        self.energy_dim = 1
+        self.visual_encoder = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
                                         nn.Linear(25, 256), 
                                         nn.ReLU(),
                                         nn.Linear(256, 256),
@@ -25,8 +34,8 @@ class PPOLSTMAgent(nn.Module):
                                         nn.ReLU(),
                                         nn.Linear(256, 256),
                                         nn.ReLU(),
-                                        )       
-        self.lstm = nn.LSTM(256, 128)
+                                        )   
+        self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.energy_dim, 128)
         for name, param in self.lstm.named_parameters():
             if "bias" in name:
                 nn.init.constant_(param, 0)
@@ -35,16 +44,18 @@ class PPOLSTMAgent(nn.Module):
         self.actor = layer_init(nn.Linear(128, num_actions), std=0.01)
         self.critic = layer_init(nn.Linear(128, 1), std=1)
 
-    def get_states(self, x, lstm_state, done):
-        # print(f"network input {x.shape}")
-        # hidden = self.nonlinear(self.network(x / 255.0)) # CNN
-        hidden = self.nonlinear(x / 255.0) # MLP
-        # print("hidden before", hidden.shape)
-        # LSTM logic
+    def get_states(self, input, lstm_state, done):
         batch_size = lstm_state[0].shape[1]
-        # print("lstm_state[0]", lstm_state[0].shape)
+        image, location, energy = input
+        image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
+        location = location / self.grid_size # (L*B,2)
+        energy = energy / self.max_energy # (L*B,1)
+
+        # print(f"image_feat {image_feat.shape}, location {location.shape}, energy {energy.shape}, message_feat {message_feat.shape}")
+        hidden = torch.cat((image_feat, location, energy), axis=1)
+        # print("hidden", hidden.shape)
+        # LSTM logic
         hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
-        # print("hidden after", hidden.shape)
         done = done.reshape((-1, batch_size))
         new_hidden = []
         for h, d in zip(hidden, done):
@@ -63,13 +74,16 @@ class PPOLSTMAgent(nn.Module):
         hidden, _ = self.get_states(x, lstm_state, done)
         return self.critic(hidden)
 
-    def get_action_and_value(self, x, lstm_state, done, action=None):
-        hidden, lstm_state = self.get_states(x, lstm_state, done)
-        logits = self.actor(hidden)
-        probs = Categorical(logits=logits)
+    def get_action_and_value(self, input, lstm_state, done, action=None, message=None):
+        image, location, energy = input
+        hidden, lstm_state = self.get_states((image, location, energy), lstm_state, done)
+
+        action_logits = self.actor(hidden)
+        action_probs = Categorical(logits=action_logits)
         if action is None:
-            action = probs.sample()
-        return action, probs.log_prob(action), probs.entropy(), self.critic(hidden), lstm_state
+            action = action_probs.sample()
+
+        return action, action_probs.log_prob(action), action_probs.entropy(), self.critic(hidden), lstm_state
 
 class PPOLSTMCommAgent(nn.Module):
     '''
