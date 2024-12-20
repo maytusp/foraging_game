@@ -35,9 +35,9 @@ class Args:
     saved_dir = "logs/ppo_commu_ps_pickup_100M_noise_message_invisible"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
-    ablate_message = True
+    ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = False
+    agent_visible = True
 
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
