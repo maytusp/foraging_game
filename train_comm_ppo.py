@@ -23,7 +23,7 @@ from models import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/sanity_check"
+    save_dir = "checkpoints/ps_ppo_commu"
     os.makedirs(save_dir, exist_ok=True)
     save_frequency = 10000
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -34,9 +34,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "IPPO MA Foraging Game"
+    wandb_project_name: str = "PPO_COMM_PS"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -142,12 +142,12 @@ if __name__ == "__main__":
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device)
-    locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device)
-    eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device)
-    r_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device)
-    actions = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    s_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device)
+    obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device) # obs: vision
+    locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device) # obs: location
+    eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device) # obs: energy
+    r_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # obs: received message
+    actions = torch.zeros((args.num_steps, args.num_envs)).to(device) # action: physical action
+    s_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # action: sent message
     action_logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     message_logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -338,7 +338,7 @@ if __name__ == "__main__":
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
         writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
+        writer.add_scalar("losses/action_loss", pg_loss.item(), global_step)
         writer.add_scalar("losses/message_loss", mg_loss.item(), global_step)
         writer.add_scalar("losses/action_entropy", action_entropy_loss.item(), global_step)
         writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)

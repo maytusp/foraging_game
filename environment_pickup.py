@@ -11,11 +11,10 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-NUM_FOODS = 1  # Number of foods
-ENERGY_FACTOR = 10
-NUM_ACTIONS = 6
+NUM_FOODS = 6  # Number of foods
+ENERGY_FACTOR = 2
+NUM_ACTIONS = 5
 
-# print("HOME GRID X,Y", self.home_grid_x, self.home_grid_y)
 AGENT_ATTRIBUTES = [150]  # All agents have the same attributes
 HOME_ATTRIBUTES = [100]
 AGENT_STRENGTH = 3
@@ -36,14 +35,14 @@ energy_reward_factor = 1
 pick_up_energy_factor = 0
 step_punishment = False
 class Environment(ParallelEnv):
-    metadata = {"name": "multi_foraging"}
-    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, use_pointgoal=True, seed=42):
+    metadata = {"name": "multiagent_pickup"}
+    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, seed=42, agent_visible=True):
         np.random.seed(seed)
         self.use_message = use_message
-        self.use_pointgoal = use_pointgoal # observed location is relatie to the home
+        self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 5
+        self.grid_size = 10
         self.image_size = 5
         self.num_channels = 1
         self.n_words = n_words
@@ -65,16 +64,10 @@ class Environment(ParallelEnv):
         self.observation_spaces = spaces.Dict({i: self.single_observation_space for i in range(num_agents)})
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
-        self.home_size = 3
-        self.reward_denom = 100 # normalize reward
+        self.reward_denorm = 100 # normalize reward
         self.reset()
 
     def reset(self, seed=42, options=None):
-        home_rand_pos = np.random.randint(self.grid_size-self.home_size, size=2)
-        self.home_position = (home_rand_pos[0], home_rand_pos[1])  # Coordinates of the home
-        self.home_grid_x = {self.home_position[0] + i for i in range(self.home_size)}
-        self.home_grid_y = {self.home_position[1] + i for i in range(self.home_size)}
-
         self.episode_lengths = {i:0 for i in range(len(self.possible_agents))}
         self.cumulative_rewards = {i:0 for i in range(len(self.possible_agents))}
         self.dones = {i:False for i in range(len(self.possible_agents))}
@@ -84,7 +77,7 @@ class Environment(ParallelEnv):
         self.prev_pos_list = []
         # Initialize agents with uniform attributes
         self.agents = self.possible_agents[:]
-        self.agent_maps = [EnvAgent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY, self.grid_size) for i in range(len(self.possible_agents))]
+        self.agent_maps = [EnvAgent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY, self.grid_size, self.agent_visible) for i in range(len(self.possible_agents))]
         
 
         for agent in self.agent_maps:
@@ -113,10 +106,10 @@ class Environment(ParallelEnv):
         '''
         self.grid = np.full((self.grid_size, self.grid_size), None)
         for agent in self.agent_maps:
-            if not(agent.done): # If agent is alive
+            if not(agent.done):
                 self.grid[agent.position[0], agent.position[1]] = agent
         for food in self.foods:
-            if not(food.done): # If food is not placed at home
+            if not(food.done):
                 self.grid[food.position[0], food.position[1]] = food
                 
     def update_food(self):
@@ -131,22 +124,23 @@ class Environment(ParallelEnv):
     def min_dist(self,curr_pos, min_distance):
         satisfy = True
         for prev_pos in self.prev_pos_list:
-            if self.l2_dist(curr_pos, prev_pos) < min_distance:
+            if self.manhattan_dist(curr_pos, prev_pos) < min_distance:
                 satisfy = False
                 break
         return satisfy
 
+
     def random_position(self):
         while True:
             pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,2):
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3):
                 self.prev_pos_list.append(pos)
                 return pos
 
     def random_food_position(self):
         while True:
             pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,2): #  and self.manhattan_dist(pos, self.home_position) > 3:
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3):
                 self.prev_pos_list.append(pos)
                 return pos
 
@@ -169,7 +163,7 @@ class Environment(ParallelEnv):
             image = self.agent_maps[0].observe(self)
             if self.torch_order:
                 image = np.transpose(image, (2,0,1))
-            return {"image": image, "location": self.a_minus_b(self.home_position, self.agent_maps[0].position), "energy": self.agent_maps[0].energy}
+            return {"image": image, "location": self.agent_maps[0].position, "energy": self.agent_maps[0].energy}
         else:
             agent_obs = {i:{} for i in range(self.num_agents)}
             for i, agent in enumerate(self.agent_maps):
@@ -177,7 +171,7 @@ class Environment(ParallelEnv):
                 if self.torch_order:
                     image = np.transpose(image, (2,0,1))
                 agent_obs[i]['image'] = image
-                agent_obs[i]['location'] = self.a_minus_b(self.home_position, agent.position)
+                agent_obs[i]['location'] = agent.position
                 agent_obs[i]['energy'] = np.array([agent.energy])
                 if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
                     agent_obs[i]['message'] = self.sent_message[i]
@@ -194,7 +188,7 @@ class Environment(ParallelEnv):
                     2: "left",
                     3: "right", 
                     4: "pick_up",
-                    5: "drop", }
+                    }
         return action_map[action]
         
     def extract_message(self, message, agent_id):
@@ -204,11 +198,12 @@ class Environment(ParallelEnv):
     def normalize_reward(self, reward):
         norm_reward = {}
         for key, item in reward.items():
-            norm_reward[key] = item / self.reward_denom
+            norm_reward[key] = item / self.reward_denorm
         return norm_reward
 
     def failed_action(self, agent):
-        agent.energy -= 2 # Useless move punishment
+        agent.energy -= 1 # Useless move punishment
+        self.rewards[agent.id] -= 0.1
 
     def step(self, agent_action_dict, int_action=True):
         # Update food state: Clear all agents if not carried
@@ -220,12 +215,6 @@ class Environment(ParallelEnv):
         for i, agent in enumerate(self.agent_maps):
             if self.use_message: # Tuple TODO
                 agent_actions, received_message = agent_action_dict[i]["action"], agent_action_dict
-            # End if any agent runs out of energy
-            if agent.energy <= 0: #TODO Change this to the end
-                agent.done = True
-                for j in range(len(self.possible_agents)):
-                    self.dones[j] = True
-                break
             
             if self.use_message and received_message is not None:
                 self.sent_message[i] = self.extract_message(received_message, i)
@@ -243,26 +232,11 @@ class Environment(ParallelEnv):
                     action = agent_actions[i] # integer action to string action
             actions[i] = (agent, action)
 
-        # Consensus action is for agents taking the same food items
-        consensual_action = {}
-        for food in self.foods:
-            if len(food.carried) > 1:
-                first_id = food.carried[0]
-                try:
-                    consensual_action[food.id] = actions[first_id][1] if all(a[1] == actions[first_id][1] for k, a in actions.items() if a[0].id in food.carried) else None
-                except: # In case agent.done
-                    pass
 
         for action_key in actions.keys():
             (agent, action) = actions[action_key]
             # If an agent is tied to other agents, i.e., picking the same food.
-            # Consensus action has to be satisfied for all agents to perform action, move or drop food.  Otherwise, these actions have no effect.
-            if agent.carrying_food:
-                if agent.carrying_food.id in consensual_action:
-                    if consensual_action[agent.carrying_food.id] is None:
-                        # print(f"Agent {agent.id} couldn't move; consensus required.")
-                        self.failed_action(agent)
-                        continue
+            # Consensus action has to be satisfied for all agents to perform action, move or drop food.  Otherwise, these actions have no effect
                     
             if action in ["up", "down", "left", "right"]:
                 delta_pos = {'up': np.array([-1,0]),
@@ -272,86 +246,37 @@ class Environment(ParallelEnv):
                 old_agent_position = np.array(agent.position)
                 new_agent_position = old_agent_position + delta_pos[action]
 
-                # Check if the new position is empty and move if it is
-                # Note: This code will iterate all the agents that carry the same food.
-                # The condition not(agent.carrying_food.is_moved) will make sure all agents are iterated only one time
-                # print(f"check {agent.id}")
-                if agent.carrying_food and not(agent.carrying_food.is_moved):
-                    # print(f"agent {agent.id} is not moved")
-                    move = True
-                    new_food_position = agent.carrying_food.position + delta_pos[action]
-                    new_pos_list = [new_food_position]
-                     # the new position of each element has to be unoccupieds
-                    for agent_id in agent.carrying_food.carried:
-                        new_pos_list.append(self.agent_maps[agent_id].position + delta_pos[action])
+                if new_agent_position[0] < 0 or new_agent_position[1] < 0 or new_agent_position[0] > self.grid_size-1 or new_agent_position[1] > self.grid_size-1:
+                    self.failed_action(agent)
 
-                    for id,new_pos in enumerate(new_pos_list):
-                        if new_pos[0] < 0 or new_pos[1] < 0 or new_pos[0] > self.grid_size-1 or new_pos[1] > self.grid_size-1:
-                            # print(f"Bounded, {agent.id}'s move = False, because new_pos number {id}")
-                            move = False
-                            break
+                elif self.grid[new_agent_position[0], new_agent_position[1]] is None:
+                    agent.position += delta_pos[action]
+                    agent.energy -= 1
+                    self.rewards[agent.id] -= 0.1
+                else:
+                    self.failed_action(agent)
 
-                        check_grid = self.grid[new_pos[0], new_pos[1]]
-                        if isinstance(check_grid, EnvAgent) and (check_grid.id not in agent.carrying_food.carried) or \
-                            isinstance(check_grid, Food) and (check_grid.id != agent.carrying_food.id):
-                            move = False
-                            # print(f"{agent.id}'s move = False because new_pos number {id}")
-                            # print(f"first condition= {isinstance(check_grid, Agent) and (check_grid.id not in agent.carrying_food.carried)}")
-                            # print(f"second condition= {isinstance(check_grid, Food) and (check_grid.id != agent.carrying_food.id)}")
-                            break
-
-                    if move:
-                        # multi_agent_reward = False
-                        # if len(agent.carrying_food.carried) > 1: # reward is given if 2 agents successfully move food
-                        #     multi_agent_reward = True
-                        for agent_id in agent.carrying_food.carried:
-                            old_position = self.agent_maps[agent_id].position
-                            new_position = self.agent_maps[agent_id].position + delta_pos[action]
-                            self.agent_maps[agent_id].position = new_position
-                            loss = 0.2*min(self.agent_maps[agent_id].strength, self.agent_maps[agent_id].carrying_food.strength_required)
-                            self.agent_maps[agent_id].energy += -loss-1 # When carry food, agent lose more energy due to friction
-                            # if multi_agent_reward:
-                            #     self.rewards[agent_id] += 0.2
-                            if step_punishment:
-                                self.rewards[agent_id] += -loss-1
-                            # step_reward
-                            # old_home_dist = self.l2_dist(old_position, self.home_position)
-                            # new_home_dist = self.l2_dist(new_position, self.home_position)
-                            # self.rewards[agent_id] += 0.2*(old_home_dist-new_home_dist)
-
-                        if not(agent.carrying_food.is_moved):
-                            # print(f"{agent.carrying_food.id} moves to {new_food_position}")
-                            agent.carrying_food.position = new_food_position
-                            agent.carrying_food.is_moved = True
-                    else:
-                        self.failed_action(agent)
-
-                elif not(agent.carrying_food):
-                    if new_agent_position[0] < 0 or new_agent_position[1] < 0 or new_agent_position[0] > self.grid_size-1 or new_agent_position[1] > self.grid_size-1:
-                        self.failed_action(agent)
-
-                    elif self.grid[new_agent_position[0], new_agent_position[1]] is None:
-                        agent.position += delta_pos[action]
-                        agent.energy -= 1
-                        if step_punishment:
-                            self.rewards[agent.id] -= 1
-                    else:
-                        self.failed_action(agent)
-
-            elif action == "pick_up" and agent.carrying_food is None:
+            elif action == "pick_up":
                 hit = False
                 for food in self.foods:
-                    if (self.l2_dist(food.position, agent.position) <= np.sqrt(2)) and len(food.carried) == 0:
+                    if (self.l2_dist(food.position, agent.position) <= np.sqrt(2)):
                         # If the combined strength satisfies the required strength, the food is picked up sucessfully
                         if food.strength_required - food.reduced_strength <= agent.strength and not food.carried:
+                            # cancel the step punishment for agents that pick up previously if the item is successfully picked
+                            for agent_id in food.pre_carried:
+                                self.agent_maps[agent_id].energy += 1
+                                self.rewards[agent_id] += 0.1
                             food.carried += food.pre_carried
                             food.carried.append(agent.id)
                             for agent_id in food.carried:
                                 # step_reward
-                                self.agent_maps[agent_id].carrying_food = food
-                                self.agent_maps[agent_id].energy -= pick_up_energy_factor*food.energy_score
+                                self.rewards[agent_id] += food.energy_score
+                                self.agent_maps[agent_id].energy += food.energy_score
                             food.pre_carried.clear()
-                            # print(f"Agents {food.carried} picked up food at {food.position}")
+                            # Dismiss the dropped food item at home
+                            food.position = (-2000,-2000)
+                            food.done = True
+                            self.collected_foods.add(food.id)
                             hit = True
                             break
 
@@ -361,46 +286,22 @@ class Environment(ParallelEnv):
                             food.reduced_strength += agent.strength
                             food.pre_carried.append(agent.id) # agent.id prepares to carry the food.
                             hit = True
+                            # step punishment if another agent doesn't pick up
+                            agent.energy -= 1
+                            self.rewards[agent.id] -= 0.1
+
                 if not(hit):
                     self.failed_action(agent)
-
-
-            elif action == "drop" and agent.carrying_food:
-                # If agent drops food at home
-                if (agent.carrying_food.position[0] in range(self.home_position[0], self.home_position[0] + self.home_size) and 
-                    agent.carrying_food.position[1] in range(self.home_position[1], self.home_position[1] + self.home_size)):
-                    
-                    # Dismiss the dropped food item at home
-                    agent.carrying_food.position = (-2000,-2000)
-                    agent.carrying_food.done = True
-                    self.collected_foods.add(agent.carrying_food.id)
-                    
-                    for agent_id in agent.carrying_food.carried:
-                        # step_reward
-                        self.agent_maps[agent_id].energy += self.agent_maps[agent_id].carrying_food.energy_score # TODO this is wrong another agent has to get energy too
-                        self.rewards[agent_id] += self.agent_maps[agent_id].carrying_food.energy_score * drop_reward_factor # TODO this is wrong another agent has to get energy too
-                        
-                        self.agent_maps[agent_id].carrying_food.carried = []
-                        self.agent_maps[agent_id].carrying_food = None
-
-                    
-                else:
-                    agent.carrying_food.carried = []
-                    agent.carrying_food = None
-                    self.failed_action(agent)
-
-            # Useless action
-            elif action == "pick_up" and agent.carrying_food is not None:
-                self.failed_action(agent)
-
-            # Useless action
-            elif action == "drop" and not(agent.carrying_food):
-                self.failed_action(agent)
-
 
             # Update grid state 
             self.update_grid()
 
+            # End if any agent runs out of energy
+            if agent.energy <= 0: #TODO Change this to the end
+                agent.done = True
+                for j in range(len(self.possible_agents)):
+                    self.dones[j] = True
+                break
         # End conditions
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
@@ -410,18 +311,8 @@ class Environment(ParallelEnv):
             average_energy /= len(self.possible_agents)
             # terminal_reward
             for agent in self.agent_maps:
-                self.rewards[agent.id] += energy_reward_factor * average_energy
-
+                # self.rewards[agent.id] += energy_reward_factor * average_energy
                 self.dones = {i:True for i in range(len(self.possible_agents))}
-
-        # elif self.dones[0] or self.dones[1]: #TODO make it general for multiple agents
-        #     # terminal reward if food is not placed at home
-        #     for food in self.foods:
-        #         if not(food.done) and len(food.carried) > 0: 
-        #             for agent_id in food.carried:
-        #                 self.rewards[agent_id] += ((self.grid_size-1)*2 - self.manhattan_dist(food.position, self.home_position))
-                        
-
 
         # normalize reward
         self.rewards = self.normalize_reward(self.rewards)
@@ -434,6 +325,7 @@ class Environment(ParallelEnv):
                 self.infos[agent.id] = {"episode": {
                                 "r": self.cumulative_rewards[agent.id],
                                 "l": self.episode_lengths[agent.id],
+                                "collect": len(self.collected_foods),
                                 },
                             }
     
@@ -441,7 +333,7 @@ class Environment(ParallelEnv):
 
 # Define the classes
 class EnvAgent:
-    def __init__(self, id, position, strength, max_energy, grid_size):
+    def __init__(self, id, position, strength, max_energy, grid_size, agent_visible):
         self.id = id
         self.position = position
         self.strength = strength
@@ -449,6 +341,7 @@ class EnvAgent:
         self.carrying_food = None
         self.done = False
         self.grid_size = grid_size
+        self.agent_visible = agent_visible
         # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
     
     def observe(self, environment): #TODO Check this again
@@ -469,10 +362,7 @@ class EnvAgent:
                 if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
                     obj = environment.grid[x, y]
                     if obj is None:
-                        if x in environment.home_grid_x and y in environment.home_grid_y:
-                            row.append(HOME_ATTRIBUTES)  # home grid
-                        else:
-                            row.append([0])  # Empty grid
+                        row.append([0])  # Empty grid
                     elif isinstance(obj, Food): # Observe Food
                         if len(obj.carried) > 0:
                             obs_attribute = list(map(lambda x:x+33, obj.attribute)) # if food is carried
@@ -480,12 +370,14 @@ class EnvAgent:
                             obs_attribute = obj.attribute
 
                         row.append(obs_attribute)
-                    elif isinstance(obj, EnvAgent): # Observe another agent
+                    elif isinstance(obj, EnvAgent) and self.agent_visible: # Observe another agent
                         if obj.carrying_food is not None:
                             obs_attribute = list(map(lambda x:x+33, AGENT_ATTRIBUTES)) # if agent is carrying food
                         else:
                             obs_attribute = AGENT_ATTRIBUTES
                         row.append(obs_attribute)
+                    else:
+                        row.append([0])  # Empty grid
                 else:
                     row.append([255])  # Out-of-bounds grid (treated as empty)
             perception_data.append(row)
