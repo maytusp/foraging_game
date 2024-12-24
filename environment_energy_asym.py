@@ -313,6 +313,7 @@ class Environment(ParallelEnv):
             if agent.energy <= 0: #TODO Change this to the end
                 agent.done = True
                 for j in range(len(self.possible_agents)):
+                    self.rewards[j] -= 10
                     self.dones[j] = True
                 break
         # End conditions
