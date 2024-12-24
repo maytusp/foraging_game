@@ -1,3 +1,4 @@
+# Edit: 20Dec2024
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
 import random
@@ -13,25 +14,17 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
-from stable_baselines3.common.atari_wrappers import (  # isort:skip
-    ClipRewardEnv,
-    EpisodicLifeEnv,
-    FireResetEnv,
-    MaxAndSkipEnv,
-    NoopResetEnv,
-)
 
-from nets import *
-from constants import *
-from keyboard_control import *
-from environment import *
-from buffer import *
-from train_marl_ppo import *
+import supersuit as ss
+from environment_pickup import Environment
+from utils import *
+from models import PPOLSTMAgent
+
 
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ippo/model_step_29920000.pt"
+    ckpt_path = "checkpoints/ppo_ps_pickup/final_model.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -40,8 +33,10 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    video_save_dir = "vids/ippo_30M_rand_home"
+    saved_dir = "logs/ppo_ps_pickup_100M"
+    video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
+    agent_visible = True
 
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -52,7 +47,6 @@ class Args:
 
 
 if __name__ == "__main__":
-    env = Environment()
     args = tyro.cli(Args)
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -68,18 +62,16 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    envs = Environment()
-    grid_size = (envs.image_size, env.image_size)
-    num_channels = envs.num_channels
-    num_agents = len(envs.possible_agents)
-    num_actions = envs.action_space(envs.possible_agents[0]).n
-    observation_size = envs.observation_space(envs.possible_agents[0]).shape
+    env = Environment(agent_visible=args.agent_visible)
+    grid_size = (env.image_size, env.image_size)
+    num_channels = env.num_channels
+    num_agents = len(env.possible_agents)
+    num_actions = env.action_space(env.possible_agents[0]).n
+    observation_size = env.observation_space(env.possible_agents[0]).shape
 
     # Vectorise env
-    # env = ss.clip_reward_v0(env, lower_bound=-1, upper_bound=1)
-    # envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    # envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
-
+    envs = ss.pettingzoo_env_to_vec_env_v1(env)
+    envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
 
     agent = PPOLSTMAgent(num_actions).to(device)
     agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
@@ -94,41 +86,54 @@ if __name__ == "__main__":
         torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
     )
     average_sr = 0
+    collected_items = 0
+    running_rewards = 0.0
+    running_length = 0
     for episode_id in range(1, args.total_episodes + 1):
         
         next_obs_dict, _ = envs.reset(seed=args.seed)
-
-        next_obs, next_locs, next_eners = batchify_obs(next_obs_dict, device)
-        next_obs = torch.Tensor(next_obs).to(device)
-        next_locs = torch.Tensor(next_locs).to(device)
-        next_eners = torch.Tensor(next_eners).to(device)
+        next_obs, next_locs, next_eners = extract_dict(next_obs_dict, device, use_message=False)
         next_done = torch.zeros((num_agents)).to(device)
         returns = 0
         ep_step = 0
         frames = []
         while not next_done[0]:
             if args.visualize:
-                frame = visualize_environment(envs, ep_step)
+                single_env = envs.vec_envs[0].unwrapped.par_env
+                frame = visualize_environment(single_env, ep_step)
                 frames.append(frame.transpose((1, 0, 2)))
             
             with torch.no_grad():
-                action, logprob, _, value, next_lstm_state = agent.get_action_and_value(next_obs, next_lstm_state, next_done)
-                
+
+                action, action_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners), 
+                                                                                                    next_lstm_state, next_done)
+                # print(f"step {ep_step} agent_actions = {action}")
             env_action = action.cpu().numpy()
             next_obs_dict, reward, terminations, truncations, infos = envs.step(env_action)
-            next_obs, next_locs, next_eners = batchify_obs(next_obs_dict, device)
-            next_done = batchify(terminations, device)
-            reward = batchify(reward, device)
+            next_obs, next_locs, next_eners = extract_dict(next_obs_dict, device, use_message=False)
+            next_done = np.logical_or(terminations, truncations)
+            next_done = torch.tensor(terminations).to(device)
+            next_obs = torch.Tensor(next_obs).to(device)
+            reward = torch.tensor(reward).to(device)
             returns += torch.sum(reward).cpu()
             ep_step+=1
+        collected_items += infos[0]['episode']['collect']
+        running_length += infos[0]['episode']['l']
+        
+        print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}")
+        running_rewards += (returns / 2)
+
         if args.visualize: # and returns > 5:
             os.makedirs(args.video_save_dir, exist_ok=True)
             clip = ImageSequenceClip(frames, fps=5)
-            clip.write_videofile(os.path.join(args.video_save_dir, f"ep_{episode_id}_return={returns}.mp4"), codec="libx264")
-        print(f"Total Reward: {returns}")
-        if returns > 0:
+            clip.write_videofile(os.path.join(args.video_save_dir, f"ep_{episode_id}_collected_items={infos[0]['episode']['collect']}_length_{infos[0]['episode']['l']}.mp4"), codec="libx264")
+        
+        if infos[0]['episode']['collect'] == len(single_env.foods):
             average_sr += 1
 
     print(f"Average SR: {average_sr / args.total_episodes}")
+    print(f"Average Reward {running_rewards / args.total_episodes}")
+    print(f"Average Collected Items: {collected_items / args.total_episodes}")
+    print(f"Average Length: {running_length / args.total_episodes}")
     envs.close()
     # writer.close()

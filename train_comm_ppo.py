@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment import *
+from environment_energy_asym import *
 from utils import *
 from models import PPOLSTMAgent, PPOLSTMCommAgent
 
