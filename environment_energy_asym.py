@@ -12,7 +12,7 @@ from keyboard_control import *
 
 # Environment Parameters
 NUM_FOODS = 1  # Number of foods
-ENERGY_FACTOR = 2
+ENERGY_FACTOR = 10
 NUM_ACTIONS = 6
 
 AGENT_ATTRIBUTES = [150]  # All agents have the same attributes
@@ -28,7 +28,7 @@ collect_all_reward = 0
 pickup_reward = 0
 drop_punishment = 0
 drop_reward_factor = 1 # multiplying with energy
-energy_reward_factor = 1
+energy_reward_factor = 10
 
 # energy parameter
 pick_up_energy_factor = 0
@@ -41,7 +41,7 @@ class Environment(ParallelEnv):
         self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 7
+        self.grid_size = 10
         self.image_size = 5
         self.num_channels = 1
         self.n_words = n_words
@@ -65,7 +65,7 @@ class Environment(ParallelEnv):
         self.render_mode = None
         self.reward_denorm = 100 # normalize reward
         self.agent_energy = 30
-        self.agent_low_energy = 5
+        self.agent_low_energy = 10
         self.reset()
 
     def reset(self, seed=42, options=None):
@@ -132,7 +132,7 @@ class Environment(ParallelEnv):
         return satisfy
 
     def max_dist_from_low_agent(self, pos):
-        if self.manhattan_dist(pos, self.agent_maps[self.low_energy_agent_id].position) < self.agent_low_energy-1:
+        if self.manhattan_dist(pos, self.agent_maps[self.low_energy_agent_id].position) < self.agent_low_energy-3:
             return True
         else:
             return False
@@ -304,7 +304,7 @@ class Environment(ParallelEnv):
                     self.failed_action(agent)
                     
             elif action == "idle":
-                agent.energy -= 0.1
+                agent.energy -= 0.2
 
             # Update grid state 
             self.update_grid()
@@ -320,12 +320,14 @@ class Environment(ParallelEnv):
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
             average_energy = 0
+            remaining_energy = []
             for agent in self.agent_maps:
                 average_energy += agent.energy
+                remaining_energy.append(agent.energy)
             average_energy /= len(self.possible_agents)
             # terminal_reward
             for agent in self.agent_maps:
-                # self.rewards[agent.id] += energy_reward_factor * average_energy
+                self.rewards[agent.id] += energy_reward_factor * min(remaining_energy)
                 self.dones = {i:True for i in range(len(self.possible_agents))}
 
         # normalize reward

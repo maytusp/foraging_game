@@ -10,7 +10,7 @@ KEY_MAPPING = {
         pygame.K_a: "left",
         pygame.K_d: "right",
         pygame.K_q: "pick_up",
-        pygame.K_e: "drop",
+        pygame.K_e: "idle",
     },
     "agent2": {
         pygame.K_UP: "up",
@@ -18,7 +18,7 @@ KEY_MAPPING = {
         pygame.K_LEFT: "left",
         pygame.K_RIGHT: "right",
         pygame.K_o: "pick_up",
-        pygame.K_p: "drop",
+        pygame.K_p: "idle",
     }
 }
 
