@@ -24,9 +24,9 @@ from models import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ps_ppo_commu"
+    save_dir = "checkpoints/ps_ppo_comm_energy_asym"
     os.makedirs(save_dir, exist_ok=True)
-    save_frequency = 10000
+    save_frequency = int(1e5)
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
     seed: int = 1
@@ -37,7 +37,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "PPO_COMM_PS"
+    wandb_project_name: str = "ENERGY_ASYM_PPO_COMM_PS"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -47,11 +47,11 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = 10000000
+    total_timesteps: int = int(1e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 8
+    num_envs: int = 128
     """the number of parallel game environments"""
     num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
