@@ -13,7 +13,7 @@ from keyboard_control import *
 # Environment Parameters
 NUM_FOODS = 1  # Number of foods
 ENERGY_FACTOR = 2
-NUM_ACTIONS = 5
+NUM_ACTIONS = 6
 
 AGENT_ATTRIBUTES = [150]  # All agents have the same attributes
 HOME_ATTRIBUTES = [100]
