@@ -41,7 +41,7 @@ class Environment(ParallelEnv):
         self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 10
+        self.grid_size = 7
         self.image_size = 5
         self.num_channels = 1
         self.n_words = n_words
