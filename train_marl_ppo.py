@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup import *
+from environment_energy_asym import *
 from utils import *
 from models import PPOLSTMAgent, PPOLSTMCommAgent
 
@@ -24,10 +24,11 @@ from models import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/sanity_check"
+    save_dir = "checkpoints/ppo_ps_energy_asym"
     os.makedirs(save_dir, exist_ok=True)
-    save_frequency = 10000
-    exp_name: str = os.path.basename(__file__)[: -len(".py")]
+    save_frequency = int(1e5)
+    # exp_name: str = os.path.basename(__file__)[: -len(".py")]
+    exp_name = "energy_asymmetry"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -35,9 +36,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "IPPO MA Foraging Game"
+    wandb_project_name: str = "ENERGY_ASYM_PPO_PS"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -45,13 +46,13 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
     # Algorithm specific arguments
-    env_id: str = "Foraging-Single-v1"
+    env_id: str = "Energy Asymmetry"
     """the id of the environment"""
-    total_timesteps: int = 10000000
+    total_timesteps: int = int(1e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 8
+    num_envs: int = 128
     """the number of parallel game environments"""
     num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
@@ -99,7 +100,8 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    # run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = args.exp_name
     if args.track:
         import wandb
 

@@ -27,7 +27,8 @@ class Args:
     save_dir = "checkpoints/ps_ppo_comm_energy_asym"
     os.makedirs(save_dir, exist_ok=True)
     save_frequency = int(1e5)
-    exp_name: str = os.path.basename(__file__)[: -len(".py")]
+    # exp_name: str = os.path.basename(__file__)[: -len(".py")]
+    exp_name = "energy_asymmetry"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -99,7 +100,8 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    # run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = args.exp_name
     if args.track:
         import wandb
 
