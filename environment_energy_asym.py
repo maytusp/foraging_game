@@ -140,7 +140,7 @@ class Environment(ParallelEnv):
     def random_position(self):
         while True:
             pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,10):
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos, 3):
                 self.prev_pos_list.append(pos)
                 return pos
 
