@@ -211,7 +211,7 @@ class Environment(ParallelEnv):
 
     def failed_action(self, agent):
         agent.energy -= 1 # Useless move punishment
-        self.rewards[agent.id] -= 0.1
+        # self.rewards[agent.id] -= 0.1
 
     def step(self, agent_action_dict, int_action=True):
         # Update food state: Clear all agents if not carried
@@ -262,7 +262,7 @@ class Environment(ParallelEnv):
                 elif self.grid[new_agent_position[0], new_agent_position[1]] is None:
                     agent.position += delta_pos[action]
                     agent.energy -= 1
-                    self.rewards[agent.id] -= 0.1
+                    # self.rewards[agent.id] -= 0.1
                 else:
                     self.failed_action(agent)
 
@@ -275,7 +275,7 @@ class Environment(ParallelEnv):
                             # cancel the step punishment for agents that pick up previously if the item is successfully picked
                             for agent_id in food.pre_carried:
                                 self.agent_maps[agent_id].energy += 1
-                                self.rewards[agent_id] += 0.1
+                                # self.rewards[agent_id] += 0.1
                             food.carried += food.pre_carried
                             food.carried.append(agent.id)
                             # for agent_id in food.carried:
@@ -298,7 +298,7 @@ class Environment(ParallelEnv):
                             hit = True
                             # step punishment if another agent doesn't pick up
                             agent.energy -= 1
-                            self.rewards[agent.id] -= 0.1
+                            # self.rewards[agent.id] -= 0.1
 
                 if not(hit):
                     self.failed_action(agent)
