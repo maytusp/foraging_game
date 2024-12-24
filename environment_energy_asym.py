@@ -304,7 +304,7 @@ class Environment(ParallelEnv):
                     self.failed_action(agent)
                     
             elif action == "idle":
-                pass
+                agent.energy -= 0.1
 
             # Update grid state 
             self.update_grid()
