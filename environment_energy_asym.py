@@ -278,10 +278,10 @@ class Environment(ParallelEnv):
                                 # self.rewards[agent_id] += 0.1
                             food.carried += food.pre_carried
                             food.carried.append(agent.id)
-                            # for agent_id in food.carried:
-                            #     # step_reward
-                            #     self.rewards[agent_id] += food.energy_score
-                            #     self.agent_maps[agent_id].energy += food.energy_score
+                            for agent_id in food.carried:
+                                # step_reward
+                                self.rewards[agent_id] += food.energy_score
+                                self.agent_maps[agent_id].energy += food.energy_score
                             food.pre_carried.clear()
                             # Dismiss the dropped food item at home
                             food.position = (-2000,-2000)
@@ -325,7 +325,7 @@ class Environment(ParallelEnv):
             average_energy /= len(self.possible_agents)
             # terminal_reward
             for agent in self.agent_maps:
-                self.rewards[agent.id] += energy_reward_factor * average_energy
+                # self.rewards[agent.id] += energy_reward_factor * average_energy
                 self.dones = {i:True for i in range(len(self.possible_agents))}
 
         # normalize reward
