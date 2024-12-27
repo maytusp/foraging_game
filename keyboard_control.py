@@ -5,20 +5,20 @@ import pygame
 # Map keys to actions for each agent
 KEY_MAPPING = {
     "agent1": {
-        pygame.K_w: "up",
-        pygame.K_s: "down",
-        pygame.K_a: "left",
-        pygame.K_d: "right",
-        pygame.K_q: "pick_up",
-        pygame.K_e: "idle",
+        pygame.K_w: 1,
+        pygame.K_s: 2,
+        pygame.K_a: 3,
+        pygame.K_d: 4,
+        pygame.K_q: 5,
+        pygame.K_e: 6,
     },
     "agent2": {
-        pygame.K_UP: "up",
-        pygame.K_DOWN: "down",
-        pygame.K_LEFT: "left",
-        pygame.K_RIGHT: "right",
-        pygame.K_o: "pick_up",
-        pygame.K_p: "idle",
+        pygame.K_UP: 1,
+        pygame.K_DOWN: 2,
+        pygame.K_LEFT: 3,
+        pygame.K_RIGHT: 4,
+        pygame.K_o: 5,
+        pygame.K_p: 6,
     }
 }
 

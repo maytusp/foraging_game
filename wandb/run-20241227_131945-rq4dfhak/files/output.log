@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "train_comm_ppo.py", line 144, in <module>
+    agent = PPOLSTMCommAgent(num_actions).to(device)
+  File "/Users/user/Projects/foraging_game/models.py", line 120, in __init__
+    self.energy_encoder = nn.Linear(1, energy_dim)
+NameError: name 'energy_dim' is not defined

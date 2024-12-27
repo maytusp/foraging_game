@@ -19,24 +19,29 @@ class PPOLSTMAgent(nn.Module):
     Agent with communication
     Observations: [image, location, energy, message]
     '''
-    def __init__(self, num_actions, grid_size=10, max_energy=200):
+    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=32):
         super().__init__()
         self.grid_size = grid_size
         self.max_energy = max_energy
-        self.image_feat_dim = 256
-        self.loc_dim = 2
-        self.energy_dim = 1
+        self.n_words = n_words
+        self.n_embedding = n_embedding
+        self.image_feat_dim = 32
+        self.loc_dim = 32
+        self.energy_dim = 32
         self.visual_encoder = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
                                         nn.Linear(25, 256), 
                                         nn.ReLU(),
                                         nn.Linear(256, 256),
                                         nn.ReLU(),
-                                        nn.Linear(256, 256),
+                                        nn.Linear(256, 128),
                                         nn.ReLU(),
-                                        nn.Linear(256, 256),
+                                        nn.Linear(128, self.image_feat_dim),
                                         nn.ReLU(),
                                         )   
-        self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.energy_dim, 128)
+        self.message_encoder =  nn.Embedding(n_words, n_embedding) # Contains n_words tensor of size n_embedding
+        self.energy_encoder = nn.Linear(1, self.energy_dim)
+        self.location_encoder = nn.Linear(2, self.loc_dim)
+        self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.energy_dim+self.n_embedding, 128)
         for name, param in self.lstm.named_parameters():
             if "bias" in name:
                 nn.init.constant_(param, 0)
@@ -51,9 +56,10 @@ class PPOLSTMAgent(nn.Module):
         image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
         location = location / self.grid_size # (L*B,2)
         energy = energy / self.max_energy # (L*B,1)
-
+        energy_feat = self.energy_encoder(energy)
+        location_feat = self.location_encoder(location)
         # print(f"image_feat {image_feat.shape}, location {location.shape}, energy {energy.shape}, message_feat {message_feat.shape}")
-        hidden = torch.cat((image_feat, location, energy), axis=1)
+        hidden = torch.cat((image_feat, location_feat, energy_feat), axis=1)
         # print("hidden", hidden.shape)
         # LSTM logic
         hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
@@ -91,26 +97,28 @@ class PPOLSTMCommAgent(nn.Module):
     Agent with communication
     Observations: [image, location, energy, message]
     '''
-    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=3):
+    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=32):
         super().__init__()
         self.grid_size = grid_size
         self.max_energy = max_energy
         self.n_words = n_words
         self.n_embedding = n_embedding
-        self.image_feat_dim = 256
-        self.loc_dim = 2
-        self.energy_dim = 1
+        self.image_feat_dim = 32
+        self.loc_dim = 32
+        self.energy_dim = 32
         self.visual_encoder = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
                                         nn.Linear(25, 256), 
                                         nn.ReLU(),
                                         nn.Linear(256, 256),
                                         nn.ReLU(),
-                                        nn.Linear(256, 256),
+                                        nn.Linear(256, 128),
                                         nn.ReLU(),
-                                        nn.Linear(256, 256),
+                                        nn.Linear(128, self.image_feat_dim),
                                         nn.ReLU(),
                                         )   
         self.message_encoder =  nn.Embedding(n_words, n_embedding) # Contains n_words tensor of size n_embedding
+        self.energy_encoder = nn.Linear(1, self.energy_dim)
+        self.location_encoder = nn.Linear(2, self.loc_dim)
         self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.energy_dim+self.n_embedding, 128)
         for name, param in self.lstm.named_parameters():
             if "bias" in name:
@@ -127,11 +135,13 @@ class PPOLSTMCommAgent(nn.Module):
         image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
         location = location / self.grid_size # (L*B,2)
         energy = energy / self.max_energy # (L*B,1)
+        energy_feat = self.energy_encoder(energy)
+        location_feat = self.location_encoder(location)
         message_feat = self.message_encoder(message) # (L*B,1)
         message_feat = message_feat.view(-1, self.n_embedding)
 
         # print(f"image_feat {image_feat.shape}, location {location.shape}, energy {energy.shape}, message_feat {message_feat.shape}")
-        hidden = torch.cat((image_feat, location, energy, message_feat), axis=1)
+        hidden = torch.cat((image_feat, location_feat, energy_feat, message_feat), axis=1)
         # print("hidden", hidden.shape)
         # LSTM logic
         hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))

@@ -43,7 +43,7 @@ class Environment(ParallelEnv):
         self.use_pointgoal = use_pointgoal # observed location is relatie to the home
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 5
+        self.grid_size = 7
         self.image_size = 5
         self.num_channels = 1
         self.n_words = n_words
@@ -220,6 +220,8 @@ class Environment(ParallelEnv):
         for i, agent in enumerate(self.agent_maps):
             if self.use_message: # Tuple TODO
                 agent_actions, received_message = agent_action_dict[i]["action"], agent_action_dict
+            else:
+                agent_actions = agent_action_dict[i]
             # End if any agent runs out of energy
             if agent.energy <= 0: #TODO Change this to the end
                 agent.done = True
