@@ -24,7 +24,7 @@ from models import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ppo_commu_ps_energy_asym/model_step_1B.pt"
+    ckpt_path = "checkpoints/ppo_ps_comm_energy_asym/model_step_200M.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,7 +33,7 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/ppo_comm_ps_energy_asym_1B"
+    saved_dir = "logs/new/ppo_ps_comm_energy_asym_200M"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
     ablate_message = False

@@ -35,15 +35,17 @@ pick_up_energy_factor = 0
 step_punishment = False
 class Environment(ParallelEnv):
     metadata = {"name": "multiagent_pickup"}
-    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, seed=42, agent_visible=True):
+    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, seed=42, agent_visible=True, spawn_tgt=True):
         np.random.seed(seed)
         self.use_message = use_message
         self.agent_visible = agent_visible
+        self.spawn_tgt = spawn_tgt # agents spawn closely
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 10
+        self.grid_size = 8
         self.image_size = 5
         self.num_channels = 1
+        self.max_steps = 30
         self.n_words = n_words
         self.torch_order = torch_order
         self.truncated = {i:truncated for i in range(num_agents)}
@@ -65,7 +67,7 @@ class Environment(ParallelEnv):
         self.render_mode = None
         self.reward_denorm = 100 # normalize reward
         self.agent_energy = 30
-        self.agent_low_energy = 10
+        self.agent_low_energy = 5
         self.reset()
 
     def reset(self, seed=42, options=None):
@@ -81,7 +83,10 @@ class Environment(ParallelEnv):
         self.low_energy_agent_id = random.randint(0, len(self.agents)-1)
         AGENT_ENERGY = [self.agent_energy if i != self.low_energy_agent_id else self.agent_low_energy for i in range(len(self.possible_agents))]
         self.agent_maps = [EnvAgent(i, self.random_position(), AGENT_STRENGTH, AGENT_ENERGY[i], self.grid_size, self.agent_visible) for i in range(len(self.possible_agents))]
-
+        if self.spawn_tgt:
+            for agent in self.agent_maps:
+                if agent.id != self.low_energy_agent_id:
+                    agent.position = self.spawn_with_another()
         for agent in self.agent_maps:
             self.grid[agent.position[0], agent.position[1]] = agent
         #  position, food_type, id)
@@ -94,6 +99,8 @@ class Environment(ParallelEnv):
 
         self.collected_foods = set()
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
+        self.curr_steps = 0
+        
         return self.observe(), self.infos
 
     def observation_space(self, agent_id):
@@ -132,7 +139,7 @@ class Environment(ParallelEnv):
         return satisfy
 
     def max_dist_from_low_agent(self, pos):
-        if self.manhattan_dist(pos, self.agent_maps[self.low_energy_agent_id].position) < self.agent_low_energy-3:
+        if self.manhattan_dist(pos, self.agent_maps[self.low_energy_agent_id].position) == self.agent_low_energy-1:
             return True
         else:
             return False
@@ -143,6 +150,16 @@ class Environment(ParallelEnv):
             if self.grid[pos[0], pos[1]] is None and self.min_dist(pos, 3):
                 self.prev_pos_list.append(pos)
                 return pos
+
+    def spawn_with_another(self):
+        # agent spawn with another agent
+        low_energy_agent_pos = self.agent_maps[self.low_energy_agent_id].position
+        while True:
+            pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
+            if self.grid[pos[0], pos[1]] is None and self.manhattan_dist(pos, low_energy_agent_pos) == 1:
+                self.prev_pos_list.append(pos)
+                return pos
+
 
     def random_food_position(self):
         while True:
@@ -214,6 +231,7 @@ class Environment(ParallelEnv):
         # self.rewards[agent.id] -= 0.1
 
     def step(self, agent_action_dict, int_action=True):
+        self.curr_steps+=1
         # Update food state: Clear all agents if not carried
         self.update_food()
         # One step in the simulation
@@ -278,10 +296,10 @@ class Environment(ParallelEnv):
                                 # self.rewards[agent_id] += 0.1
                             food.carried += food.pre_carried
                             food.carried.append(agent.id)
-                            for agent_id in food.carried:
-                                # step_reward
-                                self.rewards[agent_id] += food.energy_score
-                                self.agent_maps[agent_id].energy += food.energy_score
+                            # for agent_id in food.carried:
+                            #     # step_reward
+                            #     self.rewards[agent_id] += food.energy_score
+                            #     self.agent_maps[agent_id].energy += food.energy_score
                             food.pre_carried.clear()
                             # Dismiss the dropped food item at home
                             food.position = (-2000,-2000)
@@ -304,7 +322,7 @@ class Environment(ParallelEnv):
                     self.failed_action(agent)
                     
             elif action == "idle":
-                agent.energy -= 0.2
+                agent.energy -= 0
 
             # Update grid state 
             self.update_grid()
@@ -313,7 +331,7 @@ class Environment(ParallelEnv):
             if agent.energy <= 0: #TODO Change this to the end
                 agent.done = True
                 for j in range(len(self.possible_agents)):
-                    self.rewards[j] -= 10
+                    self.rewards[j] -= 30
                     self.dones[j] = True
                 break
         # End conditions
@@ -329,7 +347,11 @@ class Environment(ParallelEnv):
             for agent in self.agent_maps:
                 self.rewards[agent.id] += energy_reward_factor * min(remaining_energy)
                 self.dones = {i:True for i in range(len(self.possible_agents))}
-
+        elif self.curr_steps == self.max_steps:
+            # terminal_reward
+            for agent in self.agent_maps:
+                self.rewards[agent.id] -= 30
+                self.dones = {i:True for i in range(len(self.possible_agents))}
         # normalize reward
         self.rewards = self.normalize_reward(self.rewards)
 

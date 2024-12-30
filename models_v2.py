@@ -1,4 +1,4 @@
-# Edit: 20Dec2024
+# Edit: 30ec2024: Deeper Message Encoder and Decoder
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -115,8 +115,17 @@ class PPOLSTMCommAgent(nn.Module):
                                         nn.ReLU(),
                                         nn.Linear(128, self.image_feat_dim),
                                         nn.ReLU(),
-                                        )   
-        self.message_encoder =  nn.Embedding(n_words, n_embedding) # Contains n_words tensor of size n_embedding
+                                        )
+
+        self.message_encoder =  nn.Sequential(nn.Embedding(n_words, n_embedding), # Contains n_words tensor of size n_embedding
+                                        nn.Linear(n_embedding, n_embedding*2), 
+                                        nn.ReLU(),
+                                        nn.Linear(n_embedding*2, n_embedding*2),
+                                        nn.ReLU(),
+                                        nn.Linear(n_embedding*2, n_embedding),
+                                        nn.ReLU(),
+                                        )
+
         self.energy_encoder = nn.Linear(1, self.energy_dim)
         self.location_encoder = nn.Linear(2, self.loc_dim)
         self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.energy_dim+self.n_embedding, 128)
@@ -127,7 +136,14 @@ class PPOLSTMCommAgent(nn.Module):
                 nn.init.orthogonal_(param, 1.0)
         self.actor = layer_init(nn.Linear(128, num_actions), std=0.01)
         self.critic = layer_init(nn.Linear(128, 1), std=1)
-        self.message_head = layer_init(nn.Linear(128, n_words), std=0.01)
+        self.message_head = nn.Sequential(
+                                        nn.Linear(128, 256), 
+                                        nn.ReLU(),
+                                        nn.Linear(256, 128),
+                                        nn.ReLU(),
+                                        nn.Linear(128, n_words),
+                                        nn.ReLU(),
+                                        )
 
     def get_states(self, input, lstm_state, done):
         batch_size = lstm_state[0].shape[1]

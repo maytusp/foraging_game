@@ -30,11 +30,11 @@ def visualize_environment(environment, step):
             rect = pygame.Rect(x, y, cell_size, cell_size)
             pygame.draw.rect(screen, BLACK, rect, 1)
 
-    # Draw home area
-    for i in range(environment.home_size):
-        for j in range(environment.home_size):
-            home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
-            pygame.draw.rect(screen, HOME_COLOR, home_rect)
+    # # Draw home area
+    # for i in range(environment.home_size):
+    #     for j in range(environment.home_size):
+    #         home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
+    #         pygame.draw.rect(screen, HOME_COLOR, home_rect)
 
     # Draw agents
     for agent_id, agent in enumerate(environment.agent_maps):
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     NUM_EPISODES = 3
     HUMAN_PLAY = True
     VISUALIZE = True
-    # from environment_energy_asym import *
-    from environment import *
+    from environment_energy_asym import *
+    # from environment import *
     env = Environment()
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):

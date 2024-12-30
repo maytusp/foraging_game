@@ -18,13 +18,13 @@ import supersuit as ss
 
 from environment_energy_asym import *
 from utils import *
-from models import PPOLSTMAgent, PPOLSTMCommAgent
-
+# from models import PPOLSTMAgent, PPOLSTMCommAgent
+from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ps_ppo_comm_energy_asym"
+    save_dir = "checkpoints/ppo_ps_comm_v2_energy_asym"
     os.makedirs(save_dir, exist_ok=True)
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -38,7 +38,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ENERGY_ASYM_PPO_COMM_PS"
+    wandb_project_name: str = "30dec_energy_asym"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -48,7 +48,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e8)
+    total_timesteps: int = int(5e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
