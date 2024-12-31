@@ -65,7 +65,7 @@ class Environment(ParallelEnv):
         self.observation_spaces = spaces.Dict({i: self.single_observation_space for i in range(num_agents)})
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
-        self.reward_scale = 1 # normalize reward
+        self.reward_scale = 10 # normalize reward
         self.energy_list = [(i+1)*25 for i in range(10)] # each food item will have one of these energy scores, assigned randomly.
         self.food_ener_fully_visible = food_ener_fully_visible
         self.max_steps = 30
@@ -328,10 +328,10 @@ class Environment(ParallelEnv):
             # terminal_reward
             for agent in self.agent_maps:
                 if self.collected_foods[0] == self.target_food_id:
-                    self.rewards[agent.id] += 30
+                    self.rewards[agent.id] += 10
                     self.rewards[agent.id] += self.max_steps - self.curr_steps # get more reward if use fewer steps
                 else:
-                    self.rewards[agent.id] -= 30
+                    self.rewards[agent.id] -= 10
                 self.dones = {i:True for i in range(len(self.possible_agents))}
 
         # normalize reward
