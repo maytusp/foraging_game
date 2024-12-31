@@ -18,13 +18,13 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 from environment_energy_asym import Environment
 from utils import *
-from models import PPOLSTMCommAgent
+from models_v2 import PPOLSTMCommAgent
 
 
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ppo_ps_comm_energy_asym/model_step_200M.pt"
+    ckpt_path = "checkpoints/ppo_ps_comm_v2_energy_asym/model_step_409M.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,7 +33,7 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/new/ppo_ps_comm_energy_asym_200M"
+    saved_dir = "logs/new/ppo_ps_comm_v2_energy_asym_409"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
     ablate_message = False

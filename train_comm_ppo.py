@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_energy_asym import *
+from environment_pickup_high import *
 from utils import *
 # from models import PPOLSTMAgent, PPOLSTMCommAgent
 from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
@@ -24,11 +24,11 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_comm_v2_energy_asym"
+    save_dir = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1"
     os.makedirs(save_dir, exist_ok=True)
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "energy_asymmetry"
+    exp_name = "ppo_ps_comm_stage1"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -36,15 +36,16 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "30dec_energy_asym"
+    wandb_project_name: str = "31_pickup_high"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
-
+    fully_visible_score = True
+    """Fully visible food highest score for pretraining"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
@@ -80,7 +81,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     """number of action"""
-    num_channels = 1
+    num_channels = 2
     """number of channels in observation (non rgb case)"""
     num_obs_grid = 5
     """number of observation grid"""
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    env = Environment(use_message=True)
+    env = Environment(use_message=True, food_ener_fully_visible=args.fully_visible_score)
     grid_size = (env.image_size, env.image_size)
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     envs = ss.concat_vec_envs_v1(envs, args.num_envs // num_agents, num_cpus=0, base_class="gymnasium")
 
 
-    agent = PPOLSTMCommAgent(num_actions).to(device)
+    agent = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup

@@ -97,7 +97,7 @@ class PPOLSTMCommAgent(nn.Module):
     Agent with communication
     Observations: [image, location, energy, message]
     '''
-    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=32, use_cnn=False):
+    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=32, num_channels=1):
         super().__init__()
         self.grid_size = grid_size
         self.max_energy = max_energy
@@ -106,8 +106,9 @@ class PPOLSTMCommAgent(nn.Module):
         self.image_feat_dim = 32
         self.loc_dim = 32
         self.energy_dim = 32
+        self.num_channels = num_channels
         self.visual_encoder = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
-                                        nn.Linear(25, 256), 
+                                        nn.Linear(25*num_channels, 256), 
                                         nn.ReLU(),
                                         nn.Linear(256, 256),
                                         nn.ReLU(),
