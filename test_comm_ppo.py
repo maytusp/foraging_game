@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environment_energy_asym import Environment
+from environment_pickup_high import Environment
 from utils import *
 from models_v2 import PPOLSTMCommAgent
 
@@ -24,7 +24,7 @@ from models_v2 import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ppo_ps_comm_v2_energy_asym/model_step_409M.pt"
+    ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_pure_stage2/final_model.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,17 +33,18 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/new/ppo_ps_comm_v2_energy_asym_409"
+    saved_dir = "logs/new/ppo_ps_comm_v2_pickup_high_pure_stage2_invisible"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
     agent_visible = True
+    fully_visible_score = False
 
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     total_episodes: int = 100
-    num_channels = 4
+    num_channels = 2
     num_obs_grid = 5
 
 
@@ -64,7 +65,7 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    env = Environment(use_message=True, agent_visible=args.agent_visible)
+    env = Environment(use_message=True, agent_visible=args.agent_visible, food_ener_fully_visible=args.fully_visible_score)
     grid_size = (env.image_size, env.image_size)
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
     envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
 
-    agent = PPOLSTMCommAgent(num_actions).to(device)
+    agent = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
     agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
     agent.eval()
 
@@ -128,7 +129,7 @@ if __name__ == "__main__":
             reward = torch.tensor(reward).to(device)
             returns += torch.sum(reward).cpu()
             ep_step+=1
-        collected_items += infos[0]['episode']['collect']
+        collected_items += infos[0]['episode']['success']
         running_length += infos[0]['episode']['l']
         
         print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}")

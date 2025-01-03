@@ -11,14 +11,14 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-NUM_FOODS = 6  # Number of foods
+NUM_FOODS = 4  # Number of foods
 ENERGY_FACTOR = 2
 NUM_ACTIONS = 5
 
 AGENT_ATTRIBUTES = [150]  # All agents have the same attributes
 HOME_ATTRIBUTES = [100]
 AGENT_STRENGTH = 3
-AGENT_ENERGY = 30
+AGENT_ENERGY = 20
 
 MAX_REQUIRED_STRENGTH = 6
 
@@ -43,7 +43,7 @@ class Environment(ParallelEnv):
         self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 10
+        self.grid_size = 7
         self.image_size = 5
         self.num_channels = 2
         self.n_words = n_words
@@ -68,7 +68,7 @@ class Environment(ParallelEnv):
         self.reward_scale = 10 # normalize reward
         self.energy_list = [(i+1)*25 for i in range(10)] # each food item will have one of these energy scores, assigned randomly.
         self.food_ener_fully_visible = food_ener_fully_visible
-        self.max_steps = 30
+        self.max_steps = 20
         self.reset()
         
 
@@ -220,6 +220,7 @@ class Environment(ParallelEnv):
         pass
 
     def step(self, agent_action_dict, int_action=True):
+        success = 0
         self.curr_steps+=1
         # Update food state: Clear all agents if not carried
         self.update_food()
@@ -330,6 +331,7 @@ class Environment(ParallelEnv):
                 if self.collected_foods[0] == self.target_food_id:
                     self.rewards[agent.id] += 10
                     self.rewards[agent.id] += self.max_steps - self.curr_steps # get more reward if use fewer steps
+                    success = 1
                 else:
                     self.rewards[agent.id] -= 10
                 self.dones = {i:True for i in range(len(self.possible_agents))}
@@ -346,6 +348,7 @@ class Environment(ParallelEnv):
                                 "r": self.cumulative_rewards[agent.id],
                                 "l": self.episode_lengths[agent.id],
                                 "collect": len(self.collected_foods),
+                                "success": success,
                                 },
                             }
     

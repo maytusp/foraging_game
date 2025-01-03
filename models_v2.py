@@ -97,15 +97,15 @@ class PPOLSTMCommAgent(nn.Module):
     Agent with communication
     Observations: [image, location, energy, message]
     '''
-    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=32, num_channels=1):
+    def __init__(self, num_actions, grid_size=10, max_energy=200, n_words=10, n_embedding=4, num_channels=1):
         super().__init__()
         self.grid_size = grid_size
         self.max_energy = max_energy
         self.n_words = n_words
         self.n_embedding = n_embedding
-        self.image_feat_dim = 32
-        self.loc_dim = 32
-        self.energy_dim = 32
+        self.image_feat_dim = 16
+        self.loc_dim = 4
+        self.energy_dim = 4
         self.num_channels = num_channels
         self.visual_encoder = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
                                         nn.Linear(25*num_channels, 256), 
@@ -119,11 +119,7 @@ class PPOLSTMCommAgent(nn.Module):
                                         )
 
         self.message_encoder =  nn.Sequential(nn.Embedding(n_words, n_embedding), # Contains n_words tensor of size n_embedding
-                                        nn.Linear(n_embedding, n_embedding*2), 
-                                        nn.ReLU(),
-                                        nn.Linear(n_embedding*2, n_embedding*2),
-                                        nn.ReLU(),
-                                        nn.Linear(n_embedding*2, n_embedding),
+                                        nn.Linear(n_embedding, n_embedding), 
                                         nn.ReLU(),
                                         )
 
@@ -137,14 +133,7 @@ class PPOLSTMCommAgent(nn.Module):
                 nn.init.orthogonal_(param, 1.0)
         self.actor = layer_init(nn.Linear(128, num_actions), std=0.01)
         self.critic = layer_init(nn.Linear(128, 1), std=1)
-        self.message_head = nn.Sequential(
-                                        nn.Linear(128, 256), 
-                                        nn.ReLU(),
-                                        nn.Linear(256, 128),
-                                        nn.ReLU(),
-                                        nn.Linear(128, n_words),
-                                        nn.ReLU(),
-                                        )
+        self.message_head = layer_init(nn.Linear(128, n_words), std=0.01)
 
     def get_states(self, input, lstm_state, done):
         batch_size = lstm_state[0].shape[1]

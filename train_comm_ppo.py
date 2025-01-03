@@ -24,11 +24,13 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1"
+    save_dir = "checkpoints/ppo_ps_comm_v2_pickup_high_stage2"
     os.makedirs(save_dir, exist_ok=True)
+    load_pretrained = True
+    ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm_stage1"
+    exp_name = "ppo_ps_comm_stage2"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -36,7 +38,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "31_pickup_high"
     """the wandb's project name"""
@@ -49,7 +51,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(5e8)
+    total_timesteps: int = int(1e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -143,6 +145,8 @@ if __name__ == "__main__":
 
 
     agent = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
+    if args.load_pretrained:
+        agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
