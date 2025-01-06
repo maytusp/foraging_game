@@ -66,9 +66,18 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.reward_scale = 10 # normalize reward
-        self.energy_list = [(i+1)*25 for i in range(10)] # each food item will have one of these energy scores, assigned randomly.
+        self.energy_unit = 25
+        self.energy_list = [(i+1)*self.energy_unit for i in range(10)] # each food item will have one of these energy scores, assigned randomly.
         self.food_ener_fully_visible = food_ener_fully_visible
         self.max_steps = 20
+        self.food_type2name =  {
+                                    1: "spinach",
+                                    2: "watermelon",
+                                    3: "strawberry",
+                                    4: "chicken",
+                                    5: "pig",
+                                    6: "cattle",
+                                    }
         self.reset()
         
 
@@ -94,7 +103,7 @@ class Environment(ParallelEnv):
         #  position, food_type, id)
         self.selected_energy = np.random.choice(self.energy_list, size=NUM_FOODS, replace=False)
         self.target_food_id = np.argmax(self.selected_energy)
-        self.energy_visible_to_agent = np.random.choice([0,0,0,1,1,1], size=NUM_FOODS, replace=False)
+        self.energy_visible_to_agent = np.random.choice([0,0,1,1], size=NUM_FOODS, replace=False)
         self.foods = [Food(position=self.random_food_position(), 
                             food_type = food_id+1,
                             id=food_id,
@@ -104,6 +113,8 @@ class Environment(ParallelEnv):
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
+
+        self.target_name = self.food_type2name[self.foods[self.target_food_id].food_type]
         self.collected_foods = []
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
 
@@ -349,6 +360,7 @@ class Environment(ParallelEnv):
                                 "l": self.episode_lengths[agent.id],
                                 "collect": len(self.collected_foods),
                                 "success": success,
+                                "target_name": self.target_name,
                                 },
                             }
     

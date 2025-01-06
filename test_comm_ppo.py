@@ -24,7 +24,7 @@ from models_v2 import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_pure_stage2/final_model.pt"
+    ckpt_path = "checkpoints/4jan_ppo_comm_ps_pickup_high/model_step_1B.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,11 +33,11 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/new/ppo_ps_comm_v2_pickup_high_pure_stage2_invisible"
+    saved_dir = "logs/ppo_comm_ps_pickup_high_1B_noise/"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
-    ablate_message = False
-    ablate_type = "noise" # zero, noise
+    ablate_message = True
+    ablate_type = "zero" # zero, noise
     agent_visible = True
     fully_visible_score = False
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     if args.visualize:
         from visualize import *
         from moviepy.editor import *
-
+    os.makedirs(args.saved_dir, exist_ok=True)
     # TRY NOT TO MODIFY: seeding
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -92,16 +92,24 @@ if __name__ == "__main__":
     collected_items = 0
     running_rewards = 0.0
     running_length = 0
+    next_obs_dict, _ = envs.reset()
+    next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
+    next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
     for episode_id in range(1, args.total_episodes + 1):
-        
-        next_obs_dict, _ = envs.reset(seed=args.seed)
-        next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
-        next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
+        energy_obs = {"agent0": set(), "agent1": set()}
+
         next_done = torch.zeros((num_agents)).to(device)
         returns = 0
         ep_step = 0
         frames = []
+        next_lstm_state = (
+            torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
+            torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
+        )
         while not next_done[0]:
+            next_obs_arr = next_obs.detach().cpu().numpy()
+            energy_obs["agent0"] = energy_obs["agent0"].union(set(next_obs_arr[0,1,:,:].flatten()))
+            energy_obs["agent1"] = energy_obs["agent1"].union(set(next_obs_arr[1,1,:,:].flatten()))
             if args.visualize:
                 single_env = envs.vec_envs[0].unwrapped.par_env
                 frame = visualize_environment(single_env, ep_step)
@@ -122,30 +130,41 @@ if __name__ == "__main__":
             env_action, env_message = action.cpu().numpy(), s_message.cpu().numpy()
             next_obs_dict, reward, terminations, truncations, infos = envs.step({"action": env_action, "message": env_message})
             next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
+
             next_done = np.logical_or(terminations, truncations)
             next_done = torch.tensor(terminations).to(device)
             next_obs = torch.Tensor(next_obs).to(device)
             next_r_messages = torch.tensor(next_r_messages).to(device)
             reward = torch.tensor(reward).to(device)
-            returns += torch.sum(reward).cpu()
             ep_step+=1
+
+        returns += infos[0]['episode']['r'] # torch.sum(reward).cpu()
         collected_items += infos[0]['episode']['success']
         running_length += infos[0]['episode']['l']
         
-        print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}")
-        running_rewards += (returns / 2)
+        # Open the log file in append mode
+        with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
+            
+            # Redirect the print statements to the log file
+            print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)
+            print(f"Agent Item Value Observations {energy_obs}", file=log_file)
+            print(f"Target Name {infos[0]['episode']['target_name']}", file=log_file)
+            print(f"Final Score Obs Agent0:  {next_obs_arr[0,1,:,:]}", file=log_file)
+            print(f"Final Score Obs Agent1:  {next_obs_arr[1,1,:,:]}", file=log_file)
+        
+        running_rewards += returns
 
         if args.visualize: # and returns > 5:
             os.makedirs(args.video_save_dir, exist_ok=True)
             clip = ImageSequenceClip(frames, fps=5)
-            clip.write_videofile(os.path.join(args.video_save_dir, f"ep_{episode_id}_collected_items={infos[0]['episode']['collect']}_length_{infos[0]['episode']['l']}.mp4"), codec="libx264")
+            clip.write_videofile(os.path.join(args.video_save_dir, f"ep_{episode_id}_{infos[0]['episode']['target_name']}_r={infos[0]['episode']['r']}.mp4"), codec="libx264")
         
         if infos[0]['episode']['collect'] == len(single_env.foods):
             average_sr += 1
-
-    print(f"Average SR: {average_sr / args.total_episodes}")
-    print(f"Average Reward {running_rewards / args.total_episodes}")
-    print(f"Average Collected Items: {collected_items / args.total_episodes}")
-    print(f"Average Length: {running_length / args.total_episodes}")
+    with open(os.path.join(args.saved_dir, "score.txt"), "a") as log_file:
+        print(f"Average Reward {running_rewards / args.total_episodes}", file=log_file)
+        print(f"Average SR: {collected_items / args.total_episodes}", file=log_file)
+        print(f"Average Length: {running_length / args.total_episodes}", file=log_file)
+    
     envs.close()
     # writer.close()
