@@ -11,7 +11,7 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-NUM_FOODS = 4  # Number of foods
+NUM_FOODS = 6  # Number of foods
 ENERGY_FACTOR = 2
 NUM_ACTIONS = 5
 
@@ -37,15 +37,16 @@ step_punishment = False
 class Environment(ParallelEnv):
     metadata = {"name": "multiagent_pickup"}
     def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, seed=42, agent_visible=True,
-                food_ener_fully_visible=True):
+                food_ener_fully_visible=True, identical_item_obs=False):
         np.random.seed(seed)
         self.use_message = use_message
         self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 7
+        self.grid_size = 12
         self.image_size = 5
         self.num_channels = 2
+        self.identical_item_obs = identical_item_obs
         self.n_words = n_words
         self.torch_order = torch_order
         self.truncated = {i:truncated for i in range(num_agents)}
@@ -66,10 +67,12 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.reward_scale = 10 # normalize reward
-        self.energy_unit = 25
-        self.energy_list = [(i+1)*self.energy_unit for i in range(10)] # each food item will have one of these energy scores, assigned randomly.
+        self.energy_unit = 5
+        self.start_steps = 0
+        self.last_steps = 50
+        self.energy_list = [(i+1)*self.energy_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
         self.food_ener_fully_visible = food_ener_fully_visible
-        self.max_steps = 20
+        self.max_steps = 30
         self.food_type2name =  {
                                     1: "spinach",
                                     2: "watermelon",
@@ -103,12 +106,13 @@ class Environment(ParallelEnv):
         #  position, food_type, id)
         self.selected_energy = np.random.choice(self.energy_list, size=NUM_FOODS, replace=False)
         self.target_food_id = np.argmax(self.selected_energy)
-        self.energy_visible_to_agent = np.random.choice([0,0,1,1], size=NUM_FOODS, replace=False)
+        self.energy_visible_to_agent = np.random.choice([0]* (NUM_FOODS//2) + [1]*(NUM_FOODS//2), size=NUM_FOODS, replace=False)
         self.foods = [Food(position=self.random_food_position(), 
                             food_type = food_id+1,
                             id=food_id,
                             energy_score=self.selected_energy[food_id],
-                            visible_to_agent=self.energy_visible_to_agent[food_id]) for food_id in range(NUM_FOODS)
+                            visible_to_agent=self.energy_visible_to_agent[food_id],
+                            identical_item_obs=self.identical_item_obs) for food_id in range(NUM_FOODS)
                     ]
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
@@ -361,6 +365,7 @@ class Environment(ParallelEnv):
                                 "collect": len(self.collected_foods),
                                 "success": success,
                                 "target_name": self.target_name,
+                                "food_scores": {self.food_type2name[f.food_type]: f.energy_score for f in self.foods},
                                 },
                             }
     
@@ -429,7 +434,7 @@ class EnvAgent:
 
 
 class Food:
-    def __init__(self, position, food_type, id, energy_score, visible_to_agent):
+    def __init__(self, position, food_type, id, energy_score, visible_to_agent, identical_item_obs):
         self.type_to_strength_map = {
                                     1:6, # Spinach
                                     2:6,  # Watermelon
@@ -438,26 +443,39 @@ class Food:
                                     5:6,  # Pig
                                     6:6 # Cattle
                                     }
+        self.identical_item_obs = identical_item_obs
         self.position = position
         self.food_type = food_type
         self.strength_required = self.type_to_strength_map[food_type]
         self.carried = [] # keep all agents that already picked up this food
         self.pre_carried = [] # keep all agents that try to pick up this food, no need to be successful
-        self.attribute = self.generate_attributes(food_type)
         self.energy_score = energy_score
         self.id = id
         self.done = False
         self.reduced_strength = 0
         self.visible_to_agent = visible_to_agent
+        self.attribute = self.generate_attributes(food_type)
+        
 
     def generate_attributes(self, food_type):
-        attribute_mapping = {
-            1: [30], # Spinach
-            2: [60], # Watermelon
-            3: [90], # Strawberry
-            4: [120], # Chicken
-            5: [150], # Pig
-            6: [180], # Cattle
+        if self.identical_item_obs:
+            attribute_mapping = {
+                1: [30], # Spinach
+                2: [30], # Watermelon
+                3: [30], # Strawberry
+                4: [30], # Chicken
+                5: [30], # Pig
+                6: [30], # Cattle
 
-        }
+            }
+        else:
+            attribute_mapping = {
+                1: [30], # Spinach
+                2: [60], # Watermelon
+                3: [90], # Strawberry
+                4: [120], # Chicken
+                5: [150], # Pig
+                6: [180], # Cattle
+
+            }
         return np.array(attribute_mapping.get(food_type, [1, 1, 1, 1]))

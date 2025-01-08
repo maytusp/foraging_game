@@ -25,6 +25,7 @@ from models_v2 import PPOLSTMCommAgent
 @dataclass
 class Args:
     ckpt_path = "checkpoints/4jan_ppo_comm_ps_pickup_high/model_step_1B.pt"
+    ckpt_path2 = "checkpoints/4jan_ppo_comm_ps_pickup_high/model_step_972M.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,7 +34,7 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/pickup_high/25to250/seed1/ppo_ps_comm_pickup_high_1B/ood/"
+    saved_dir = "logs/pickup_high/25to250/seed1/ppo_ps_comm_pickup_high_1B/no_ps/"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
     ablate_message = False
@@ -41,6 +42,8 @@ class Args:
     agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
+    zero_memory = False
+    memory_transfer = False
 
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -79,17 +82,22 @@ if __name__ == "__main__":
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
     envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
 
-    agent = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
-    agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
-    agent.eval()
+    agent1 = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
+    agent1.load_state_dict(torch.load(args.ckpt_path, map_location=device))
+    agent1.eval()
+
+    # Separated Network (for debug only, not necessary)
+    agent2 = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
+    agent2.load_state_dict(torch.load(args.ckpt_path2, map_location=device))
+    agent2.eval()
 
 
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
     next_lstm_state = (
-        torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
-        torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
+        torch.zeros(agent1.lstm.num_layers, num_agents, agent1.lstm.hidden_size).to(device),
+        torch.zeros(agent1.lstm.num_layers, num_agents, agent1.lstm.hidden_size).to(device),
     )
     average_sr = 0
     collected_items = 0
@@ -97,6 +105,7 @@ if __name__ == "__main__":
     running_length = 0
     next_obs_dict, _ = envs.reset()
     next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
+
     next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
     for episode_id in range(1, args.total_episodes + 1):
         energy_obs = {"agent0": set(), "agent1": set()}
@@ -106,8 +115,8 @@ if __name__ == "__main__":
         ep_step = 0
         frames = []
         next_lstm_state = (
-            torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
-            torch.zeros(agent.lstm.num_layers, num_agents, agent.lstm.hidden_size).to(device),
+            torch.zeros(agent1.lstm.num_layers, num_agents, agent1.lstm.hidden_size).to(device),
+            torch.zeros(agent1.lstm.num_layers, num_agents, agent1.lstm.hidden_size).to(device),
         )
         while not next_done[0]:
             next_obs_arr = next_obs.detach().cpu().numpy()
@@ -117,7 +126,7 @@ if __name__ == "__main__":
                 single_env = envs.vec_envs[0].unwrapped.par_env
                 frame = visualize_environment(single_env, ep_step)
                 frames.append(frame.transpose((1, 0, 2)))
-            
+
             with torch.no_grad():
                 if args.ablate_message:
                     if args.ablate_type == "zero":
@@ -126,9 +135,35 @@ if __name__ == "__main__":
                         next_r_messages = torch.randint(0, 10, next_r_messages.shape)
                     else:
                         raise Exception("only zero and noise are allowed")
+                
+                (h1,c1) = (next_lstm_state[0][:,0,:].unsqueeze(dim=1), next_lstm_state[1][:,0,:].unsqueeze(dim=1))
+                (h2,c2) = (next_lstm_state[0][:,1,:].unsqueeze(dim=1), next_lstm_state[1][:,1,:].unsqueeze(dim=1))
 
-                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners, next_r_messages), 
-                                                                                                    next_lstm_state, next_done)
+
+                action1, _, _, s_message1, _, _, _, (h1, c1) = agent1.get_action_and_value((next_obs[0].unsqueeze(0),
+                                                                                            next_locs[0].unsqueeze(0), next_eners[0].unsqueeze(0),
+                                                                                            next_r_messages[0].unsqueeze(0)),
+                                                                                            (h1,c1), next_done[0])
+                action2, _, _, s_message2, _, _, _, (h2, c2) = agent2.get_action_and_value((next_obs[1].unsqueeze(0),
+                                                                                            next_locs[1].unsqueeze(0), next_eners[1].unsqueeze(0),
+                                                                                            next_r_messages[1].unsqueeze(0)),
+                                                                                            (h2,c2), next_done[1])
+
+                action = torch.cat((action1, action2), dim=0)
+                s_message = torch.cat((s_message1, s_message2), dim=0)
+                if args.memory_transfer:
+                    h2 = torch.tensor(h1)
+                    c2 = torch.tensor(c1)
+                new_h = torch.cat((h1, h2), dim=1)
+                new_c = torch.cat((c1, c2), dim=1)
+                next_lstm_state = (new_h, new_c)
+                if args.zero_memory:
+                    next_lstm_state = (
+                        torch.zeros(agent1.lstm.num_layers, num_agents, agent1.lstm.hidden_size).to(device),
+                        torch.zeros(agent1.lstm.num_layers, num_agents, agent1.lstm.hidden_size).to(device),
+                    )
+                
+
                 # print(f"step {ep_step} agent_actions = {action}")
             env_action, env_message = action.cpu().numpy(), s_message.cpu().numpy()
             next_obs_dict, reward, terminations, truncations, infos = envs.step({"action": env_action, "message": env_message})
