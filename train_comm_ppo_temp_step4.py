@@ -24,7 +24,7 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_comm_pickup_highv2"
+    save_dir = "checkpoints/ppo_ps_comm_pickup_highv2_step4"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"

@@ -24,13 +24,13 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_comm_pickup_highv2"
+    save_dir = "checkpoints/ppo_ps_comm_pickup_highv2_step8"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm_step4"
+    exp_name = "ppo_ps_comm_step8"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -57,7 +57,7 @@ class Args:
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 4
+    num_steps: int = 8
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
