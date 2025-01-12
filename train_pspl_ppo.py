@@ -47,7 +47,7 @@ class Args:
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
-    fully_visible_score = True
+    fully_visible_score = False
     """Fully visible food highest score for pretraining"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
