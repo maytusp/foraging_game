@@ -1,4 +1,5 @@
-# Edit: 20Dec2024
+# Created 10 Jan 2025
+# Add positive signalling and positive listening losses, adopted from pseudo code in https://arxiv.org/pdf/1912.05676
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
 import random
@@ -16,19 +17,21 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_energy_asym import *
+from environment_pickup_high_simple import *
 from utils import *
-from models import PPOLSTMAgent, PPOLSTMCommAgent
-
+# from models import PPOLSTMAgent, PPOLSTMCommAgent
+from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_energy_asym"
+    save_dir = "checkpoints/debug_pspl"
     os.makedirs(save_dir, exist_ok=True)
+    load_pretrained = False
+    ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "energy_asymmetry"
+    exp_name = "ppo_ps_comm_step4"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -36,25 +39,26 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ENERGY_ASYM_PPO_PS"
+    wandb_project_name: str = "pickup_highv2"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
-
+    fully_visible_score = True
+    """Fully visible food highest score for pretraining"""
     # Algorithm specific arguments
-    env_id: str = "Energy Asymmetry"
+    env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
     total_timesteps: int = int(1e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 128
+    num_envs: int = 8
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 10
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -72,15 +76,15 @@ class Args:
     """the surrogate clipping coefficient"""
     clip_vloss: bool = True
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
-    ent_coef: float = 0.03 # ori 0.01
-    """coefficient of the entropy"""
+    ent_coef: float = 0.01 # ori 0.01
+    """coefficient of the action_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     """number of action"""
-    num_channels = 1
+    num_channels = 2
     """number of channels in observation (non rgb case)"""
     num_obs_grid = 5
     """number of observation grid"""
@@ -92,6 +96,10 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
+    positive_signalling = True
+    positive_listening = True
+    target_entropy = 0.8
+    message_ent_coef = 0.1
 
 
 
@@ -128,28 +136,33 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    env = Environment()
+    env = Environment(use_message=True, food_ener_fully_visible=args.fully_visible_score)
     grid_size = (env.image_size, env.image_size)
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
-    num_actions = env.action_space(env.possible_agents[0]).n
+    # print("env.action_space(env.possible_agents[0])", env.action_space(env.possible_agents[0]))
+    num_actions = env.action_space(env.possible_agents[0])['action'].n
     observation_size = env.observation_space(env.possible_agents[0]).shape
 
     # Vectorise env
-    # env = ss.clip_reward_v0(env, lower_bound=-1, upper_bound=1)
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
     envs = ss.concat_vec_envs_v1(envs, args.num_envs // num_agents, num_cpus=0, base_class="gymnasium")
 
 
-    agent = PPOLSTMAgent(num_actions).to(device)
+    agent = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
+    if args.load_pretrained:
+        agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device)
-    locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device)
-    eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device)
-    actions = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
+    obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device) # obs: vision
+    locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device) # obs: location
+    eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device) # obs: energy
+    r_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # obs: received message
+    actions = torch.zeros((args.num_steps, args.num_envs)).to(device) # action: physical action
+    s_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # action: sent message
+    action_logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
+    message_logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
     dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
     values = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -158,7 +171,8 @@ if __name__ == "__main__":
     global_step = 0
     start_time = time.time()
     next_obs_dict, _ = envs.reset(seed=args.seed)
-    next_obs, next_locs, next_eners = extract_dict(next_obs_dict, device)
+    next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
+    next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
     next_done = torch.zeros(args.num_envs).to(device)
     next_lstm_state = (
         torch.zeros(agent.lstm.num_layers, args.num_envs, agent.lstm.hidden_size).to(device),
@@ -178,22 +192,34 @@ if __name__ == "__main__":
             obs[step] = next_obs
             locs[step] = next_locs
             eners[step] = next_eners
+            r_messages[step] = next_r_messages.squeeze()
             dones[step] = next_done
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners), next_lstm_state, next_done)
+                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, 
+                                                                                                                        next_locs, next_eners, 
+                                                                                                                        next_r_messages), 
+                                                                                                                        next_lstm_state, 
+                                                                                                                        next_done)
                 values[step] = value.flatten()
+
+            # print(f"action {action.shape}")
+            # print(f"s_message {s_message.shape}")
             actions[step] = action
-            logprobs[step] = logprob
+            s_messages[step] = s_message
+            action_logprobs[step] = action_logprob
+            message_logprobs[step] = message_logprob
+            
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            env_action = action.cpu().numpy()
-            next_obs_dict, reward, terminations, truncations, infos = envs.step(env_action)
-            next_obs, next_locs, next_eners = extract_dict(next_obs_dict, device)
+            env_action, env_message = action.cpu().numpy(), s_message.cpu().numpy()
+            next_obs_dict, reward, terminations, truncations, infos = envs.step({"action": env_action, "message": env_message})
+            next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
             next_done = np.logical_or(terminations, truncations)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
+            next_r_messages = torch.tensor(next_r_messages).to(device)
 
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
                 save_path = os.path.join(args.save_dir, f"model_step_{global_step}.pt")
@@ -211,7 +237,7 @@ if __name__ == "__main__":
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(
-                (next_obs, next_locs, next_eners),
+                (next_obs, next_locs, next_eners, next_r_messages),
                 next_lstm_state,
                 next_done,
             ).reshape(1, -1)
@@ -229,10 +255,13 @@ if __name__ == "__main__":
             returns = advantages + values
 
         # flatten the batch
-        b_obs = obs.reshape((-1,args.num_channels, args.num_obs_grid, args.num_obs_grid))
+        b_obs = obs.reshape((-1, args.num_channels, args.num_obs_grid, args.num_obs_grid))
         b_locs = locs.reshape(-1, 2)
         b_eners = eners.reshape(-1, 1)
-        b_logprobs = logprobs.reshape(-1)
+        b_r_messages = r_messages.reshape(-1)
+        b_action_logprobs = action_logprobs.reshape(-1)
+        b_s_messages = s_messages.reshape(-1)
+        b_message_logprobs = message_logprobs.reshape(-1)
         b_actions = actions.reshape((-1))
         b_dones = dones.reshape(-1)
         b_advantages = advantages.reshape(-1)
@@ -243,40 +272,56 @@ if __name__ == "__main__":
         assert args.num_envs % args.num_minibatches == 0
         envsperbatch = args.num_envs // args.num_minibatches
         envinds = np.arange(args.num_envs)
-        flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs)
+        flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs) # (T, B)
+        action_clipfracs = []
+        message_clipfracs = []
 
-        clipfracs = []
         for epoch in range(args.update_epochs):
-
-            np.random.shuffle(envinds)
+            # np.random.shuffle(envinds) #TODO comment in
+            # For PS
+            message_avg_prob = []
             for start in range(0, args.num_envs, envsperbatch):
                 end = start + envsperbatch
                 mbenvinds = envinds[start:end]
                 mb_inds = flatinds[:, mbenvinds].ravel("F")  # be really careful about the index
-
-                _, newlogprob, entropy, newvalue, _ = agent.get_action_and_value(
-                     (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds]), 
+                print(f"initial_lstm_state {initial_lstm_state[0].shape}")
+                print(f"dones {b_dones[mb_inds]}")
+                _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(
+                    (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds], b_r_messages[mb_inds]),
                     (initial_lstm_state[0][:, mbenvinds], initial_lstm_state[1][:, mbenvinds]),
                     b_dones[mb_inds],
                     b_actions.long()[mb_inds],
+                    b_s_messages.long()[mb_inds],
                 )
-                logratio = newlogprob - b_logprobs[mb_inds]
-                ratio = logratio.exp()
+                action_logratio = new_action_logprob - b_action_logprobs[mb_inds]
+                action_ratio = action_logratio.exp()
+
+                message_logratio = new_message_logprob - b_message_logprobs[mb_inds]
+                message_ratio = message_logratio.exp()
 
                 with torch.no_grad():
-                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    old_approx_kl = (-logratio).mean()
-                    approx_kl = ((ratio - 1) - logratio).mean()
-                    clipfracs += [((ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
+                    # calculate action_approx_kl http://joschu.net/blog/kl-approx.html
+                    old_action_approx_kl = (-action_logratio).mean()
+                    action_approx_kl = ((action_ratio - 1) - action_logratio).mean()
+                    action_clipfracs += [((action_ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
+
+                    old_message_approx_kl = (-message_logratio).mean()
+                    message_approx_kl = ((message_ratio - 1) - message_logratio).mean()
+                    message_clipfracs += [((message_ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
 
                 mb_advantages = b_advantages[mb_inds]
                 if args.norm_adv:
                     mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
                 # Policy loss
-                pg_loss1 = -mb_advantages * ratio
-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
+                pg_loss1 = -mb_advantages * action_ratio
+                pg_loss2 = -mb_advantages * torch.clamp(action_ratio, 1 - args.clip_coef, 1 + args.clip_coef)
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+                # Message loss
+                mg_loss1 = -mb_advantages * message_ratio
+                mg_loss2 = -mb_advantages * torch.clamp(message_ratio, 1 - args.clip_coef, 1 + args.clip_coef)
+                mg_loss = torch.max(mg_loss1, mg_loss2).mean()
 
                 # Value loss
                 newvalue = newvalue.view(-1)
@@ -293,15 +338,30 @@ if __name__ == "__main__":
                 else:
                     v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
-                entropy_loss = entropy.mean()
-                loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
+
+
+                
+
+                action_entropy_loss = action_entropy.mean()
+                message_entropy_loss = (message_entropy.mean() - args.target_entropy) ** 2
+                loss = pg_loss + mg_loss - args.ent_coef * action_entropy_loss + v_loss * args.vf_coef
+
+                # TODO Positive Signalling Loss
+                if args.positive_signalling:
+                    new_message_prob = torch.exp(new_message_logprob)
+                    print(f"new_message_prob {new_message_prob.shape}")
+                    # message_avg_prob = new_message_prob.mean(dim=1)
+                    
+                    # loss += 
+                
+                # TODO Positive Listening Loss
 
                 optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
                 optimizer.step()
 
-            if args.target_kl is not None and approx_kl > args.target_kl:
+            if args.target_kl is not None and action_approx_kl > args.target_kl:
                 break
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
@@ -311,11 +371,16 @@ if __name__ == "__main__":
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
         writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-        writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-        writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-        writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-        writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
+        writer.add_scalar("losses/action_loss", pg_loss.item(), global_step)
+        writer.add_scalar("losses/message_loss", mg_loss.item(), global_step)
+        writer.add_scalar("losses/action_entropy", action_entropy_loss.item(), global_step)
+        writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)
+        writer.add_scalar("losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
+        writer.add_scalar("losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
+        writer.add_scalar("losses/action_approx_kl", action_approx_kl.item(), global_step)
+        writer.add_scalar("losses/message_approx_kl", message_approx_kl.item(), global_step)
+        writer.add_scalar("losses/action_clipfrac", np.mean(action_clipfracs), global_step)
+        writer.add_scalar("losses/message__clipfrac", np.mean(message_clipfracs), global_step)
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)

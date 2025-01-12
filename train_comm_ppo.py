@@ -1,4 +1,4 @@
-# Edit: 20Dec2024
+# Edit: 20Dec2024 
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
 import random
@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup_high import *
+from environment_pickup_high_easy import *
 from utils import *
 # from models import PPOLSTMAgent, PPOLSTMCommAgent
 from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
@@ -24,13 +24,13 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_comm_pickup_highv2"
+    save_dir = "checkpoints/12jan/ppo_ps_comm_pickup_high_easy"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm_step4"
+    exp_name = "ppo_ps_comm"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -40,7 +40,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_highv2"
+    wandb_project_name: str = "12jan_pickup_high_easy"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -273,7 +273,7 @@ if __name__ == "__main__":
             for start in range(0, args.num_envs, envsperbatch):
                 end = start + envsperbatch
                 mbenvinds = envinds[start:end]
-                mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
+                mb_inds = flatinds[:, mbenvinds].ravel("F")  # be really careful about the index
 
                 _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(
                     (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds], b_r_messages[mb_inds]),

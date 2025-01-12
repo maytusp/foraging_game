@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environment_pickup_high import Environment
+from environment_pickup_high_both_low_value import Environment
 from utils import *
 from models_v2 import PPOLSTMCommAgent
 
@@ -33,11 +33,11 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/pickup_high/25to250/seed1/ppo_ps_comm_pickup_high_1B/ood/"
+    saved_dir = "logs/pickup_high/25to250/seed1/ppo_ps_comm_pickup_high_1B/fixed_value_low/"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
     ablate_message = False
-    ablate_type = "noise" # zero, noise
+    ablate_type = "zero" # zero, noise
     agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
