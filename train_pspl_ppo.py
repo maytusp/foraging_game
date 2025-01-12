@@ -283,7 +283,7 @@ if __name__ == "__main__":
             for start in range(0, args.num_envs, envsperbatch):
                 end = start + envsperbatch
                 mbenvinds = envinds[start:end]
-                mb_inds = flatinds[:, mbenvinds].ravel("F")  # be really careful about the index
+                mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
                 print(f"initial_lstm_state {initial_lstm_state[0].shape}")
                 print(f"dones {b_dones[mb_inds]}")
                 _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(

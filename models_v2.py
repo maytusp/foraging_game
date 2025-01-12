@@ -135,7 +135,7 @@ class PPOLSTMCommAgent(nn.Module):
         self.critic = layer_init(nn.Linear(128, 1), std=1)
         self.message_head = layer_init(nn.Linear(128, n_words), std=0.01)
 
-    def get_states(self, input, lstm_state, done):
+    def get_states(self, input, lstm_state, done, tracks=None):
         batch_size = lstm_state[0].shape[1]
         image, location, energy, message = input
         image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
@@ -152,6 +152,8 @@ class PPOLSTMCommAgent(nn.Module):
         # LSTM logic
         hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
         done = done.reshape((-1, batch_size))
+        if tracks is not None:
+            tracks = tracks.reshape((-1, batch_size))
         new_hidden = []
         for h, d in zip(hidden, done):
             h, lstm_state = self.lstm(
@@ -169,9 +171,9 @@ class PPOLSTMCommAgent(nn.Module):
         hidden, _ = self.get_states(x, lstm_state, done)
         return self.critic(hidden)
 
-    def get_action_and_value(self, input, lstm_state, done, action=None, message=None):
+    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None):
         image, location, energy, received_message = input
-        hidden, lstm_state = self.get_states((image, location, energy, received_message), lstm_state, done)
+        hidden, lstm_state = self.get_states((image, location, energy, received_message), lstm_state, done, tracks)
 
         action_logits = self.actor(hidden)
         action_probs = Categorical(logits=action_logits)

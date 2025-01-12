@@ -24,7 +24,7 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/12jan/ppo_ps_comm_pickup_high_easy"
+    save_dir = "checkpoints/12jan/sanity_check"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
@@ -38,7 +38,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "12jan_index_problem_fixed"
     """the wandb's project name"""
@@ -55,9 +55,9 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 128
+    num_envs: int = 24
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 24
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -259,6 +259,7 @@ if __name__ == "__main__":
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
+        tracks = torch.tensor(np.array([int(str(i)+str(j)) for j in range(args.num_steps) for i in range(args.num_envs)]))
 
         # Optimizing the policy and value network
         assert args.num_envs % args.num_minibatches == 0
@@ -273,7 +274,7 @@ if __name__ == "__main__":
             for start in range(0, args.num_envs, envsperbatch):
                 end = start + envsperbatch
                 mbenvinds = envinds[start:end]
-                mb_inds = flatinds[:, mbenvinds].ravel("F")  # be really careful about the index
+                mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
 
                 _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(
                     (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds], b_r_messages[mb_inds]),
@@ -281,6 +282,7 @@ if __name__ == "__main__":
                     b_dones[mb_inds],
                     b_actions.long()[mb_inds],
                     b_s_messages.long()[mb_inds],
+                    tracks[mb_inds],
                 )
                 action_logratio = new_action_logprob - b_action_logprobs[mb_inds]
                 action_ratio = action_logratio.exp()
