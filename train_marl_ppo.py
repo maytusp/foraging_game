@@ -48,7 +48,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Energy Asymmetry"
     """the id of the environment"""
-    total_timesteps: int = int(1e8)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
