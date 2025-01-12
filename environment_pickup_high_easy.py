@@ -37,7 +37,7 @@ step_punishment = False
 class Environment(ParallelEnv):
     metadata = {"name": "multiagent_pickup"}
     def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, seed=42, agent_visible=True,
-                food_ener_fully_visible=True, identical_item_obs=False):
+                food_ener_fully_visible=False, identical_item_obs=False):
         np.random.seed(seed)
         self.use_message = use_message
         self.agent_visible = agent_visible

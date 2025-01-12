@@ -72,7 +72,7 @@ if __name__ == "__main__":
     NUM_EPISODES = 3
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environment_pickup_high import *
+    from environment_pickup_high_easy import *
     # from environment import *
     env = Environment()
     clock = pygame.time.Clock()
