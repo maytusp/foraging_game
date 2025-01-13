@@ -171,7 +171,7 @@ class PPOLSTMCommAgent(nn.Module):
         hidden, _ = self.get_states(x, lstm_state, done)
         return self.critic(hidden)
 
-    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None):
+    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None, return_message_pmf=False):
         image, location, energy, received_message = input
         hidden, lstm_state = self.get_states((image, location, energy, received_message), lstm_state, done, tracks)
 
@@ -182,7 +182,11 @@ class PPOLSTMCommAgent(nn.Module):
 
         message_logits = self.message_head(hidden)
         message_probs = Categorical(logits=message_logits)
+        message_pmf = nn.Softmax(dim=1)(message_logits) # probability mass function of message
+        # For positive signalling and listening
         if message is None:
             message = message_probs.sample()
-
-        return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state
+        if return_message_pmf:
+            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, message_pmf
+        else:
+            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state

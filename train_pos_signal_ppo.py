@@ -25,13 +25,13 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/debug_pspl"
+    save_dir = "checkpoints/pickup_high_moderate/ppo_ps_pos_signal"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm_step4"
+    exp_name = "ppo_ps_positive_signalling"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -41,7 +41,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_highv2"
+    wandb_project_name: str = "pickup_high"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
