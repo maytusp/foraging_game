@@ -171,22 +171,34 @@ class PPOLSTMCommAgent(nn.Module):
         hidden, _ = self.get_states(x, lstm_state, done)
         return self.critic(hidden)
 
-    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None, return_message_pmf=False):
+    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None, pos_sig=False, pos_lis=False):
         image, location, energy, received_message = input
         hidden, lstm_state = self.get_states((image, location, energy, received_message), lstm_state, done, tracks)
 
         action_logits = self.actor(hidden)
         action_probs = Categorical(logits=action_logits)
+        action_pmf = nn.Softmax(dim=1)(action_logits) 
         if action is None:
             action = action_probs.sample()
 
         message_logits = self.message_head(hidden)
         message_probs = Categorical(logits=message_logits)
         message_pmf = nn.Softmax(dim=1)(message_logits) # probability mass function of message
+
+        if pos_lis:
+            # create counterfactual case where message is zero
+            zero_message = torch.zeros_like(received_message).to(received_message.device)
+            hidden_cf, _ = self.get_states((image, location, energy, zero_message), lstm_state, done, tracks)
+            action_cf_logits = self.actor(hidden_cf)
+            action_cf_pmf = nn.Softmax(dim=1)(action_cf_logits) 
         # For positive signalling and listening
         if message is None:
             message = message_probs.sample()
-        if return_message_pmf:
+        if pos_sig and not(pos_lis):
             return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, message_pmf
+        elif pos_lis and not(pos_sig):
+            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, action_pmf, action_cf_pmf
+        elif pos_sig and pos_lis: 
+            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, action_pmf, action_cf_pmf, message_pmf
         else:
             return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state

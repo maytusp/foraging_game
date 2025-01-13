@@ -25,13 +25,13 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/debug_pspl"
+    save_dir = "checkpoints/ppo_pspl_pickup_high_easy"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm_step4"
+    exp_name = "ppo_pspl_pickup_high_easy"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -41,7 +41,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_highv2"
+    wandb_project_name: str = "12jan_pickup_high"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -56,9 +56,9 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 4
+    num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 13
+    num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -286,13 +286,15 @@ if __name__ == "__main__":
                 mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
                 # print(f"initial_lstm_state {initial_lstm_state[0].shape}")
                 # print(f"dones {b_dones[mb_inds]}")
-                _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _, message_pmf = agent.get_action_and_value(
+                _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _, action_pmf, action_cf_pmf, message_pmf = \
+                    agent.get_action_and_value(
                     (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds], b_r_messages[mb_inds]),
                     (initial_lstm_state[0][:, mbenvinds], initial_lstm_state[1][:, mbenvinds]),
                     b_dones[mb_inds],
                     b_actions.long()[mb_inds],
                     b_s_messages.long()[mb_inds],
-                    return_message_pmf=True,
+                    pos_sig=args.positive_signalling,
+                    pos_lis=args.positive_listening,
                 )
                 action_logratio = new_action_logprob - b_action_logprobs[mb_inds]
                 action_ratio = action_logratio.exp()
@@ -346,17 +348,10 @@ if __name__ == "__main__":
 
                 # TODO Positive Signalling Loss
                 if args.positive_signalling:
-                    # print(f"message_entropy {message_entropy.shape}")
-                    # print(f"new_message_logprob {new_message_logprob.shape}")
                     message_cond_entropy_loss = (message_entropy - args.target_entropy).mean() ** 2
-
                     message_pmf_mean = message_pmf.mean(dim=0)
-                    # print(f"message_pmf_mean {message_pmf_mean}")
-                    message_undond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
-
-                    message_entropy_loss = message_cond_entropy_loss - message_undond_entropy_loss
-                    # print(f"message_undond_entropy_loss {message_undond_entropy_loss}")
-                    # print(f"message_cond_entropy_loss {message_cond_entropy_loss}")
+                    message_uncond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
+                    message_entropy_loss = message_cond_entropy_loss - message_uncond_entropy_loss
 
                 elif not(args.positive_signalling):
                     message_entropy_loss = message_entropy.mean()
@@ -366,8 +361,13 @@ if __name__ == "__main__":
                 pl_loss = 0
                 # TODO Positive Listening Loss
                 if args.positive_listening:
-                    pl_loss += 0
-                loss += message_entropy_loss + pl_loss
+                    action_pmf_no_grad = action_pmf.detach()
+                    action_cf_pmf_no_grad = action_cf_pmf.detach()
+                    # (4096, 5)
+                    ce_term = - (action_pmf_no_grad * torch.log(action_cf_pmf)).mean(dim=0).sum()
+                    pl_term = - torch.abs(action_pmf-action_cf_pmf_no_grad).mean(dim=0).sum()
+                    pl_loss = ce_term + pl_term
+                loss += args.message_ent_coef*(message_entropy_loss + pl_loss)
                 optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
@@ -386,9 +386,11 @@ if __name__ == "__main__":
         writer.add_scalar("losses/action_loss", pg_loss.item(), global_step)
         writer.add_scalar("losses/message_loss", mg_loss.item(), global_step)
         writer.add_scalar("losses/action_entropy", action_entropy_loss.item(), global_step)
-        writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)
+        writer.add_scalar("losses/message_entropy", message_entropy.mean().item(), global_step)
+        writer.add_scalar("losses/message_entropy_loss", message_entropy_loss.item(), global_step)
         writer.add_scalar("losses/message_cond_entropy_loss", message_cond_entropy_loss.item(), global_step)
         writer.add_scalar("losses/message_uncond_entropy_loss", message_uncond_entropy_loss.item(), global_step)
+        writer.add_scalar("losses/pl_loss", pl_loss.item(), global_step)
         writer.add_scalar("losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
         writer.add_scalar("losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
         writer.add_scalar("losses/action_approx_kl", action_approx_kl.item(), global_step)

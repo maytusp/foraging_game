@@ -25,13 +25,13 @@ from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/pickup_high_moderate/ppo_ps_pos_signal"
+    save_dir = "checkpoints/ppo_ps_pos_signal_pickup_high_easy"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_positive_signalling"
+    exp_name = "ppo_ps_positive_signalling_pickup_high_easy"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -39,9 +39,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_high"
+    wandb_project_name: str = "12jan_pickup_high"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -56,9 +56,9 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 4
+    num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 13
+    num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -98,7 +98,7 @@ class Args:
     """the number of iterations (computed in runtime)"""
     positive_signalling = True
     positive_listening = True
-    target_entropy = 0.8
+    target_entropy = 1.2
     message_ent_coef = 0.1
 
 
@@ -352,10 +352,10 @@ if __name__ == "__main__":
 
                     message_pmf_mean = message_pmf.mean(dim=0)
                     # print(f"message_pmf_mean {message_pmf_mean}")
-                    message_undond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
+                    message_uncond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
 
-                    message_entropy_loss = message_cond_entropy_loss - message_undond_entropy_loss
-                    # print(f"message_undond_entropy_loss {message_undond_entropy_loss}")
+                    message_entropy_loss = message_cond_entropy_loss - message_uncond_entropy_loss
+                    # print(f"message_uncond_entropy_loss {message_uncond_entropy_loss}")
                     # print(f"message_cond_entropy_loss {message_cond_entropy_loss}")
 
                 elif not(args.positive_signalling):
@@ -367,7 +367,7 @@ if __name__ == "__main__":
                 # TODO Positive Listening Loss
                 if args.positive_listening:
                     pl_loss += 0
-                loss += message_entropy_loss + pl_loss
+                loss += args.message_ent_coef*(message_entropy_loss)
                 optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
@@ -386,7 +386,8 @@ if __name__ == "__main__":
         writer.add_scalar("losses/action_loss", pg_loss.item(), global_step)
         writer.add_scalar("losses/message_loss", mg_loss.item(), global_step)
         writer.add_scalar("losses/action_entropy", action_entropy_loss.item(), global_step)
-        writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)
+        writer.add_scalar("losses/message_entropy", message_entropy.mean().item(), global_step)
+        writer.add_scalar("losses/message_entropy_loss", message_entropy_loss.item(), global_step)
         writer.add_scalar("losses/message_cond_entropy_loss", message_cond_entropy_loss.item(), global_step)
         writer.add_scalar("losses/message_uncond_entropy_loss", message_uncond_entropy_loss.item(), global_step)
         writer.add_scalar("losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
