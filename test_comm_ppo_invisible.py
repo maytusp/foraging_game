@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environment_pickup_high_easy import Environment
+from environment_pickup_high_moderate import Environment
 from utils import *
 from models_v2 import PPOLSTMCommAgent
 
@@ -24,7 +24,7 @@ from models_v2 import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/ppo_ps_pos_signal_pickup_high_easy/model_step_832M.pt"
+    ckpt_path = "checkpoints/pickup_high_invisible/ppo_ps_pos_sig/model_step_499M.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,12 +33,12 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/pickup_high_easy/ppo_ps_pos_signal_zero/normal"
+    saved_dir = "logs/pickup_high_invisible/ppo_ps_pos_sig_499M_zero/normal/"
     video_save_dir = os.path.join(saved_dir, "vids")
     visualize = True
     ablate_message = True
     ablate_type = "zero" # zero, noise
-    agent_visible = True
+    agent_visible = False
     fully_visible_score = False
     identical_item_obs = False
 

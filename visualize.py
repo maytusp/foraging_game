@@ -72,9 +72,9 @@ if __name__ == "__main__":
     NUM_EPISODES = 3
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environment_pickup_high_easy import *
+    from environment_pickup_high_moderate import *
     # from environment import *
-    env = Environment()
+    env = Environment(agent_visible=False)
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
@@ -102,8 +102,8 @@ if __name__ == "__main__":
             agent_actions = list(np.array(agent_actions)-1)
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=True)
             # print("reward", rewards)
-            print(f"agent1: {observations[0]['image'][1]}")
-            print(f"agent2: {observations[1]['image'][1]}")
+            print(f"agent1: {observations[0]['image'][0]}")
+            print(f"agent2: {observations[1]['image'][0]}")
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if isinstance(dones,bool):

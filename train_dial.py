@@ -1,5 +1,4 @@
-# Created 10 Jan 2025
-# Add positive signalling and positive listening losses, adopted from pseudo code in https://arxiv.org/pdf/1912.05676
+# Edit: 20Dec2024 
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
 import random
@@ -17,21 +16,21 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup_high_easy import *
+from environment_pickup_high_dial import *
 from utils import *
 # from models import PPOLSTMAgent, PPOLSTMCommAgent
-from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
+from models_v2 import PPOLSTMDIALAgent
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_pos_signal_pickup_high_easy_ht=2e-1"
+    save_dir = "checkpoints/12jan/ppo_ps_comm_pickup_high_easy"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_positive_signalling_pickup_high_easy__ht=2e-1"
+    exp_name = "ppo_ps_comm_pickup_high_easy"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -39,9 +38,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "12jan_pickup_high"
+    wandb_project_name: str = "12jan_index_problem_fixed"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -76,7 +75,7 @@ class Args:
     """the surrogate clipping coefficient"""
     clip_vloss: bool = True
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
-    ent_coef: float = 0.01 # ori 0.01
+    ent_coef: float = 0.03 # ori 0.01
     """coefficient of the action_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -96,10 +95,6 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    positive_signalling = True
-    positive_listening = False
-    target_entropy = 0.2
-    message_ent_coef = 0.1
 
 
 
@@ -149,7 +144,7 @@ if __name__ == "__main__":
     envs = ss.concat_vec_envs_v1(envs, args.num_envs // num_agents, num_cpus=0, base_class="gymnasium")
 
 
-    agent = PPOLSTMCommAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
+    agent = PPOLSTMDIALAgent(num_actions=num_actions, num_channels=args.num_channels).to(device)
     if args.load_pretrained:
         agent.load_state_dict(torch.load(args.ckpt_path, map_location=device))
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
@@ -158,9 +153,9 @@ if __name__ == "__main__":
     obs = torch.zeros((args.num_steps, args.num_envs, args.num_channels, args.num_obs_grid, args.num_obs_grid)).to(device) # obs: vision
     locs = torch.zeros((args.num_steps, args.num_envs, 2)).to(device) # obs: location
     eners = torch.zeros((args.num_steps, args.num_envs, 1)).to(device) # obs: energy
-    r_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # obs: received message
+    r_messages = torch.zeros((args.num_steps, args.num_envs)).to(device) # obs: received message
     actions = torch.zeros((args.num_steps, args.num_envs)).to(device) # action: physical action
-    s_messages = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # action: sent message
+    s_messages = torch.zeros((args.num_steps, args.num_envs)).to(device) # action: sent message
     action_logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     message_logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -172,7 +167,7 @@ if __name__ == "__main__":
     start_time = time.time()
     next_obs_dict, _ = envs.reset(seed=args.seed)
     next_obs, next_locs, next_eners, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
-    next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
+    next_r_messages = torch.tensor(next_r_messages).to(device).float()
     next_done = torch.zeros(args.num_envs).to(device)
     next_lstm_state = (
         torch.zeros(agent.lstm.num_layers, args.num_envs, agent.lstm.hidden_size).to(device),
@@ -181,6 +176,7 @@ if __name__ == "__main__":
 
     for iteration in range(1, args.num_iterations + 1):
         initial_lstm_state = (next_lstm_state[0].clone(), next_lstm_state[1].clone())
+        initial_r_message = next_r_messages.clone()
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             frac = 1.0 - (iteration - 1.0) / args.num_iterations
@@ -197,19 +193,20 @@ if __name__ == "__main__":
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, 
-                                                                                                                        next_locs, next_eners, 
-                                                                                                                        next_r_messages), 
-                                                                                                                        next_lstm_state, 
-                                                                                                                        next_done)
+                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value(
+                                                                                                    (next_obs, next_locs, next_r_messages), 
+                                                                                                    next_lstm_state, 
+                                                                                                    next_done, 
+                                                                                                    train_mode=False,
+                                                                                                    )
                 values[step] = value.flatten()
 
             # print(f"action {action.shape}")
             # print(f"s_message {s_message.shape}")
             actions[step] = action
-            s_messages[step] = s_message
+            s_messages[step] = s_message.squeeze()
             action_logprobs[step] = action_logprob
-            message_logprobs[step] = message_logprob
+            message_logprobs[step] = message_logprob.squeeze()
             
 
             # TRY NOT TO MODIFY: execute the game and log data.
@@ -237,7 +234,7 @@ if __name__ == "__main__":
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(
-                (next_obs, next_locs, next_eners, next_r_messages),
+                (next_obs, next_locs, next_r_messages),
                 next_lstm_state,
                 next_done,
             ).reshape(1, -1)
@@ -255,45 +252,43 @@ if __name__ == "__main__":
             returns = advantages + values
 
         # flatten the batch
-        b_obs = obs.reshape((-1, args.num_channels, args.num_obs_grid, args.num_obs_grid))
-        b_locs = locs.reshape(-1, 2)
-        b_eners = eners.reshape(-1, 1)
-        b_r_messages = r_messages.reshape(-1)
+        # b_obs = obs.reshape((-1, args.num_channels, args.num_obs_grid, args.num_obs_grid))
+        # b_locs = locs.reshape(-1, 2)
+        # b_eners = eners.reshape(-1, 1)
+        # b_r_messages = r_messages.reshape(-1, 1)
         b_action_logprobs = action_logprobs.reshape(-1)
-        b_s_messages = s_messages.reshape(-1)
+        b_s_messages = s_messages.reshape(-1, 1)
         b_message_logprobs = message_logprobs.reshape(-1)
         b_actions = actions.reshape((-1))
         b_dones = dones.reshape(-1)
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
+        tracks = torch.tensor(np.array([int(str(i)+str(j)) for j in range(args.num_steps) for i in range(args.num_envs)]))
 
         # Optimizing the policy and value network
         assert args.num_envs % args.num_minibatches == 0
         envsperbatch = args.num_envs // args.num_minibatches
         envinds = np.arange(args.num_envs)
-        flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs) # (T, B)
+        flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs)
+
         action_clipfracs = []
         message_clipfracs = []
-
         for epoch in range(args.update_epochs):
             np.random.shuffle(envinds)
-            # For PS
-            message_avg_prob = []
             for start in range(0, args.num_envs, envsperbatch):
                 end = start + envsperbatch
                 mbenvinds = envinds[start:end]
                 mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
-                # print(f"initial_lstm_state {initial_lstm_state[0].shape}")
-                # print(f"dones {b_dones[mb_inds]}")
-                _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _, message_pmf = agent.get_action_and_value(
-                    (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds], b_r_messages[mb_inds]),
+                print(f"initial_r_message {initial_r_message.shape}")
+                _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(
+                    (obs[:,mbenvinds,:,:,:], locs[:, mbenvinds, :], initial_r_message[mbenvinds]),
                     (initial_lstm_state[0][:, mbenvinds], initial_lstm_state[1][:, mbenvinds]),
-                    b_dones[mb_inds],
+                    dones[:, mbenvinds],
                     b_actions.long()[mb_inds],
                     b_s_messages.long()[mb_inds],
-                    pos_sig=args.positive_signalling,
-                    pos_lis=args.positive_listening,
+                    tracks[mb_inds],
+                    train_mode=True,
                 )
                 action_logratio = new_action_logprob - b_action_logprobs[mb_inds]
                 action_ratio = action_logratio.exp()
@@ -340,35 +335,10 @@ if __name__ == "__main__":
                 else:
                     v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
-
-
                 action_entropy_loss = action_entropy.mean()
-                loss = pg_loss + mg_loss - args.ent_coef * action_entropy_loss + v_loss * args.vf_coef
+                message_entropy_loss = message_entropy.mean()
+                loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
 
-                # TODO Positive Signalling Loss
-                if args.positive_signalling:
-                    # print(f"message_entropy {message_entropy.shape}")
-                    # print(f"new_message_logprob {new_message_logprob.shape}")
-                    message_cond_entropy_loss = (message_entropy - args.target_entropy).mean() ** 2
-
-                    message_pmf_mean = message_pmf.mean(dim=0)
-                    # print(f"message_pmf_mean {message_pmf_mean}")
-                    message_uncond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
-
-                    message_entropy_loss = message_cond_entropy_loss - message_uncond_entropy_loss
-                    # print(f"message_uncond_entropy_loss {message_uncond_entropy_loss}")
-                    # print(f"message_cond_entropy_loss {message_cond_entropy_loss}")
-
-                elif not(args.positive_signalling):
-                    message_entropy_loss = message_entropy.mean()
-
-
-    
-                pl_loss = 0
-                # TODO Positive Listening Loss
-                if args.positive_listening:
-                    pl_loss += 0
-                loss += args.message_ent_coef*(message_entropy_loss)
                 optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
@@ -387,10 +357,7 @@ if __name__ == "__main__":
         writer.add_scalar("losses/action_loss", pg_loss.item(), global_step)
         writer.add_scalar("losses/message_loss", mg_loss.item(), global_step)
         writer.add_scalar("losses/action_entropy", action_entropy_loss.item(), global_step)
-        writer.add_scalar("losses/message_entropy", message_entropy.mean().item(), global_step)
-        writer.add_scalar("losses/message_entropy_loss", message_entropy_loss.item(), global_step)
-        writer.add_scalar("losses/message_cond_entropy_loss", message_cond_entropy_loss.item(), global_step)
-        writer.add_scalar("losses/message_uncond_entropy_loss", message_uncond_entropy_loss.item(), global_step)
+        writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)
         writer.add_scalar("losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
         writer.add_scalar("losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
         writer.add_scalar("losses/action_approx_kl", action_approx_kl.item(), global_step)

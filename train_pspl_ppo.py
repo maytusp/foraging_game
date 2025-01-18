@@ -364,7 +364,7 @@ if __name__ == "__main__":
                     action_pmf_no_grad = action_pmf.detach()
                     action_cf_pmf_no_grad = action_cf_pmf.detach()
                     # (4096, 5)
-                    ce_term = - (action_pmf_no_grad * torch.log(action_cf_pmf)).mean(dim=0).sum()
+                    ce_term = (action_pmf_no_grad * torch.log(action_cf_pmf)).mean(dim=0).sum()
                     pl_term = - torch.abs(action_pmf-action_cf_pmf_no_grad).mean(dim=0).sum()
                     pl_loss = ce_term + pl_term
                 loss += args.message_ent_coef*(message_entropy_loss + pl_loss)
