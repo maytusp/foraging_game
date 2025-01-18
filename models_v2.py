@@ -337,7 +337,7 @@ class PPOLSTMDIALAgent(nn.Module):
         if train_mode:
             # DRU Operation: follows https://github.com/minqi/learning-to-communicate-pytorch/
             # Regularization based on RIAL/DIAL paper (Foerster et. al.)
-            message = message_logits + torch.randn(message_logits.size()) * self.sigma
+            message = message_logits + torch.randn(message_logits.size()).to(message_logits.device) * self.sigma
             message = torch.sigmoid(message).float()
             message_probs = None
         else:
