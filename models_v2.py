@@ -280,7 +280,7 @@ class PPOLSTMDIALAgent(nn.Module):
         hidden, _ = self.get_states(x, lstm_state, done)
         return self.critic(hidden)
 
-    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None, train_mode=False):
+    def get_action_and_value(self, input, lstm_state, done, past_action=None, past_message=None, tracks=None, train_mode=False):
         # Train mode: image and location have size of (T*B, *). lstm_state has size of (1, B, N_h)
         # Interaction mode: image and location have size of (B, *) lstm_state has size of (1, B, N_h)
         # received_message has size of (B, 1)
@@ -290,8 +290,6 @@ class PPOLSTMDIALAgent(nn.Module):
         if train_mode:
             batch_size = image.shape[1]
             seq_len = image.shape[0]
-            print(f"image {image.shape}")
-            print(f"location {location.shape}")
             hiddens = []
             message = []
             message_logits = []
@@ -309,7 +307,7 @@ class PPOLSTMDIALAgent(nn.Module):
                 message.append(m)
                 message_logits.append(m_logit)
             hiddens = torch.cat(hiddens, dim=0)
-            message = torch.cat(message, dim=0)
+            # message = torch.cat(message, dim=0)
             message_logits = torch.cat(message_logits, dim=0)
             message_probs = Normal(message_logits, self.sigma)
 
@@ -320,10 +318,17 @@ class PPOLSTMDIALAgent(nn.Module):
 
         action_logits = self.actor(hiddens)
         action_probs = Categorical(logits=action_logits)
-        action_pmf = nn.Softmax(dim=1)(action_logits) 
-        if action is None:
+        action_pmf = nn.Softmax(dim=1)(action_logits)
+
+        if past_action is None:
             action = action_probs.sample()
-    
+        else:
+            action = past_action
+
+        # TODO We have to check this very carefully
+        if past_message is not(None):
+            message = past_message
+            
         return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hiddens), lstm_state
 
     def get_message(self, hidden, train_mode=False):

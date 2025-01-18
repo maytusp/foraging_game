@@ -37,10 +37,11 @@ step_punishment = False
 class Environment(ParallelEnv):
     metadata = {"name": "multiagent_pickup"}
     def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, seed=42, agent_visible=True,
-                food_ener_fully_visible=False, identical_item_obs=False):
+                food_ener_fully_visible=False, identical_item_obs=False, partner_food_visible=True):
         np.random.seed(seed)
         self.use_message = use_message
         self.agent_visible = agent_visible
+        self.partner_food_visible = partner_food_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
         self.grid_size = 7
@@ -98,7 +99,8 @@ class Environment(ParallelEnv):
         self.agent_maps = [EnvAgent(i, self.random_position(), 
                             AGENT_STRENGTH, AGENT_ENERGY, 
                             self.grid_size, self.agent_visible,
-                            self.food_ener_fully_visible) for i in range(len(self.possible_agents))]
+                            self.food_ener_fully_visible,
+                            self.partner_food_visible) for i in range(len(self.possible_agents))]
         
 
         for agent in self.agent_maps:
@@ -373,7 +375,7 @@ class Environment(ParallelEnv):
 
 # Define the classes
 class EnvAgent:
-    def __init__(self, id, position, strength, max_energy, grid_size, agent_visible, fully_visible):
+    def __init__(self, id, position, strength, max_energy, grid_size, agent_visible, fully_visible, partner_food_visible):
         self.id = id
         self.position = position
         self.strength = strength
@@ -383,6 +385,7 @@ class EnvAgent:
         self.grid_size = grid_size
         self.agent_visible = agent_visible
         self.fully_visible = fully_visible
+        self.partner_food_visible = partner_food_visible
         # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
     
     def observe(self, environment): #TODO Check this again
@@ -410,7 +413,15 @@ class EnvAgent:
                             obs_attribute = list(map(lambda x:x+33, obj.attribute)) # if food is carried
                         else:
                             obs_attribute = obj.attribute
-                        row.append(obs_attribute)
+
+                        if self.partner_food_visible:
+                            row.append(obs_attribute)
+                        else:
+                            if obj.visible_to_agent == self.id:
+                                row.append(obs_attribute)
+                            else:
+                                row.append([0])
+
 
                         # observe food's energy level
                         if self.fully_visible or obj.visible_to_agent == self.id:

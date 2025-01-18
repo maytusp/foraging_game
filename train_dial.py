@@ -24,13 +24,13 @@ from models_v2 import PPOLSTMDIALAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/12jan/ppo_ps_comm_pickup_high_easy"
+    save_dir = "checkpoints/pickup_high_invisible/ppo_dial"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
-    ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
+    ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm_pickup_high_easy"
+    exp_name = "ppo_dial"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -38,9 +38,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "12jan_index_problem_fixed"
+    wandb_project_name: str = "pickup_high_invisible"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -48,6 +48,10 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     fully_visible_score = False
     """Fully visible food highest score for pretraining"""
+    agent_visible = False
+    """Agent cannot see each other"""
+    partner_food_visible = False
+    """Agent cannot see the food that another agent sees"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
@@ -75,7 +79,7 @@ class Args:
     """the surrogate clipping coefficient"""
     clip_vloss: bool = True
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
-    ent_coef: float = 0.03 # ori 0.01
+    ent_coef: float = 0.01 # ori 0.01
     """coefficient of the action_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -131,7 +135,10 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    env = Environment(use_message=True, food_ener_fully_visible=args.fully_visible_score)
+    env = Environment(use_message=True, 
+                        food_ener_fully_visible=args.fully_visible_score,
+                        partner_food_visible=args.partner_food_visible,
+                        )
     grid_size = (env.image_size, env.image_size)
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -280,7 +287,6 @@ if __name__ == "__main__":
                 end = start + envsperbatch
                 mbenvinds = envinds[start:end]
                 mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
-                print(f"initial_r_message {initial_r_message.shape}")
                 _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(
                     (obs[:,mbenvinds,:,:,:], locs[:, mbenvinds, :], initial_r_message[mbenvinds]),
                     (initial_lstm_state[0][:, mbenvinds], initial_lstm_state[1][:, mbenvinds]),
