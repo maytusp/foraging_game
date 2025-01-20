@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "train_comm_ppo.py", line 190, in <module>
-    action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners, next_r_messages),
-  File "/Users/user/Projects/foraging_game/models.py", line 168, in get_action_and_value
-    hidden, lstm_state = self.get_states((image, location, energy, received_message), lstm_state, done)
-  File "/Users/user/Projects/foraging_game/models.py", line 147, in get_states
-    hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
-RuntimeError: shape '[-1, 128, 352]' is invalid for input of size 16384

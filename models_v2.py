@@ -248,7 +248,10 @@ class PPOLSTMDIALAgent(nn.Module):
     def get_states(self, input, lstm_state, done, tracks=None):
         batch_size = lstm_state[0].shape[1]
         image, location, message = input
-        
+
+        # reset message to zero when a new episode starts. Without this line, the last message of the previous episode will be the first message here
+        message = (1.0-done).view(-1,1) * message 
+
         image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
         location = location / self.grid_size # (L*B,2)
 
@@ -264,6 +267,8 @@ class PPOLSTMDIALAgent(nn.Module):
         if tracks is not None:
             tracks = tracks.reshape((-1, batch_size))
         new_hidden = []
+        print(f"hidden {hidden.shape}")
+        print(f"len zip {len(tuple(zip(hidden, done)))}")
         for h, d in zip(hidden, done):
             h, lstm_state = self.lstm(
                 h.unsqueeze(0),
@@ -297,6 +302,7 @@ class PPOLSTMDIALAgent(nn.Module):
             # location = location.view(seq_len, batch_size, -1)
             # print(f"image {image.shape}")
             # print(f"location {location.shape}")
+
             for t in range(seq_len):
                 hidden, lstm_state = self.get_states((image[t], location[t], received_message), lstm_state, done[t], tracks)
                 m, m_logit, _ = self.get_message(hidden, train_mode=True) # m --> (B,1)
@@ -337,7 +343,7 @@ class PPOLSTMDIALAgent(nn.Module):
         if train_mode:
             # DRU Operation: follows https://github.com/minqi/learning-to-communicate-pytorch/
             # Regularization based on RIAL/DIAL paper (Foerster et. al.)
-            message = message_logits + torch.randn(message_logits.size()) * self.sigma
+            message = message_logits + torch.randn(message_logits.size()).to(message_logits.device) * self.sigma
             message = torch.sigmoid(message).float()
             message_probs = None
         else:

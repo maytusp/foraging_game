@@ -24,13 +24,13 @@ from models_v2 import PPOLSTMDIALAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/pickup_high_invisible/ppo_dial"
+    save_dir = "checkpoints/pickup_high_invisible/ppo_dial_wo_message_pg"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_dial"
+    exp_name = "ppo_dial_wo_message_pg"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -342,8 +342,11 @@ if __name__ == "__main__":
                     v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
                 action_entropy_loss = action_entropy.mean()
-                message_entropy_loss = message_entropy.mean()
-                loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
+                # message_entropy_loss = message_entropy.mean()
+                # loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
+
+                # Remove Message Policy Gradient
+                loss = pg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -363,7 +366,7 @@ if __name__ == "__main__":
         writer.add_scalar("losses/action_loss", pg_loss.item(), global_step)
         writer.add_scalar("losses/message_loss", mg_loss.item(), global_step)
         writer.add_scalar("losses/action_entropy", action_entropy_loss.item(), global_step)
-        writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)
+        # writer.add_scalar("losses/message_entropy", message_entropy_loss.item(), global_step)
         writer.add_scalar("losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
         writer.add_scalar("losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
         writer.add_scalar("losses/action_approx_kl", action_approx_kl.item(), global_step)
