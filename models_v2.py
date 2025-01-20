@@ -267,8 +267,6 @@ class PPOLSTMDIALAgent(nn.Module):
         if tracks is not None:
             tracks = tracks.reshape((-1, batch_size))
         new_hidden = []
-        print(f"hidden {hidden.shape}")
-        print(f"len zip {len(tuple(zip(hidden, done)))}")
         for h, d in zip(hidden, done):
             h, lstm_state = self.lstm(
                 h.unsqueeze(0),
