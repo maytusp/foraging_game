@@ -59,8 +59,8 @@ class Environment(ParallelEnv):
             "energy": spaces.Box(0, 500, shape=(1,), dtype=np.float32)
             })
         if self.use_message:
-            self.single_observation_space["message"] = spaces.Box(0, 1, shape=(1,), dtype=np.float32)
-            self.single_action_space = spaces.Dict({"action":spaces.Discrete(NUM_ACTIONS), "message":spaces.Box(0, 1, shape=(1,), dtype=np.float32)})
+            self.single_observation_space["message"] = spaces.Box(0, 1, shape=(n_words,), dtype=np.float32)
+            self.single_action_space = spaces.Dict({"action":spaces.Discrete(NUM_ACTIONS), "message":spaces.Box(0, 1, shape=(n_words,), dtype=np.float32)})
         else:
             self.single_action_space = spaces.Discrete(NUM_ACTIONS)
 
@@ -122,7 +122,7 @@ class Environment(ParallelEnv):
 
         self.target_name = self.food_type2name[self.foods[self.target_food_id].food_type]
         self.collected_foods = []
-        self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
+        self.sent_message = {i:np.zeros((self.n_words,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
 
         return self.observe(), self.infos
 
@@ -207,6 +207,9 @@ class Environment(ParallelEnv):
                 agent_obs[i]['energy'] = np.array([agent.energy])
                 if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
                     agent_obs[i]['message'] = self.sent_message[i]
+                    agent_message = agent_obs[i]['message']
+                    print(f"agent message {agent_message.shape}")
+            
             # print("agent_obs", agent_obs)
             return agent_obs
 
@@ -253,6 +256,7 @@ class Environment(ParallelEnv):
             
             if self.use_message and received_message is not None:
                 self.sent_message[i] = self.extract_message(received_message, i)
+                temp = self.sent_message[i]
 
             if int_action:
                 if len(self.possible_agents)==1:
