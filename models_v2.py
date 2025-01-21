@@ -267,8 +267,8 @@ class PPOLSTMDIALAgent(nn.Module):
         if tracks is not None:
             tracks = tracks.reshape((-1, batch_size))
         new_hidden = []
-        print(f"hidden {hidden.shape}")
-        print(f"len zip {len(tuple(zip(hidden, done)))}")
+        # print(f"hidden {hidden.shape}")
+        # print(f"len zip {len(tuple(zip(hidden, done)))}")
         for h, d in zip(hidden, done):
             h, lstm_state = self.lstm(
                 h.unsqueeze(0),
@@ -334,7 +334,6 @@ class PPOLSTMDIALAgent(nn.Module):
         # TODO We have to check this very carefully
         if past_message is not(None):
             message = past_message
-            
         return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hiddens), lstm_state
 
     def get_message(self, hidden, train_mode=False):
