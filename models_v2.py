@@ -349,7 +349,8 @@ class PPOLSTMDIALAgent(nn.Module):
             message_probs = Normal(message_logits, self.sigma)
             message = message_probs.sample()
             # Discretization based on RIAL/DIAL paper (Foerster et. al.)
-            message =  (message.gt(0.5).float() - 0.5).sign().float()
+            scale = 2 * 20
+            message = torch.sigmoid((message.gt(0.5).float() - 0.5) * scale)
 
         return message, message_logits, message_probs
 
