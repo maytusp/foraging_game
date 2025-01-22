@@ -11,7 +11,7 @@ from constants import *
 from keyboard_control import *
 
 # Environment Parameters
-NUM_FOODS = 4  # Number of foods
+NUM_FOODS = 2  # Number of foods
 ENERGY_FACTOR = 2
 NUM_ACTIONS = 5
 
@@ -43,7 +43,7 @@ class Environment(ParallelEnv):
         self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
-        self.grid_size = 7
+        self.grid_size = 5
         self.image_size = 5
         self.num_channels = 2
         self.identical_item_obs = identical_item_obs
@@ -68,8 +68,8 @@ class Environment(ParallelEnv):
         self.render_mode = None
         self.reward_scale = 10 # normalize reward
         self.energy_unit = 5
-        self.start_steps = 10
-        self.last_steps = 20
+        self.start_steps = 0
+        self.last_steps = 50
         self.energy_list = [(i+1)*self.energy_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
         self.food_ener_fully_visible = food_ener_fully_visible
         self.max_steps = 20
@@ -222,8 +222,9 @@ class Environment(ParallelEnv):
         return action_map[action]
         
     def extract_message(self, message, agent_id):
-        received_message = [msg for i, msg in enumerate(message) if i != agent_id]
-        return np.array(received_message)
+        received_message = [v[1]['message'] for k, v in enumerate(message.items()) if k != agent_id]
+        received_message = np.array(received_message)
+        return received_message
 
     def normalize_reward(self, reward):
         norm_reward = {}

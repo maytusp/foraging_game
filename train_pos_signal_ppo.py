@@ -17,21 +17,20 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup_high_easy import *
+from environment_pickup_high_moderate_debug import *
 from utils import *
-# from models import PPOLSTMAgent, PPOLSTMCommAgent
 from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/ppo_ps_pos_signal_pickup_high_easy_ht=2e-1"
+    save_dir = "checkpoints/ppo_ps_pos_signal_pickup_high_moderate_debug"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
-    ckpt_path = "checkpoints/ppo_ps_comm_v2_pickup_high_stage1/final_model.pt"
+    ckpt_path = "checkpoints/ppo_pos_signal_/final_model.pt"
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_positive_signalling_pickup_high_easy__ht=2e-1"
+    exp_name = "ppo_ps_pos_signal_pickup_high_moderate_debug"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -41,7 +40,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "12jan_pickup_high"
+    wandb_project_name: str = "pickup_high"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""

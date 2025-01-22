@@ -222,8 +222,10 @@ class Environment(ParallelEnv):
         return action_map[action]
         
     def extract_message(self, message, agent_id):
-        received_message = [msg for i, msg in enumerate(message) if i != agent_id]
-        return np.array(received_message)
+        received_message = [v[1]['message'] for k, v in enumerate(message.items()) if k != agent_id]
+        received_message = np.array(received_message)
+        return received_message
+
 
     def normalize_reward(self, reward):
         norm_reward = {}

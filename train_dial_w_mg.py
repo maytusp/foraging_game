@@ -16,20 +16,21 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup_high_dial_debug import *
+from environment_pickup_high_dial import *
 from utils import *
+# from models import PPOLSTMAgent, PPOLSTMCommAgent
 from models_v2 import PPOLSTMDIALAgent
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/pickup_high_invisible/ppo_dial_debug"
+    save_dir = "checkpoints/pickup_high_invisible/ppo_dial"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_dial_debug"
+    exp_name = "ppo_dial"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -39,7 +40,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_high_invisible_debug"
+    wandb_project_name: str = "pickup_high_invisible"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -60,7 +61,7 @@ class Args:
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 20
+    num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -135,7 +136,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     env = Environment(use_message=True, 
-                        agent_visible=args.agent_visible,
                         food_ener_fully_visible=args.fully_visible_score,
                         partner_food_visible=args.partner_food_visible,
                         )
@@ -345,7 +345,6 @@ if __name__ == "__main__":
                 # message_entropy_loss = message_entropy.mean()
                 # loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
 
-                # Remove Message Policy Gradient
                 loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
 
                 optimizer.zero_grad()

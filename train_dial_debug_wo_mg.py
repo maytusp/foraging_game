@@ -23,13 +23,13 @@ from models_v2 import PPOLSTMDIALAgent
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/pickup_high_invisible/ppo_dial_debug"
+    save_dir = "checkpoints/pickup_high_invisible/ppo_dial_wo_mg_debug"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_dial_debug"
+    exp_name = "ppo_dial_wo_mg_debug"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -346,7 +346,7 @@ if __name__ == "__main__":
                 # loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
 
                 # Remove Message Policy Gradient
-                loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
+                loss = pg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
 
                 optimizer.zero_grad()
                 loss.backward()
