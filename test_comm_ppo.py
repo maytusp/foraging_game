@@ -132,7 +132,7 @@ if __name__ == "__main__":
         log_rewards = torch.zeros((env.max_steps, num_agents)).to(device)
         single_env = envs.vec_envs[0].unwrapped.par_env
         log_target_food_dict = {}
-        log_dsitractor_food_dict = {"location":[], "type":[], "score":[]}
+        log_distractor_food_dict = {"location":[], "type":[], "score":[]}
         
         target_food_id = single_env.target_food_id
         target_food = single_env.foods[target_food_id]
@@ -145,9 +145,9 @@ if __name__ == "__main__":
         for food_id in range(len(single_env.foods)):
             if food_id != target_food_id:
                 distractor_food = single_env.foods[food_id]
-                log_dsitractor_food_dict['location'].append(distractor_food.position)
-                log_dsitractor_food_dict['type'].append(distractor_food.food_type)
-                log_dsitractor_food_dict['score'].append(distractor_food.energy_score)
+                log_distractor_food_dict['location'].append(distractor_food.position)
+                log_distractor_food_dict['type'].append(distractor_food.food_type)
+                log_distractor_food_dict['score'].append(distractor_food.energy_score)
         ############################################################
         while not next_done[0]:
             next_obs_arr = next_obs.detach().cpu().numpy()
@@ -216,7 +216,7 @@ if __name__ == "__main__":
             # Combine all your data into a dictionary
             log_data[f"episode_{episode_id}"] = {
                 "log_target_food_dict": log_target_food_dict,
-                "log_dsitractor_food_dict": log_dsitractor_food_dict,
+                "log_distractor_food_dict": log_distractor_food_dict,
                 "log_r_message_embs": log_r_message_embs,
                 "log_s_message_embs": log_s_message_embs,
                 "log_obs": log_obs,
