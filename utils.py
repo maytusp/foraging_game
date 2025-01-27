@@ -21,15 +21,15 @@ def extract_dict_separate(obs_dict, env_info, device, agent_id, num_agents, use_
     # convert to torch
     obs = torch.tensor(obs)[selected_indices].to(device)
     locs = torch.tensor(locs)[selected_indices].to(device)
-
+    out_env_info = None
     if env_info is not None:
         selected_indices_np = list(selected_indices.cpu().numpy())
         reward, terminations, truncations = env_info
         reward, terminations, truncations = reward[selected_indices_np], terminations[selected_indices_np], truncations[selected_indices_np]
-        env_info = (reward, terminations, truncations)
+        out_env_info = (reward, terminations, truncations)
     if use_message:
         messages = obs_dict["message"][selected_indices]
-        return obs, locs, messages, env_info
+        return obs, locs, messages, out_env_info
 
     return obs, locs, env_info
 
