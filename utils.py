@@ -16,7 +16,7 @@ def extract_dict(obs_dict, device, use_message=False):
 
 def extract_dict_separate(obs_dict, env_info, device, agent_id, num_agents, use_message=False):
     obs, locs, _ = obs_dict["image"], obs_dict["location"], obs_dict["energy"]
-    selected_indices = torch.arange(agent_id, obs.shape[0], num_agents, device=device)
+    selected_indices = torch.arange(agent_id, obs.shape[0], num_agents)
 
     # convert to torch
     obs = torch.tensor(obs)[selected_indices].to(device)
