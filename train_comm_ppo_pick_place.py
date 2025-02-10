@@ -30,7 +30,7 @@ class Args:
     ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "pickup_place"
+    exp_name = "ppo_ps_comm"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -38,9 +38,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ppo_ps_comm"
+    wandb_project_name: str = "pickup_place"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""

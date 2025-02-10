@@ -30,7 +30,7 @@ class Args:
     ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "pickup_high_moderate"
+    exp_name = "ppo_ps_comm"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -38,9 +38,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ppo_ps_comm"
+    wandb_project_name: str = "pickup_high_moderate"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners, next_r_messages), 
+                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_r_messages), 
                                                                                                     next_lstm_state, next_done)
                 values[step] = value.flatten()
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(
-                (next_obs, next_locs, next_eners, next_r_messages),
+                (next_obs, next_locs, next_r_messages),
                 next_lstm_state,
                 next_done,
             ).reshape(1, -1)
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
 
                 _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agent.get_action_and_value(
-                    (b_obs[mb_inds], b_locs[mb_inds], b_eners[mb_inds], b_r_messages[mb_inds]),
+                    (b_obs[mb_inds], b_locs[mb_inds], b_r_messages[mb_inds]),
                     (initial_lstm_state[0][:, mbenvinds], initial_lstm_state[1][:, mbenvinds]),
                     b_dones[mb_inds],
                     b_actions.long()[mb_inds],
