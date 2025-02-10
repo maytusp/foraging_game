@@ -12,7 +12,7 @@ from keyboard_control import *
 
 # Environment Parameters
 NUM_FOODS = 1  # Number of foods
-ENERGY_FACTOR = 10
+ENERGY_FACTOR = 2
 NUM_ACTIONS = 6
 
 # print("HOME GRID X,Y", self.home_grid_x, self.home_grid_y)
@@ -65,7 +65,7 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.home_size = 2
-        self.reward_denom = 100 # normalize reward
+        self.reward_scale = 10 # normalize reward
         self.max_steps = 20
         self.reset()
 
@@ -206,11 +206,12 @@ class Environment(ParallelEnv):
     def normalize_reward(self, reward):
         norm_reward = {}
         for key, item in reward.items():
-            norm_reward[key] = item / self.reward_denom
+            norm_reward[key] = item / self.reward_scale
         return norm_reward
 
     def failed_action(self, agent):
-        agent.energy -= 2 # Useless move punishment
+        pass
+        # agent.energy -= 2 # Useless move punishment
 
     def step(self, agent_action_dict, int_action=True):
         success = 0
@@ -226,12 +227,6 @@ class Environment(ParallelEnv):
                 agent_actions, received_message = agent_action_dict[i]["action"], agent_action_dict
             else:
                 agent_actions = agent_action_dict[i]
-            # End if any agent runs out of energy
-            if agent.energy <= 0: #TODO Change this to the end
-                agent.done = True
-                for j in range(len(self.possible_agents)):
-                    self.dones[j] = True
-                break
             
             if self.use_message and received_message is not None:
                 self.sent_message[i] = self.extract_message(received_message, i)
@@ -312,8 +307,8 @@ class Environment(ParallelEnv):
                             old_position = self.agent_maps[agent_id].position
                             new_position = self.agent_maps[agent_id].position + delta_pos[action]
                             self.agent_maps[agent_id].position = new_position
-                            loss = 0.2*min(self.agent_maps[agent_id].strength, self.agent_maps[agent_id].carrying_food.strength_required)
-                            self.agent_maps[agent_id].energy += -loss-1 # When carry food, agent lose more energy due to friction
+                            # loss = 0.2*min(self.agent_maps[agent_id].strength, self.agent_maps[agent_id].carrying_food.strength_required)
+                            # self.agent_maps[agent_id].energy += -loss-1 # When carry food, agent lose more energy due to friction
 
                         if not(agent.carrying_food.is_moved):
                             agent.carrying_food.position = new_food_position
@@ -327,7 +322,7 @@ class Environment(ParallelEnv):
 
                     elif self.grid[new_agent_position[0], new_agent_position[1]] is None:
                         agent.position += delta_pos[action]
-                        agent.energy -= 1
+                        # agent.energy -= 1
 
                     else:
                         self.failed_action(agent)
@@ -343,7 +338,7 @@ class Environment(ParallelEnv):
                             for agent_id in food.carried:
                                 # step_reward
                                 self.agent_maps[agent_id].carrying_food = food
-                                self.agent_maps[agent_id].energy -= pick_up_energy_factor*food.energy_score
+                                # self.agent_maps[agent_id].energy -= pick_up_energy_factor*food.energy_score
                             food.pre_carried.clear()
                             # print(f"Agents {food.carried} picked up food at {food.position}")
                             hit = True
@@ -355,8 +350,8 @@ class Environment(ParallelEnv):
                             food.reduced_strength += agent.strength
                             food.pre_carried.append(agent.id) # agent.id prepares to carry the food.
                             hit = True
-                if not(hit):
-                    self.failed_action(agent)
+                # if not(hit):
+                #     self.failed_action(agent)
 
 
             elif action == "drop" and agent.carrying_food:
@@ -370,10 +365,6 @@ class Environment(ParallelEnv):
                     self.collected_foods.add(agent.carrying_food.id)
                     
                     for agent_id in agent.carrying_food.carried:
-                        # step_reward
-                        self.agent_maps[agent_id].energy += self.agent_maps[agent_id].carrying_food.energy_score # TODO this is wrong another agent has to get energy too
-                        self.rewards[agent_id] += self.agent_maps[agent_id].carrying_food.energy_score * drop_reward_factor # TODO this is wrong another agent has to get energy too
-                        
                         self.agent_maps[agent_id].carrying_food.carried = []
                         self.agent_maps[agent_id].carrying_food = None
 
@@ -381,15 +372,15 @@ class Environment(ParallelEnv):
                 else:
                     agent.carrying_food.carried = []
                     agent.carrying_food = None
-                    self.failed_action(agent)
+                    # self.failed_action(agent)
 
-            # Useless action
-            elif action == "pick_up" and agent.carrying_food is not None:
-                self.failed_action(agent)
+            # # Useless action
+            # elif action == "pick_up" and agent.carrying_food is not None:
+            #     self.failed_action(agent)
 
-            # Useless action
-            elif action == "drop" and not(agent.carrying_food):
-                self.failed_action(agent)
+            # # Useless action
+            # elif action == "drop" and not(agent.carrying_food):
+            #     self.failed_action(agent)
 
 
             # Update grid state 
@@ -404,20 +395,16 @@ class Environment(ParallelEnv):
         # End conditions
         # End if all food items are collected
         if len(self.collected_foods) == len(self.foods):
-            average_energy = 0
-            for agent in self.agent_maps:
-                average_energy += agent.energy
-            average_energy /= len(self.possible_agents)
             # terminal_reward
             for agent in self.agent_maps:
-                self.rewards[agent.id] += energy_reward_factor * average_energy
+                self.rewards[agent.id] += 10
                 self.rewards[agent.id] += self.max_steps - self.curr_steps # get more reward if use fewer steps
                 success = 1
                 self.dones = {i:True for i in range(len(self.possible_agents))}
 
 
         # normalize reward
-        self.rewards = self.normalize_reward(self.rewards)
+        self.norm_rewards = self.normalize_reward(self.rewards)
 
         for agent in self.agent_maps:
             self.cumulative_rewards[agent.id] += self.rewards[agent.id]
@@ -432,7 +419,7 @@ class Environment(ParallelEnv):
                                 },
                             }
     
-        return self.observe(), self.rewards, self.dones, self.truncated, self.infos
+        return self.observe(), self.norm_rewards, self.dones, self.truncated, self.infos
 
 # Define the classes
 class EnvAgent:

@@ -30,7 +30,7 @@ class Args:
     ckpt_path = ""
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = "ppo_ps_comm"
+    exp_name = "pickup_high_moderate_ppo_ps_comm"
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
