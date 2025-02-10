@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup_high_moderate_debug import *
+from environments.environment_pickup_high_moderate_debug import *
 from utils import *
 from models_v2 import PPOLSTMAgent, PPOLSTMCommAgent
 

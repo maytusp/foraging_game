@@ -9,7 +9,7 @@ import time
 from nets import *
 from constants import *
 from keyboard_control import *
-from environment import *
+from environments.environment import *
 from buffer import *
 
 import wandb

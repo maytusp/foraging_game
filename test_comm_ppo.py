@@ -60,11 +60,11 @@ if __name__ == "__main__":
         from moviepy.editor import *
 
     if args.range == "normal":
-        from environment_pickup_high_moderate_debug import Environment
+        from environments.environment_pickup_high_moderate_debug import Environment
     elif args.range == "low":
-        from environment_pickup_high_moderate_debug_low import Environment
+        from environments.environment_pickup_high_moderate_debug_low import Environment
     elif args.range == "custom":
-        from environment_pickup_high_moderate_debug_custom_score import Environment
+        from environments.environment_pickup_high_moderate_debug_custom_score import Environment
 
     os.makedirs(args.saved_dir, exist_ok=True)
     # TRY NOT TO MODIFY: seeding

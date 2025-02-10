@@ -22,7 +22,7 @@ from stable_baselines3.common.atari_wrappers import (  # isort:skip
 )
 
 from nets import *
-from environment_single import *
+from environments.environment_single import *
 from models import PPOLSTMAgent
 from train_single_ppo import make_env
 

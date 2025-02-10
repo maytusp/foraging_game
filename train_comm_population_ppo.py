@@ -18,14 +18,14 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environment_pickup_high_moderate_debug import *
+from environments.environment_pickup_high_moderate import *
 from utils import *
 from models_v3 import PPOLSTMCommAgent
 
 
 @dataclass
 class Args:
-    save_dir = "checkpoints/pickup_high_moderate_debug/dec_ppo_population/"
+    save_dir = "checkpoints/pickup_high_moderate/dec_ppo_population/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     ckpt_path = ""

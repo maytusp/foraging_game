@@ -22,7 +22,7 @@ from stable_baselines3.common.atari_wrappers import (  # isort:skip
 )
 
 from models import PPOLSTMAgent
-from environment_single import *
+from environments.environment_single import *
 
 
 @dataclass

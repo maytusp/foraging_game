@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environment_pickup_high_dial import *
+from environments.environment_pickup_high_dial import *
 from utils import *
 from models_v2 import PPOLSTMDIALAgent
 
