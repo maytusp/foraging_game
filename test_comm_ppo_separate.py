@@ -24,8 +24,8 @@ from models_v3 import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/pickup_high_moderate_debug/dec_ppo/agent_0_step_448M.pt"
-    ckpt_path2 = "checkpoints/pickup_high_moderate_debug/dec_ppo/agent_1_step_448M.pt"
+    ckpt_path = "checkpoints/pickup_high_moderate_debug/dec_ppo_with_self_play/agent_1_step_256M.pt"
+    ckpt_path2 = "checkpoints/pickup_high_moderate_debug/dec_ppo_with_self_play/agent_1_step_256M.pt"
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     seed: int = 1
     torch_deterministic: bool = True
@@ -33,9 +33,9 @@ class Args:
     wandb_project_name: str = "PPO Foraging Game"
     wandb_entity: str = "maytusp"
     capture_video: bool = False
-    saved_dir = "logs/pickup_high_moderate_debug/separated_ppo/normal/"
+    saved_dir = "logs/pickup_high_moderate_debug/dec_ppo_with_self_play_clone1/normal/"
     video_save_dir = os.path.join(saved_dir, "vids")
-    visualize = True
+    visualize = False
     ablate_message = False
     ablate_type = "noise" # zero, noise
     agent_visible = True

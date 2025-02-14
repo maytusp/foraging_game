@@ -17,17 +17,17 @@ from torch.utils.tensorboard import SummaryWriter
 
 import supersuit as ss
 from utils import *
-from models_v2 import PPOLSTMCommAgent
+from models_v3 import PPOLSTMCommAgent
 
 
 
 @dataclass
 class Args:
-    ckpt_path = "checkpoints/pickup_high_moderate_debug/ppo_ps_comm/model_step_294M.pt"
-    range = "custom"
+    ckpt_path = "checkpoints/pickup_high_moderate/ppo_ps_comm/model_step_550M.pt"
+    range = "normal"
     ablate_message = False
     ablate_type = "zero" # zero, noise
-    saved_dir = f"logs/pickup_high_moderate_debug/ppo_ps_comm_5000/{range}"
+    saved_dir = f"logs/pickup_high_moderate/ppo_ps_comm_550M/{range}"
     video_save_dir = os.path.join(saved_dir, "vids")
 
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -45,7 +45,7 @@ class Args:
 
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 5000
+    total_episodes: int = 400
     num_channels = 2
     num_obs_grid = 5
 
@@ -60,11 +60,12 @@ if __name__ == "__main__":
         from moviepy.editor import *
 
     if args.range == "normal":
-        from environments.environment_pickup_high_moderate_debug import Environment
+        from environments.environment_pickup_high_moderate import Environment
+    # TODO
     elif args.range == "low":
-        from environments.environment_pickup_high_moderate_debug_low import Environment
+        from environments.environment_pickup_high_moderate import Environment
     elif args.range == "custom":
-        from environments.environment_pickup_high_moderate_debug_custom_score import Environment
+        from environments.environment_pickup_high_moderate import Environment
 
     os.makedirs(args.saved_dir, exist_ok=True)
     # TRY NOT TO MODIFY: seeding
@@ -174,7 +175,7 @@ if __name__ == "__main__":
                 log_locs[ep_step] = next_locs
                 log_r_messages[ep_step] = next_r_messages.squeeze()
                 ###################################
-                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_eners, next_r_messages), 
+                action, action_logprob, _, s_message, message_logprob, _, value, next_lstm_state = agent.get_action_and_value((next_obs, next_locs, next_r_messages), 
                                                                                                     next_lstm_state, next_done)
                 # print(f"step {ep_step} agent_actions = {action}")
             env_action, env_message = action.cpu().numpy(), s_message.cpu().numpy()

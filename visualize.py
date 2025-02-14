@@ -31,10 +31,10 @@ def visualize_environment(environment, step):
             pygame.draw.rect(screen, BLACK, rect, 1)
 
     # Draw home area
-    for i in range(environment.home_size):
-        for j in range(environment.home_size):
-            home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
-            pygame.draw.rect(screen, HOME_COLOR, home_rect)
+    # for i in range(environment.home_size):
+    #     for j in range(environment.home_size):
+    #         home_rect = pygame.Rect((environment.home_position[1] + j) * cell_size, (environment.home_position[0] + i) * cell_size, cell_size, cell_size)
+    #         pygame.draw.rect(screen, HOME_COLOR, home_rect)
 
     # Draw agents
     for agent_id, agent in enumerate(environment.agent_maps):
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     NUM_EPISODES = 3
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environments.environment_pickup_place import *
+    from environments.goal_condition_pickup import *
     # from environments.environment import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
     env = Environment()
@@ -103,8 +103,8 @@ if __name__ == "__main__":
             agent_actions = list(np.array(agent_actions)-1)
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=True)
             # print("reward", rewards)
-            print(f"agent0: {observations[0]['image'][0]}")
-            print(f"agent1: {observations[1]['image'][0]}")
+            print(f"agent0: \n {observations[0]['image']}")
+            print(f"agent1: \n {observations[1]['image']}")
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if isinstance(dones,bool):
