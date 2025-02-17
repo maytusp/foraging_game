@@ -382,7 +382,7 @@ class Environment(ParallelEnv):
                     self.rewards[agent.id] += ((self.max_steps - self.curr_steps) / self.max_steps) # get more reward if use fewer steps
                     success = 1
                 else:
-                    self.rewards[agent.id] -= 10
+                    self.rewards[agent.id] -= 1
                 self.dones = {i:True for i in range(len(self.possible_agents))}
 
         # normalize reward
