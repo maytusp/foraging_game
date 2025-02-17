@@ -6,9 +6,11 @@ import time
 import gymnasium as gym
 from gymnasium import spaces
 from pettingzoo import ParallelEnv
+import pickle
 
 from constants import *
 from keyboard_control import *
+
 
 # Environment Parameters
 ENERGY_FACTOR = 2
@@ -29,8 +31,13 @@ class Environment(ParallelEnv):
                                                                                                         N_i = 4,
                                                                                                         grid_size=7,
                                                                                                         image_size=5,
+                                                                                                        mode="train",
                                                                                                         ):
         np.random.seed(seed)
+        with open(f"./environments/configs/goal_condition_pickup/natt{N_att}_nval{N_val}.pkl", "rb") as file:
+            self.attribute_combinations = pickle.load(file)[mode]
+            self.attribute_combinations_inds = [id for id in range(len(self.attribute_combinations))]
+        self.mode = mode
         self.use_message = use_message
         self.agent_visible = agent_visible
         self.message_length = message_length
@@ -64,7 +71,7 @@ class Environment(ParallelEnv):
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
 
-        self.attribute_list = np.arange(N_att) # each food item will have one of these energy scores, assigned randomly.
+        self.attribute_id_list = np.arange(N_att) # each food item will have one of these energy scores, assigned randomly.
         self.food_ener_fully_visible = food_ener_fully_visible
         self.max_steps = 20
         self.food_type2name =  {
@@ -94,18 +101,21 @@ class Environment(ParallelEnv):
                             self.grid_size, self.agent_visible,
                             self.food_ener_fully_visible) for i in range(len(self.possible_agents))]
         
-        self.goal_attribute = np.random.randint(low=1, high=self.N_val+1, size=self.N_att)
+        
         for agent in self.agent_maps:
             self.grid[agent.position[0], agent.position[1]] = agent
         #  position, food_type, id)
-        self.selected_attributes = np.random.choice(self.attribute_list, size=self.N_att, replace=False)
+        self.selected_attribute_ids = np.random.choice(self.attribute_id_list, size=self.N_att, replace=False)
 
         self.mask_agent0 = np.zeros(self.N_att, dtype=int)
         self.mask_agent1 = np.zeros(self.N_att, dtype=int)
-        self.mask_agent0[self.selected_attributes[:self.N_att//2]] = 1
-        self.mask_agent1[self.selected_attributes[self.N_att//2:]] = 1
+        self.mask_agent0[self.selected_attribute_ids[:self.N_att//2]] = 1
+        self.mask_agent1[self.selected_attribute_ids[self.N_att//2:]] = 1
         self.attribute_mask = {0: self.mask_agent0, 1: self.mask_agent1}
+
+        self.goal_attribute = self.generate_goal_attribute()
         self.generated_attributes, self.target_food_id = self.generate_food_attribute()
+
         # print("generated attributes:", self.generated_attributes)
         # print("goal_attribute", self.goal_attribute)
         # print("target_id", self.target_food_id)
@@ -133,14 +143,21 @@ class Environment(ParallelEnv):
         for i in range(self.N_i):
             stop = False
             while not(stop):
-                curr_attribute = np.random.randint(low=1, high=self.N_val+1, size=self.N_att)
+                curr_attribute_idx = np.random.choice(self.attribute_combinations_inds)
+                curr_attribute = self.attribute_combinations[curr_attribute_idx]
                 curr_dist = self.l2_dist(curr_attribute, self.goal_attribute)
-                if curr_dist not in distance_set:
+                if curr_dist not in distance_set and curr_dist != 0:
                     distance_set.add(curr_dist)
                     distance_list.append(curr_dist)
                     generated_food_attributes.append(curr_attribute)
                     stop = True
         return generated_food_attributes, np.argmin(distance_list)
+    
+    def generate_goal_attribute(self):
+        rand_idx = np.random.choice(self.attribute_combinations_inds)
+        goal_attribute = self.attribute_combinations[rand_idx]
+        # print(f"{rand_idx} {goal_attribute}")
+        return goal_attribute
 
     def observation_space(self, agent_id):
         return self.observation_spaces[agent_id]
@@ -472,3 +489,12 @@ class Food:
         self.done = False
         self.reduced_strength = 0
         self.attribute = attribute
+
+
+if __name__ == "__main__":
+    env = Environment()
+    for i in range(100):
+        env.reset()
+        print(f"goal: {env.goal_attribute}")
+        print(f"items: {env.generated_attributes}")
+        print(f"target id: {env.target_food_id}")

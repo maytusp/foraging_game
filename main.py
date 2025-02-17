@@ -6,7 +6,7 @@ import random
 from collections import namedtuple, deque
 import time
 
-from nets import *
+from models.nets import *
 from constants import *
 from keyboard_control import *
 from environments.environment import *
