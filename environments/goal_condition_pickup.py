@@ -23,7 +23,7 @@ class Environment(ParallelEnv):
     metadata = {"name": "goal_cond_pickup"}
     def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, 
                                                                                                         seed=42, 
-                                                                                                        agent_visible=True,
+                                                                                                        agent_visible=False,
                                                                                                         food_ener_fully_visible=False, 
                                                                                                         identical_item_obs=False,
                                                                                                         N_att=2,
@@ -129,8 +129,6 @@ class Environment(ParallelEnv):
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
-
-        self.target_name = self.food_type2name[self.foods[self.target_food_id].food_type]
         self.collected_foods = []
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
 
@@ -398,8 +396,10 @@ class Environment(ParallelEnv):
                                 "l": self.episode_lengths[agent.id],
                                 "collect": len(self.collected_foods),
                                 "success": success,
-                                "target_name": self.target_name,
+                                "target_id": self.target_food_id,
+                                "goal_attribute": self.goal_attribute,
                                 "food_attributes": {f.id: f.attribute for f in self.foods},
+                                "attribute_masks" : self.attribute_mask,
                                 },
                             }
     

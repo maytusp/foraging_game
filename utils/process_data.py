@@ -14,6 +14,20 @@ def extract_dict(obs_dict, device, use_message=False):
 
     return obs, locs, eners
 
+def extract_dict_with_goal(obs_dict, device, use_message=False):
+    obs, locs, goals = obs_dict["image"], obs_dict["location"], obs_dict["goal"]
+    # convert to torch
+    obs = torch.tensor(obs).to(device)
+    locs = torch.tensor(locs).to(device)
+    goals = torch.tensor(goals).to(device)
+
+    if use_message:
+        messages = obs_dict["message"]
+        return obs, locs, goals, messages
+
+    return obs, locs, goals
+
+
 def extract_dict_separate(obs_dict, env_info, device, agent_id, num_agents, use_message=False):
     obs, locs, _ = obs_dict["image"], obs_dict["location"], obs_dict["energy"]
     selected_indices = torch.arange(agent_id, obs.shape[0], num_agents)

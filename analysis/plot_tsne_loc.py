@@ -78,7 +78,7 @@ def plot_tsne(tsne_data, locations):
 
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    log_file_path = "../logs/pickup_high_moderate_debug/ppo_ps_comm_5000/custom/trajectory.pkl"
+    log_file_path = "../logs/pickup_high_easy/ppo_ps_comm_550M/normal/trajectory.pkl"
 
     if os.path.exists(log_file_path):
         # Load log data

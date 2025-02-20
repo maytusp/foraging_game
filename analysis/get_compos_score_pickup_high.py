@@ -1,10 +1,10 @@
-import pickle
+from language_analysis import Disent, TopographicSimilarity
 import numpy as np
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
+import pickle
 import os
-
-plot_teacher_agent = True # plot agent that see the target
+import torch
+image_size = 5
+visible_range = image_size // 2
 # Load the .pkl file
 def load_trajectory(file_path):
     with open(file_path, "rb") as f:
@@ -12,7 +12,7 @@ def load_trajectory(file_path):
     return log_data
 
 # Extract and prepare data for t-SNE
-def prepare_tsne_data(log_data):
+def extract_high_score_message(log_data):
     tsne_data = []
     scores = []
     switch_agent = {0:1, 1:0}
@@ -59,33 +59,28 @@ def prepare_tsne_data(log_data):
     print(f"tsne_data {tsne_data.shape}")
     return tsne_data, scores
 
-# Plot t-SNE
-def plot_tsne(tsne_data, scores):
-    tsne = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000)
-    tsne_results = tsne.fit_transform(tsne_data)
-
-    # Scatter plot with grouping by score
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=scores, cmap="viridis", alpha=0.7, vmin=5, vmax=250)
-    plt.colorbar(scatter, label="Target Food Score")
-    plt.title("t-SNE of Messages Sent by Agents Seeing Target")
-    plt.xlabel("t-SNE Dimension 1")
-    plt.ylabel("t-SNE Dimension 2")
-    plt.grid(True)
-    plt.show()
-
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    log_file_path = "../logs/pickup_high_easy/ppo_ps_comm_550M/normal/trajectory.pkl"
-
+    log_file_path = "../logs/goal_condition_pickup/dec_ppo/grid5_img5_ni2_natt2_nval10_nw16/seed0/mode_train/trajectory.pkl"
+    num_episodes = 1000
     if os.path.exists(log_file_path):
         # Load log data
         log_data = load_trajectory(log_file_path)
+        attributes_dict, messages_dict = extract_high_score_message(log_data)
+        for agent_id in range(2):
+            print(f"agent{agent_id}")
+            attributes = np.array(attributes_dict[agent_id])
+            messages = np.array(messages_dict[agent_id])
+            attributes, messages = torch.Tensor(attributes[:num_episodes, :]), torch.Tensor(messages[:num_episodes, 2:4])
 
-        # Prepare data for t-SNE
-        tsne_data, scores = prepare_tsne_data(log_data)
 
-        # Plot t-SNE
-        plot_tsne(tsne_data, scores)
+            topsim = TopographicSimilarity.compute_topsim(attributes, messages)
+            posdis = Disent.posdis(attributes, messages)
+            bosdis = Disent.bosdis(attributes, messages, vocab_size=16)
+            
+            print(f"topsim {topsim}")
+            print(f"posdis: {posdis}")
+            print(f"bosdis: {bosdis}")
+        
     else:
         print(f"Log file not found: {log_file_path}")

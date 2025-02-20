@@ -44,6 +44,6 @@ def load_and_visualize_pickle(input_file="combinations.pkl"):
 # Example usage
 N_att = 2
 N_val = 10
-generate_combinations(N_att=N_att, N_val=N_val, output_file=f"natt{N_att}_nval{N_val}.pkl")
+# generate_combinations(N_att=N_att, N_val=N_val, output_file=f"natt{N_att}_nval{N_val}.pkl")
 
-# load_and_visualize_pickle("natt2_nval10.pkl")
+load_and_visualize_pickle("natt2_nval10.pkl")

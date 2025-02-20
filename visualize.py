@@ -66,7 +66,19 @@ def visualize_environment(environment, step):
 
     frame = pygame.surfarray.array3d(screen)
     return frame
-    
+
+def nonzero_sum_channels(obs):
+    print(obs.shape)
+    # Extract the last N_att channels (excluding the first channel)
+    att_channels = obs[1:, :, :]  # Shape: (N_att, 5, 5)
+
+    # Compute the sum over the (5,5) spatial dimensions
+    channel_sums = np.sum(att_channels, axis=(1, 2))  # Shape: (N_att,)
+
+    # Convert to binary indicator (1 if sum is nonzero, 0 otherwise)
+    binary_mask = (channel_sums != 0).astype(int)
+
+    return binary_mask
 if __name__ == "__main__":
     NUM_STEPS = 10000
     NUM_EPISODES = 3
@@ -75,10 +87,11 @@ if __name__ == "__main__":
     from environments.goal_condition_pickup import *
     # from environments.environment import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment()
+    env = Environment(N_i=2, image_size=5, grid_size=5, N_att=4, agent_visible=False)
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
+        print(f"masks {env.attribute_mask}")
         frames = []
         # print("Obs", observations[0].shape)
         for step in range(NUM_STEPS):
@@ -103,8 +116,9 @@ if __name__ == "__main__":
             agent_actions = list(np.array(agent_actions)-1)
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=True)
             # print("reward", rewards)
-            print(f"agent0: \n {observations[0]['image']}")
-            print(f"agent1: \n {observations[1]['image']}")
+            # print(f"agent0: \n {nonzero_sum_channels(observations[0]['image'])}")
+            print(f"{observations[0]['image'][0]}")
+            # print(f"agent1: \n {nonzero_sum_channels(observations[1]['image'])}")
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)
             if isinstance(dones,bool):

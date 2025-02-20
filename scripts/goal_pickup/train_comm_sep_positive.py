@@ -107,7 +107,10 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     fully_visible_score = False
     """Fully visible food highest score for pretraining"""
-    agent_visible = False
+    positive_signalling = True
+    positive_listening = True
+    target_entropy = 0.2
+    message_ent_coef = 0.1
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -142,7 +145,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     env = Environment(use_message=True,
-                        agent_visible=args.agent_visible,
                         n_words=args.n_words,
                         seed=args.seed, 
                         N_att=args.N_att,
@@ -348,13 +350,15 @@ if __name__ == "__main__":
                     end = start + envsperbatch
                     mbenvinds = envinds[start:end]
                     mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
-                    _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agents[i].get_action_and_value(
+                    _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _, action_pmf, action_cf_pmf, message_pmf = agents[i].get_action_and_value(
                         (b_obs[i][mb_inds], b_locs[i][mb_inds], b_goals[i][mb_inds], b_r_messages[i][mb_inds]),
                         (initial_lstm_state[i][0][:, mbenvinds], initial_lstm_state[i][1][:, mbenvinds]),
                         b_dones[i][mb_inds],
                         b_actions[i].long()[mb_inds],
                         b_s_messages[i].long()[mb_inds],
                         tracks[i][mb_inds],
+                    pos_sig=True,
+                    pos_lis=True,
                     )
                     action_logratio = new_action_logprob - b_action_logprobs[i][mb_inds]
                     action_ratio = action_logratio.exp()
@@ -402,8 +406,28 @@ if __name__ == "__main__":
                         v_loss = 0.5 * ((newvalue - b_returns[i][mb_inds]) ** 2).mean()
 
                     action_entropy_loss = action_entropy.mean()
-                    message_entropy_loss = message_entropy.mean()
-                    loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
+                    loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
+                    # TODO Positive Signalling Loss
+                    if args.positive_signalling:
+                        message_cond_entropy_loss = (message_entropy - args.target_entropy).mean() ** 2
+                        message_pmf_mean = message_pmf.mean(dim=0)
+                        message_uncond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
+                        message_entropy_loss = message_cond_entropy_loss - message_uncond_entropy_loss
+
+                    elif not(args.positive_signalling):
+                        message_entropy_loss = message_entropy.mean()
+        
+                    pl_loss = 0
+                    # TODO Positive Listening Loss
+                    if args.positive_listening:
+                        action_pmf_no_grad = action_pmf.detach()
+                        action_cf_pmf_no_grad = action_cf_pmf.detach()
+                        # (4096, 5)
+                        ce_term = (action_pmf_no_grad * torch.log(action_cf_pmf)).mean(dim=0).sum()
+                        pl_term = - torch.abs(action_pmf-action_cf_pmf_no_grad).mean(dim=0).sum()
+                        pl_loss = ce_term + pl_term
+
+                    loss += args.message_ent_coef*(message_entropy_loss + pl_loss)
 
                     optimizers[i].zero_grad()
                     loss.backward()
