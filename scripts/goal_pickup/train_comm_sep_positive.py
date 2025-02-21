@@ -83,21 +83,30 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
+    positive_signalling = True
+    positive_listening = False
+    agent_visible = False
+    model_name = "dec_ppo_invisible"
+    if positive_signalling:
+        model_name += "_possig"
+    if positive_listening:
+        model_name += "_poslis"
+
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    save_dir = f"checkpoints/goal_condition_pickup/dec_ppo/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/goal_condition_pickup/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
-    visualize_loss = False
+    visualize_loss = True
     ckpt_path = ""
     save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = f"dec_ppo/{train_combination_name}_seed{seed}"
+    exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
     """the name of this experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "goal_condition_pickup"
     """the wandb's project name"""
@@ -107,10 +116,9 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     fully_visible_score = False
     """Fully visible food highest score for pretraining"""
-    positive_signalling = True
-    positive_listening = True
     target_entropy = 0.2
     message_ent_coef = 0.1
+    
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -145,6 +153,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     env = Environment(use_message=True,
+                        agent_visible=args.agent_visible,
                         n_words=args.n_words,
                         seed=args.seed, 
                         N_att=args.N_att,
@@ -357,8 +366,8 @@ if __name__ == "__main__":
                         b_actions[i].long()[mb_inds],
                         b_s_messages[i].long()[mb_inds],
                         tracks[i][mb_inds],
-                    pos_sig=True,
-                    pos_lis=True,
+                        pos_sig=True,
+                        pos_lis=True,
                     )
                     action_logratio = new_action_logprob - b_action_logprobs[i][mb_inds]
                     action_ratio = action_logratio.exp()
@@ -449,6 +458,11 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{i}/losses/message_loss", mg_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/action_entropy", action_entropy_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/message_entropy", message_entropy_loss.item(), global_step)
+                if args.positive_signalling:
+                    writer.add_scalar(f"agent{i}/losses/message_cond_entropy_loss", message_cond_entropy_loss.item(), global_step)
+                    writer.add_scalar(f"agent{i}/losses/message_uncond_entropy_loss", message_uncond_entropy_loss.item(), global_step)
+                if args.positive_listening:
+                    writer.add_scalar(f"agent{i}/losses/pl_loss", pl_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/action_approx_kl", action_approx_kl.item(), global_step)

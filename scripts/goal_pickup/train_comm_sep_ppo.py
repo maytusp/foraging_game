@@ -84,14 +84,14 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    save_dir = f"checkpoints/goal_condition_pickup/dec_ppo/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/goal_condition_pickup/dec_ppo_invisible/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     visualize_loss = False
     ckpt_path = ""
     save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    exp_name = f"dec_ppo/{train_combination_name}_seed{seed}"
+    exp_name = f"dec_ppo_invisible/{train_combination_name}_seed{seed}"
     """the name of this experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
