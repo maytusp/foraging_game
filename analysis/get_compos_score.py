@@ -5,48 +5,117 @@ import os
 import torch
 image_size = 5
 visible_range = image_size // 2
+target_item_only = True
+non_target = False
+all_message = True
 # Load the .pkl file
 def load_trajectory(file_path):
     with open(file_path, "rb") as f:
         log_data = pickle.load(f)
     return log_data
 
-def extract_high_score_message(log_data, N_att=2, N_i=2):
+def within_receptive_field(receptive_field_size, agent_location, item_location):
+    visible_range = receptive_field_size // 2 # visible_range(3x3) = 1, (5x5) = 2, (7x7) =3
+    if (item_location[0] >= agent_location[0] - visible_range and item_location[0] <= agent_location[0] + visible_range and
+        item_location[1] >= agent_location[1] - visible_range and item_location[1] <= agent_location[1] + visible_range):
+        return True
+    else:
+        return False
+
+def compute_first_seen_time_indices(log_locs, log_foods, receptive_field_size, N_i):
+    first_seen_time_indices = np.zeros((2, N_i))
+    for agent_id in range(2):
+        for item_id in range(N_i):
+            item_loc = log_foods["position"][item_id]
+            for t in range(log_locs.shape[0]):
+                agent_loc = log_locs[t, agent_id, :]
+                seen = within_receptive_field(receptive_field_size, agent_loc, item_loc)
+                if seen:
+                    first_seen_time_indices[agent_id, item_id] = t
+                    break
+                if t == log_locs.shape[0]-1: # Item is not seen
+                    first_seen_time_indices[agent_id, item_id] = -1
+    return first_seen_time_indices
+
+
+
+def extract_message(log_data, N_att=2, N_i=2, window_size=8, lag_time=1):
     attributes = {0:[], 1:[]}
     messages = {0:[], 1:[]}
-
+    swap_target = {0:1, 1:0}
+    
+    neg_episode = 0
     for episode, data in log_data.items():
         
         # Get sent messages and target food score
         log_s_message = data["log_s_messages"]
         log_masks = data["log_masks"]
         log_attributes = data["log_attributes"]
-        for agent_id in range(2):
-            seen_attribute = np.zeros((N_i, N_att))
-            for item_id in range(N_i):
-                seen_attribute[item_id, :] = log_attributes[item_id]*log_masks[agent_id]
-            # target_loc = data["log_target_food_dict"]["location"] # (2,)
-            # agent_locs = data["log_locs"][:, plot_agent] #(num_steps, 2)
-            # num_steps = agent_locs.shape[0]
-            # print(f"agent {agent_id} sees {seen_attribute.flatten()}")
-            messages[agent_id].append(log_s_message[:, agent_id])  # Collect all time steps for the agent
-            attributes[agent_id].append(seen_attribute.flatten())
+        log_goal = np.array(data["log_goal"])
+        log_foods = data["log_foods"]
+        log_locs = data["log_locs"] # (max_steps, num_agents, 2)
+        log_target_id = data["log_target_food_id"]
+        log_rewards = data["log_rewards"][:, 0]
+        first_index = np.argmax(log_rewards > 0)
+        
+        if non_target:
+            log_target_id = swap_target[log_target_id]
+        max_timesteps = log_locs.shape[0]
+        num_agents = 2
+        first_seen_time_indices = compute_first_seen_time_indices(log_locs, log_foods, receptive_field_size=5, N_i=N_i)
+        
+        # Check if any row contains -1
+        # has_neg_one = np.any(first_seen_time_indices == -1, axis=1)
+        has_neg_one = np.any(first_seen_time_indices == -1)
+        check_window_size = np.any(19-first_seen_time_indices < window_size+lag_time)
+        if not(has_neg_one or check_window_size) and first_index < 10:
+            for agent_id in range(num_agents):
+                sent_message = np.zeros((N_i, window_size))
+                seen_attribute = np.zeros((N_i, N_att+2))
+                start_idx_list = []
+                for item_id in range(N_i):
+                    start_idx = int(first_seen_time_indices[agent_id, item_id])
+                    start_idx_list.append(start_idx)
+                    agent_pos = log_locs[start_idx, agent_id, :]
+                    item_pos = log_foods["position"][item_id]
+                    diff = np.array(log_goal) - np.array(log_attributes[item_id])
+                    mask_att = diff*log_masks[agent_id]
+                    seen_attribute[item_id, :] = np.concatenate((mask_att, item_pos), axis=0)
+                    # seen_attribute[item_id, :] = mask_att
+                    # 
+                    # print(log_s_message.shape)
+                    # print(f"{start_idx}, {start_idx+window_size}")
+                    start_idx += lag_time
+                    sent_message[item_id] = log_s_message[start_idx:start_idx+window_size, agent_id]
+                    if all_message:
+                        start_idx = 0
+                        sent_message[item_id] = log_s_message[start_idx:start_idx+window_size, agent_id]
+                if target_item_only:
+                    messages[agent_id].append(sent_message[log_target_id].flatten())  # Collect all time steps for the agent
+                    attributes[agent_id].append(seen_attribute[log_target_id].flatten())
+                else:
+                    messages[agent_id].append(sent_message.flatten())  # Collect all time steps for the agent
+                    attributes[agent_id].append(seen_attribute.flatten())
+        else:
+            neg_episode+=1
 
+    print(f"Total unused episodes: {neg_episode}")
     return attributes, messages
 
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    log_file_path = "../logs/goal_condition_pickup/dec_ppo/grid5_img5_ni2_natt2_nval10_nw16/seed42/mode_train/trajectory.pkl"
-    num_episodes = 2000
+    log_file_path = "../logs/goal_condition_pickup/dec_ppo_invisible/grid5_img5_ni2_natt2_nval10_nw16_588800000/seed1/mode_test/normal/trajectory.pkl"
+    num_episodes = 3000
     if os.path.exists(log_file_path):
         # Load log data
         log_data = load_trajectory(log_file_path)
-        attributes_dict, messages_dict = extract_high_score_message(log_data)
+        attributes_dict, messages_dict = extract_message(log_data)
         for agent_id in range(2):
             print(f"agent{agent_id}")
             attributes = np.array(attributes_dict[agent_id])
             messages = np.array(messages_dict[agent_id])
-            attributes, messages = torch.Tensor(attributes[:num_episodes, :]), torch.Tensor(messages[:num_episodes, 2:4])
+            print(messages.shape)
+            attributes, messages = torch.Tensor(attributes[:num_episodes, :]), torch.Tensor(messages[:num_episodes])
 
 
             topsim = TopographicSimilarity.compute_topsim(attributes, messages)

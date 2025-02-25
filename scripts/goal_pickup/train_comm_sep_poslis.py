@@ -30,7 +30,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -62,8 +62,6 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
 
-    log_every = 32
-
     n_words = 16
     """vocab size"""
     image_size = 5
@@ -85,22 +83,24 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
+    positive_signalling = False
+    positive_listening = True
+    agent_visible = False
+    model_name = "dec_ppo_invisible"
+    if positive_signalling:
+        model_name += "_possig"
+    if positive_listening:
+        model_name += "_poslis"
+
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    save_dir = f"checkpoints/goal_condition_pickup/dec_ppo_invisible/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/goal_condition_pickup/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
-    if load_pretrained:
-        global_step = 384000000
-        learning_rate = 2e-4
+    load_pretrained = False
     visualize_loss = True
-    ckpt_path = {
-                0:f"checkpoints/goal_condition_pickup/dec_ppo_invisible/grid5_img5_ni2_natt2_nval10_nw16/seed1/agent_0_step_{global_step}.pt", 
-                1:f"checkpoints/goal_condition_pickup/dec_ppo_invisible/grid5_img5_ni2_natt2_nval10_nw16/seed1/agent_1_step_{global_step}.pt"
-                }
+    ckpt_path = ""
     save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    
-    exp_name = f"dec_ppo_invisible_from_{global_step}/{train_combination_name}_seed{seed}"
+    exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
     """the name of this experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -116,7 +116,9 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     fully_visible_score = False
     """Fully visible food highest score for pretraining"""
-    agent_visible = False
+    target_entropy = 0.2
+    message_ent_coef = 0.1
+    
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -198,9 +200,7 @@ if __name__ == "__main__":
                                     N_att=args.N_att, 
                                     image_size=args.image_size).to(device)
         if args.load_pretrained:
-            print(f"load agent{i} from {args.ckpt_path[i]}")
-            print(f"use previous lr {args.learning_rate}")
-            agents[i].load_state_dict(torch.load(args.ckpt_path[i], map_location=device))
+            agents[i].load_state_dict(torch.load(args.ckpt_path, map_location=device))
         optimizers[i] = optim.Adam(agents[i].parameters(), lr=args.learning_rate, eps=1e-5)
 
         # ALGO Logic: Storage setup
@@ -227,16 +227,8 @@ if __name__ == "__main__":
         )  # hidden and cell states (see https://youtu.be/8HyCNIVRbSU)
 
     start_time = time.time()
-    if args.load_pretrained:
-        global_step = args.global_step
-        print(f"start at global_step = {global_step}")
-    else:
-        global_step = 0
+    global_step = 0
     initial_lstm_state = {}
-    # for visualization
-    running_ep_r = 0.0
-    running_ep_l = 0.0
-    running_num_ep = 0
     for iteration in range(1, args.num_iterations + 1):
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
@@ -296,20 +288,11 @@ if __name__ == "__main__":
                 if "terminal_observation" in info:
                     # for info in each_infos:
                     if "episode" in info:
-                        running_ep_r += info["episode"]["r"]
-                        running_ep_l += info["episode"]["l"]
-                        running_num_ep += 1
-
-            if args.visualize_loss and running_num_ep != 0 and (global_step // args.num_envs) % args.log_every == 0:
-                # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                running_ep_r /= running_num_ep
-                running_ep_l /= running_num_ep
-                writer.add_scalar("charts/episodic_return", running_ep_r, global_step)
-                writer.add_scalar("charts/episodic_length", running_ep_l, global_step)
-                running_ep_r = 0.0
-                running_ep_l = 0.0
-                running_num_ep = 0
-
+                        if args.visualize_loss:
+                            # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                            writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                            writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                        
         #TODO Implement seprate network for this part
         b_obs = {}
         b_locs = {}
@@ -376,13 +359,15 @@ if __name__ == "__main__":
                     end = start + envsperbatch
                     mbenvinds = envinds[start:end]
                     mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
-                    _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agents[i].get_action_and_value(
+                    _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _, action_pmf, action_cf_pmf, message_pmf = agents[i].get_action_and_value(
                         (b_obs[i][mb_inds], b_locs[i][mb_inds], b_goals[i][mb_inds], b_r_messages[i][mb_inds]),
                         (initial_lstm_state[i][0][:, mbenvinds], initial_lstm_state[i][1][:, mbenvinds]),
                         b_dones[i][mb_inds],
                         b_actions[i].long()[mb_inds],
                         b_s_messages[i].long()[mb_inds],
                         tracks[i][mb_inds],
+                        pos_sig=True,
+                        pos_lis=True,
                     )
                     action_logratio = new_action_logprob - b_action_logprobs[i][mb_inds]
                     action_ratio = action_logratio.exp()
@@ -430,8 +415,28 @@ if __name__ == "__main__":
                         v_loss = 0.5 * ((newvalue - b_returns[i][mb_inds]) ** 2).mean()
 
                     action_entropy_loss = action_entropy.mean()
-                    message_entropy_loss = message_entropy.mean()
-                    loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss+message_entropy_loss) + v_loss * args.vf_coef
+                    loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
+                    # TODO Positive Signalling Loss
+                    if args.positive_signalling:
+                        message_cond_entropy_loss = (message_entropy - args.target_entropy).mean() ** 2
+                        message_pmf_mean = message_pmf.mean(dim=0)
+                        message_uncond_entropy_loss = (-message_pmf_mean * torch.log(message_pmf_mean)).sum()
+                        message_entropy_loss = message_cond_entropy_loss - message_uncond_entropy_loss
+
+                    elif not(args.positive_signalling):
+                        message_entropy_loss = message_entropy.mean()
+        
+                    pl_loss = 0
+                    # TODO Positive Listening Loss
+                    if args.positive_listening:
+                        action_pmf_no_grad = action_pmf.detach()
+                        action_cf_pmf_no_grad = action_cf_pmf.detach()
+                        # (4096, 5)
+                        ce_term = (action_pmf_no_grad * torch.log(action_cf_pmf)).mean(dim=0).sum()
+                        pl_term = - torch.abs(action_pmf-action_cf_pmf_no_grad).mean(dim=0).sum()
+                        pl_loss = ce_term + pl_term
+
+                    loss += args.message_ent_coef*(message_entropy_loss + pl_loss)
 
                     optimizers[i].zero_grad()
                     loss.backward()
@@ -446,13 +451,18 @@ if __name__ == "__main__":
             explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
             # TRY NOT TO MODIFY: record rewards for plotting purposes
-            if args.visualize_loss and (global_step // args.num_envs) % args.log_every == 0:
+            if args.visualize_loss:
                 writer.add_scalar(f"agent{i}/charts/learning_rate", optimizers[i].param_groups[0]["lr"], global_step)
                 writer.add_scalar(f"agent{i}/losses/value_loss", v_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/action_loss", pg_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/message_loss", mg_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/action_entropy", action_entropy_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/message_entropy", message_entropy_loss.item(), global_step)
+                if args.positive_signalling:
+                    writer.add_scalar(f"agent{i}/losses/message_cond_entropy_loss", message_cond_entropy_loss.item(), global_step)
+                    writer.add_scalar(f"agent{i}/losses/message_uncond_entropy_loss", message_uncond_entropy_loss.item(), global_step)
+                if args.positive_listening:
+                    writer.add_scalar(f"agent{i}/losses/pl_loss", pl_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/action_approx_kl", action_approx_kl.item(), global_step)

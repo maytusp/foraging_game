@@ -34,8 +34,8 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = True
-    save_trajectory = False
+    visualize = False
+    save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
     agent_visible = True
@@ -46,7 +46,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 2000
+    total_episodes: int = 5000
     n_words = 16
     """vocab size"""
     image_size = 5
@@ -55,16 +55,18 @@ class Args:
     """number of attributes"""
     N_val = 10
     """number of values"""
-    N_i = 4
+    N_i = 2
     """number of items"""
-    grid_size = 7
+    grid_size = 5
     """grid size"""
     mode = "test"
     agent_visible = False
+    model_name = "dec_ppo_invisible_possig"
+    model_step = "972800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    ckpt_path = f"checkpoints/goal_condition_pickup/dec_ppo/{combination_name}/seed{seed}/agent_0_step_384000000.pt"
-    ckpt_path2 = f"checkpoints/goal_condition_pickup/dec_ppo/{combination_name}/seed{seed}/agent_1_step_384000000.pt"
-    saved_dir = f"logs/goal_condition_pickup/dec_ppo/{combination_name}/seed{seed}/mode_{mode}"
+    ckpt_path = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/goal_condition_pickup/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
@@ -193,10 +195,14 @@ if __name__ == "__main__":
             
                 single_env = envs.vec_envs[0].unwrapped.par_env
                 log_target_food_dict = {}
+                log_foods = {}
                 
                 target_food_id = single_env.target_food_id
                 target_food = single_env.foods[target_food_id]
                 log_target_food_dict['location'] = target_food.position
+                log_target_food_dict['attribute'] = target_food.attribute
+                log_foods["attribute"] = [food.attribute for food in single_env.foods]
+                log_foods["position"] = [food.position for food in single_env.foods]
                 ############### Logging #########################
 
             with torch.no_grad():
@@ -276,6 +282,7 @@ if __name__ == "__main__":
         if args.save_trajectory:
             log_masks = infos[0]['episode']['attribute_masks']
             log_attributes = infos[0]['episode']['food_attributes']
+            log_goal = infos[0]['episode']['goal_attribute']
             with torch.no_grad():
                 # agent0 embedding
                 log_r_message_embs[:, :, 0] = agent0.message_encoder(log_r_messages[:, 0])
@@ -293,8 +300,11 @@ if __name__ == "__main__":
 
             # Combine all your data into a dictionary
             log_data[f"episode_{episode_id}"] = {
+                "log_foods": log_foods,
                 "log_target_food_dict": log_target_food_dict,
+                "log_target_food_id" : target_food_id,
                 "log_attributes" : log_attributes,
+                "log_goal" : log_goal,
                 "log_masks" : log_masks,
                 "log_r_messages": log_r_messages,
                 "log_s_messages": log_s_messages,
@@ -317,7 +327,7 @@ if __name__ == "__main__":
                 print(f"Agent Item Score Observations \n {energy_obs}", file=log_file)
                 print(f"Final Score Obs Agent0:  \n {next_obs_arr[0,1,:,:]}", file=log_file)
                 print(f"Final Score Obs Agent1:  \n {next_obs_arr[1,1,:,:]}", file=log_file)
-        
+
         running_rewards += returns
 
         if args.visualize: # and returns > 5:

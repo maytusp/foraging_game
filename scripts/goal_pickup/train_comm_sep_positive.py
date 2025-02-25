@@ -30,7 +30,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -84,7 +84,7 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     positive_signalling = True
-    positive_listening = False
+    positive_listening = True
     agent_visible = False
     model_name = "dec_ppo_invisible"
     if positive_signalling:

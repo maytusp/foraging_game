@@ -49,7 +49,7 @@ def visualize_environment(environment, step):
         top_left_x = x + cell_size // 2 - square_size // 2
         top_left_y = y + cell_size // 2 - square_size // 2
         square_rect = pygame.Rect(top_left_x, top_left_y, square_size, square_size)
-        pygame.draw.rect(screen, (173, 216, 255), square_rect, 2)
+        pygame.draw.rect(screen, (255, 0, 0), square_rect, 2)
 
     # Draw foods
     for food in environment.foods:
