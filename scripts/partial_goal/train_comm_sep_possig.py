@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.goal_condition_pickup import *
+from environments.partial_goal_pickup import *
 from utils.process_data import *
 from models.goal_cond_models import PPOLSTMCommAgentGoal
 
@@ -62,17 +62,19 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
 
+    log_every = 32
+
     n_words = 16
     """vocab size"""
-    image_size = 5
+    image_size = 3
     """number of observation grid"""
-    N_att = 2
+    N_att = 4
     """number of attributes"""
     N_val = 10
     """number of values"""
     N_i = 2
     """number of items"""
-    grid_size = 5
+    grid_size = 7
     """grid size"""
     mode = "train"
     """train or test (different attribute combinations)"""
@@ -84,7 +86,7 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     positive_signalling = True
-    positive_listening = True
+    positive_listening = False
     agent_visible = False
     model_name = "dec_ppo_invisible"
     if positive_signalling:
@@ -93,7 +95,7 @@ class Args:
         model_name += "_poslis"
 
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    save_dir = f"checkpoints/goal_condition_pickup/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/partial_goal_pickup/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     visualize_loss = True
@@ -108,7 +110,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "goal_condition_pickup"
+    wandb_project_name: str = "partial_goal_pickup"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -117,7 +119,7 @@ class Args:
     fully_visible_score = False
     """Fully visible food highest score for pretraining"""
     target_entropy = 0.2
-    message_ent_coef = 0.1
+    message_ent_coef = 0.01
     
 
 if __name__ == "__main__":
@@ -229,6 +231,10 @@ if __name__ == "__main__":
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
+    # for visualization
+    running_ep_r = 0.0
+    running_ep_l = 0.0
+    running_num_ep = 0
     for iteration in range(1, args.num_iterations + 1):
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
@@ -288,10 +294,20 @@ if __name__ == "__main__":
                 if "terminal_observation" in info:
                     # for info in each_infos:
                     if "episode" in info:
-                        if args.visualize_loss:
-                            # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                            writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                            writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                        running_ep_r += info["episode"]["r"]
+                        running_ep_l += info["episode"]["l"]
+                        running_num_ep += 1
+
+            if args.visualize_loss and running_num_ep != 0 and (global_step // args.num_envs) % args.log_every == 0:
+                # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                running_ep_r /= running_num_ep
+                running_ep_l /= running_num_ep
+                writer.add_scalar("charts/episodic_return", running_ep_r, global_step)
+                writer.add_scalar("charts/episodic_length", running_ep_l, global_step)
+                running_ep_r = 0.0
+                running_ep_l = 0.0
+                running_num_ep = 0
+
                         
         #TODO Implement seprate network for this part
         b_obs = {}
@@ -451,7 +467,7 @@ if __name__ == "__main__":
             explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
             # TRY NOT TO MODIFY: record rewards for plotting purposes
-            if args.visualize_loss:
+            if args.visualize_loss and (global_step // args.num_envs) % args.log_every == 0:
                 writer.add_scalar(f"agent{i}/charts/learning_rate", optimizers[i].param_groups[0]["lr"], global_step)
                 writer.add_scalar(f"agent{i}/losses/value_loss", v_loss.item(), global_step)
                 writer.add_scalar(f"agent{i}/losses/action_loss", pg_loss.item(), global_step)

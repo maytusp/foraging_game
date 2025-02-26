@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.goal_condition_pickup import *
+from environments.partial_goal_pickup import *
 from utils.process_data import *
 from models.goal_cond_models import PPOLSTMCommAgentGoal
 
@@ -49,24 +49,24 @@ class Args:
     total_episodes: int = 5000
     n_words = 16
     """vocab size"""
-    image_size = 5
+    image_size = 3
     """number of observation grid"""
-    N_att = 2
+    N_att = 4
     """number of attributes"""
     N_val = 10
     """number of values"""
     N_i = 2
     """number of items"""
-    grid_size = 5
+    grid_size = 7
     """grid size"""
     mode = "train"
     agent_visible = False
     model_name = "dec_ppo_invisible_possig"
     model_step = "998400000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    ckpt_path = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
-    ckpt_path2 = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/goal_condition_pickup/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    ckpt_path = f"checkpoints/partial_goal_pickup/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/partial_goal_pickup/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/partial_goal_pickup/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
