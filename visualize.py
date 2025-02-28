@@ -88,7 +88,7 @@ if __name__ == "__main__":
     from environments.pickup_high_v1 import *
     # from environments.environment import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment(image_size=3, grid_size=5, agent_visible=False)
+    env = Environment(image_size=3, grid_size=5, agent_visible=True)
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
@@ -117,8 +117,9 @@ if __name__ == "__main__":
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=True)
             # print("reward", rewards)
             # print(f"agent0: \n {nonzero_sum_channels(observations[0]['image'])}")
-            print(f"score: {observations[0]['image']}")
-            print(f"score: {observations[1]['image']}")
+            print(f"Agent0: \n {observations[0]['image'][1]}")
+            print(f"Agent1: \n {observations[1]['image'][1]}")
+            # print(f"score: {observations[1]['image']}")
             # print(f"Can communicate:  {observations[0]['is_m_sent']}")
             # print(f"agent1: \n {nonzero_sum_channels(observations[1]['image'])}")
             # if rewards[0] != 0 or rewards[1] != 0:

@@ -21,7 +21,6 @@ import supersuit as ss
 from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-from utils.coef_decay import update_entropy_coef
 
 @dataclass
 class Args:
@@ -57,7 +56,6 @@ class Args:
     ent_coef: float = 0.01 # ori 0.01
     """coefficient of the action_entropy"""
     m_ent_coef: float = 0.01
-    min_m_ent_coef: float = 0.002
     """coefficient of the message_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -125,7 +123,6 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    args.m_ent_decay_steps = args.num_iterations
     run_name = args.exp_name
     if args.track:
         import wandb
@@ -236,10 +233,6 @@ if __name__ == "__main__":
     running_ep_l = 0.0
     running_num_ep = 0
     for iteration in range(1, args.num_iterations + 1):
-        m_ent_coef = update_entropy_coef(min_entropy_coef=args.min_m_ent_coef, 
-                                        initial_entropy_coef=args.m_ent_coef, 
-                                        decay_steps=args.m_ent_decay_steps,
-                                        current_step=iteration)
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
             # Annealing the rate if instructed to do so.
@@ -430,7 +423,7 @@ if __name__ == "__main__":
 
                     action_entropy_loss = action_entropy.mean()
                     message_entropy_loss = message_entropy.mean()
-                    loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss) + (m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
+                    loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss) + (args.m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
 
                     optimizers[i].zero_grad()
                     loss.backward()
