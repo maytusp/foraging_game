@@ -1,3 +1,5 @@
+# Wrongly implement: Didn't update the agent parameter following the selected agent
+# Instead it update the agent parameters based on the number of agents
 # Created: 6 Feb 2024
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
