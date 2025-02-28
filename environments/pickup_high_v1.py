@@ -440,82 +440,10 @@ class Environment(ParallelEnv):
         return self.observe(), self.norm_rewards, self.dones, self.truncated, self.infos
 # Original Code: Non-vectorise
 # # Define the classes
-# class EnvAgent:
-#     def __init__(self, id, position, strength, max_energy, grid_size, agent_visible, fully_visible):
-#         self.id = id
-#         self.position = position
-#         self.strength = strength
-#         self.energy = max_energy
-#         self.carrying_food = None
-#         self.done = False
-#         self.grid_size = grid_size
-#         self.agent_visible = agent_visible
-#         self.fully_visible = fully_visible
-#         # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
-    
-#     def observe(self, environment): #TODO Check this again
-#         # Define the 5x5 field of view around the agent, excluding its center
-#         occupancy_data = []
-#         food_attribute_data = np.zeros((environment.image_size, environment.image_size, environment.N_att))
-#         ob_range = environment.image_size // 2
-#         begin = -ob_range
-#         end = ob_range + 1
-#         agent_occupancy = [environment.N_val // 2]
-#         wall_occupancy = [environment.N_val]
-#         food_occupancy = [environment.N_val // 3]
-#         carry_add = environment.N_val // 10
-        
-#         for dx in range(begin, end):
-#             row = []
-#             for dy in range(begin, end):
-#                 if dx == 0 and dy == 0: # agent's own position
-#                     if self.carrying_food is not None:
-#                         obs_occupancy = list(map(lambda x:x+carry_add, agent_occupancy)) # if agent is carrying food
-#                     else:
-#                         obs_occupancy = agent_occupancy
-#                     row.append(obs_occupancy)
-#                     continue
-
-#                 x, y = self.position[0] + dx, self.position[1] + dy
-#                 if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-#                     obj = environment.grid[x, y]
-#                     if obj is None:
-#                         row.append([0])  # Empty grid
-#                     elif isinstance(obj, Food): # Observe Food
-#                         if len(obj.carried) > 0:
-#                             obs_occupancy = list(map(lambda x:x+carry_add, food_occupancy)) # if food is carried
-#                         else:
-#                             obs_occupancy = food_occupancy
-#                         row.append(obs_occupancy)
-
-#                         # observe food's attribute
-#                         if self.fully_visible: # If agent can see all attributes
-#                             food_attribute_data[dx+ob_range, dy+ob_range] = obj.attribute
-#                         else: # This is default case where agent can see some attributes
-#                             mask = (obj.visible_to_agent == self.id)  # Creates a boolean mask
-#                             food_attribute_data[dx+ob_range, dy+ob_range] = mask * obj.attribute
-
-#                     elif isinstance(obj, EnvAgent) and self.agent_visible: # Observe another agent
-#                         if obj.carrying_food is not None:
-#                             obs_occupancy = list(map(lambda x:x+carry_add, agent_occupancy)) # if agent is carrying food
-#                         else:
-#                             obs_occupancy = agent_occupancy
-#                         row.append(obs_occupancy)
-#                     else:
-#                         row.append([0])  # Empty grid
-#                 else:
-#                     row.append(wall_occupancy)  # Out-of-bounds grid (treated as empty)
-#             occupancy_data.append(row)
-#         occupancy_data = np.array(occupancy_data)
-#         obs_out = np.concatenate((occupancy_data, food_attribute_data), axis=2)
-#         return obs_out
-
-
-# Optimised code: Vectorise
 class EnvAgent:
     def __init__(self, id, position, strength, max_energy, grid_size, agent_visible, fully_visible):
         self.id = id
-        self.position = np.array(position)  # Convert to NumPy array for fast calculations
+        self.position = position
         self.strength = strength
         self.energy = max_energy
         self.carrying_food = None
@@ -523,64 +451,136 @@ class EnvAgent:
         self.grid_size = grid_size
         self.agent_visible = agent_visible
         self.fully_visible = fully_visible
-
-    def observe(self, environment):
-        ob_range = environment.image_size // 2
-        begin, end = -ob_range, ob_range + 1
-        
-        # Define occupancy values
-        agent_occupancy = environment.N_val // 2
-        wall_occupancy = environment.N_val
-        food_occupancy = environment.N_val // 3
-        carry_add = environment.N_val // 10
-
-        # Create empty observation arrays
-        occupancy_data = np.zeros((environment.image_size, environment.image_size, 1), dtype=int)
+        # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
+    
+    def observe(self, environment): #TODO Check this again
+        # Define the 5x5 field of view around the agent, excluding its center
+        occupancy_data = []
         food_attribute_data = np.zeros((environment.image_size, environment.image_size, environment.N_att))
-
-        # Compute valid indices in one step
-        x_range = self.position[0] + np.arange(begin, end)
-        y_range = self.position[1] + np.arange(begin, end)
-
-        valid_x = (x_range >= 0) & (x_range < self.grid_size)
-        valid_y = (y_range >= 0) & (y_range < self.grid_size)
-
-        valid_x_range = x_range[valid_x]
-        valid_y_range = y_range[valid_y]
-
-        sub_grid = environment.grid[np.ix_(valid_x_range, valid_y_range)]
-
-        is_food = np.vectorize(lambda obj: isinstance(obj, Food) if obj else False)(sub_grid)
-        is_agent = np.vectorize(lambda obj: isinstance(obj, EnvAgent) if obj else False)(sub_grid) & self.agent_visible
-
-        # Get carried food status
-        food_carried = np.vectorize(lambda obj: len(obj.carried) > 0 if isinstance(obj, Food) else False)(sub_grid)
-        agent_carrying = np.vectorize(lambda obj: obj.carrying_food is not None if isinstance(obj, EnvAgent) else False)(sub_grid)
-
-        rhs = (
-            is_food * (food_occupancy + food_carried * carry_add) +
-            is_agent * (agent_occupancy + agent_carrying * carry_add)
-        )
-
-        rhs = np.expand_dims(rhs, axis=2)
-
-        # Assign occupancy values
-        occupancy_data[np.ix_(valid_x, valid_y)] += rhs
-
-        # Assign food attributes
-        if self.fully_visible:
-            food_attributes = np.vectorize(lambda obj: obj.attribute if isinstance(obj, Food) else np.zeros(environment.N_att))(sub_grid)
-        else:
-            food_attributes = np.vectorize(lambda obj: obj.attribute * (obj.visible_to_agent == self.id) if isinstance(obj, Food) else np.zeros(environment.N_att))(sub_grid)
+        ob_range = environment.image_size // 2
+        begin = -ob_range
+        end = ob_range + 1
+        agent_occupancy = [environment.N_val // 2]
+        wall_occupancy = [environment.N_val]
+        food_occupancy = [environment.N_val // 3]
+        carry_add = environment.N_val // 10
         
-        food_attribute_data[np.ix_(valid_x, valid_y)] = np.expand_dims(food_attributes, axis=2)
+        for dx in range(begin, end):
+            row = []
+            for dy in range(begin, end):
+                if dx == 0 and dy == 0: # agent's own position
+                    if self.carrying_food is not None:
+                        obs_occupancy = list(map(lambda x:x+carry_add, agent_occupancy)) # if agent is carrying food
+                    else:
+                        obs_occupancy = agent_occupancy
+                    row.append(obs_occupancy)
+                    continue
 
-        # Mark agent's own position
-        occupancy_data[ob_range, ob_range, 0] = agent_occupancy + (carry_add if self.carrying_food else 0)
+                x, y = self.position[0] + dx, self.position[1] + dy
+                if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                    obj = environment.grid[x, y]
+                    if obj is None:
+                        row.append([0])  # Empty grid
+                    elif isinstance(obj, Food): # Observe Food
+                        if len(obj.carried) > 0:
+                            obs_occupancy = list(map(lambda x:x+carry_add, food_occupancy)) # if food is carried
+                        else:
+                            obs_occupancy = food_occupancy
+                        row.append(obs_occupancy)
 
-        # Combine occupancy and attribute data
+                        # observe food's attribute
+                        if self.fully_visible: # If agent can see all attributes
+                            food_attribute_data[dx+ob_range, dy+ob_range] = obj.attribute
+                        else: # This is default case where agent can see some attributes
+                            mask = (obj.visible_to_agent == self.id)  # Creates a boolean mask
+                            food_attribute_data[dx+ob_range, dy+ob_range] = mask * obj.attribute
+
+                    elif isinstance(obj, EnvAgent) and self.agent_visible: # Observe another agent
+                        if obj.carrying_food is not None:
+                            obs_occupancy = list(map(lambda x:x+carry_add, agent_occupancy)) # if agent is carrying food
+                        else:
+                            obs_occupancy = agent_occupancy
+                        row.append(obs_occupancy)
+                    else:
+                        row.append([0])  # Empty grid
+                else:
+                    row.append(wall_occupancy)  # Out-of-bounds grid (treated as empty)
+            occupancy_data.append(row)
+        occupancy_data = np.array(occupancy_data)
         obs_out = np.concatenate((occupancy_data, food_attribute_data), axis=2)
         return obs_out
+
+
+# # Optimised code: Vectorise, does not speed up with vectorise gym
+# class EnvAgent:
+#     def __init__(self, id, position, strength, max_energy, grid_size, agent_visible, fully_visible):
+#         self.id = id
+#         self.position = np.array(position)  # Convert to NumPy array for fast calculations
+#         self.strength = strength
+#         self.energy = max_energy
+#         self.carrying_food = None
+#         self.done = False
+#         self.grid_size = grid_size
+#         self.agent_visible = agent_visible
+#         self.fully_visible = fully_visible
+
+#     def observe(self, environment):
+#         ob_range = environment.image_size // 2
+#         begin, end = -ob_range, ob_range + 1
+        
+#         # Define occupancy values
+#         agent_occupancy = environment.N_val // 2
+#         wall_occupancy = environment.N_val
+#         food_occupancy = environment.N_val // 3
+#         carry_add = environment.N_val // 10
+
+#         # Create empty observation arrays
+#         occupancy_data = np.zeros((environment.image_size, environment.image_size, 1), dtype=int)
+#         food_attribute_data = np.zeros((environment.image_size, environment.image_size, environment.N_att))
+
+#         # Compute valid indices in one step
+#         x_range = self.position[0] + np.arange(begin, end)
+#         y_range = self.position[1] + np.arange(begin, end)
+
+#         valid_x = (x_range >= 0) & (x_range < self.grid_size)
+#         valid_y = (y_range >= 0) & (y_range < self.grid_size)
+
+#         valid_x_range = x_range[valid_x]
+#         valid_y_range = y_range[valid_y]
+
+#         sub_grid = environment.grid[np.ix_(valid_x_range, valid_y_range)]
+
+#         is_food = np.vectorize(lambda obj: isinstance(obj, Food) if obj else False)(sub_grid)
+#         is_agent = np.vectorize(lambda obj: isinstance(obj, EnvAgent) if obj else False)(sub_grid) & self.agent_visible
+
+#         # Get carried food status
+#         food_carried = np.vectorize(lambda obj: len(obj.carried) > 0 if isinstance(obj, Food) else False)(sub_grid)
+#         agent_carrying = np.vectorize(lambda obj: obj.carrying_food is not None if isinstance(obj, EnvAgent) else False)(sub_grid)
+
+#         rhs = (
+#             is_food * (food_occupancy + food_carried * carry_add) +
+#             is_agent * (agent_occupancy + agent_carrying * carry_add)
+#         )
+
+#         rhs = np.expand_dims(rhs, axis=2)
+
+#         # Assign occupancy values
+#         occupancy_data[np.ix_(valid_x, valid_y)] += rhs
+
+#         # Assign food attributes
+#         if self.fully_visible:
+#             food_attributes = np.vectorize(lambda obj: obj.attribute if isinstance(obj, Food) else np.zeros(environment.N_att))(sub_grid)
+#         else:
+#             food_attributes = np.vectorize(lambda obj: obj.attribute * (obj.visible_to_agent == self.id) if isinstance(obj, Food) else np.zeros(environment.N_att))(sub_grid)
+        
+#         food_attribute_data[np.ix_(valid_x, valid_y)] = np.expand_dims(food_attributes, axis=2)
+
+#         # Mark agent's own position
+#         occupancy_data[ob_range, ob_range, 0] = agent_occupancy + (carry_add if self.carrying_food else 0)
+
+#         # Combine occupancy and attribute data
+#         obs_out = np.concatenate((occupancy_data, food_attribute_data), axis=2)
+#         return obs_out
 
 
 class Food:
