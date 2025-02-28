@@ -55,7 +55,7 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01
     """coefficient of the action_entropy"""
-    m_ent_coef: float = 0.01
+    m_ent_coef: float = 0.002
     """coefficient of the message_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -451,7 +451,7 @@ if __name__ == "__main__":
 
                     action_entropy_loss = action_entropy.mean()
                     message_entropy_loss = message_entropy.mean()
-                    loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss)+ (args.m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
+                    loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss) - (args.m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
 
                     optimizers[i].zero_grad()
                     loss.backward()
