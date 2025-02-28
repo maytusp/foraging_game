@@ -45,7 +45,7 @@ def visualize_environment(environment, step):
         screen.blit(energy_text, (x, y - 20))  # Display text slightly above the agent
 
         # Draw a square centered at the agent position representing visual fieldss
-        square_size = 5 * cell_size
+        square_size = environment.image_size * cell_size
         top_left_x = x + cell_size // 2 - square_size // 2
         top_left_y = y + cell_size // 2 - square_size // 2
         square_rect = pygame.Rect(top_left_x, top_left_y, square_size, square_size)
@@ -79,19 +79,19 @@ def nonzero_sum_channels(obs):
     binary_mask = (channel_sums != 0).astype(int)
 
     return binary_mask
+
 if __name__ == "__main__":
     NUM_STEPS = 10000
-    NUM_EPISODES = 3
+    NUM_EPISODES = 20
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environments.goal_condition_pickup import *
+    from environments.pickup_high_v1 import *
     # from environments.environment import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment(N_i=2, image_size=5, grid_size=5, N_att=4, agent_visible=False)
+    env = Environment(image_size=3, grid_size=5, agent_visible=False)
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
-        print(f"masks {env.attribute_mask}")
         frames = []
         # print("Obs", observations[0].shape)
         for step in range(NUM_STEPS):
@@ -117,7 +117,9 @@ if __name__ == "__main__":
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=True)
             # print("reward", rewards)
             # print(f"agent0: \n {nonzero_sum_channels(observations[0]['image'])}")
-            print(f"{observations[0]['image'][0]}")
+            print(f"score: {observations[0]['image']}")
+            print(f"score: {observations[1]['image']}")
+            # print(f"Can communicate:  {observations[0]['is_m_sent']}")
             # print(f"agent1: \n {nonzero_sum_channels(observations[1]['image'])}")
             # if rewards[0] != 0 or rewards[1] != 0:
             #     print("reward", rewards)

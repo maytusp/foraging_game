@@ -14,7 +14,7 @@ def load_trajectory(file_path):
 # Extract and prepare data for t-SNE
 def extract_high_score_message(log_data):
     tsne_data = []
-    scores = []
+    attributes = []
     switch_agent = {0:1, 1:0}
     for episode, data in log_data.items():
         # Get sent messages and target food score
@@ -51,7 +51,8 @@ def extract_high_score_message(log_data):
 
         sent_message_embs = log_s_message_embs[start_idx:start_idx+5, plot_agent].flatten()
         tsne_data.append(sent_message_embs)  # Collect all time steps for the agent
-        scores.append(score)  # Same score for all time steps
+        concat_att = np.concatenate((agent_locs, score))
+        attributes.append()  # Same score for all time steps
 
     # Flatten and convert to NumPy
     tsne_data = np.vstack(tsne_data)

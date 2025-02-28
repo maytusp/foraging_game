@@ -1,6 +1,7 @@
 
-# Created: 14 Feb
-# Goal-Conditioned Model
+# Created: 28 Feb 2025
+# Model for pickup_high_v1
+# DecTraining DecExec
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,28 +17,27 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
-class PPOLSTMCommAgentGoal(nn.Module):
+class PPOLSTMCommAgent(nn.Module):
     '''
     Agent with communication
     Observations: [image, location, message]
     '''
-    def __init__(self, num_actions, grid_size=10, n_words=16, embedding_size=16, num_channels=None, N_val=None, N_att=None, image_size=None):
+    def __init__(self, num_actions, grid_size=5, n_words=16, embedding_size=16, num_channels=1, image_size=3):
         super().__init__()
         self.grid_size = grid_size
         self.n_words = n_words
         self.embedding_size = embedding_size
-        self.image_feat_dim = 64
-        self.loc_dim = 8
-        self.N_val = N_val # the highest value of the observation
+        self.image_feat_dim = 16
+        self.loc_dim = 4
         self.num_channels = num_channels
         self.visual_encoder = nn.Sequential(nn.Flatten(), # (1,5,5) to (25)
-                                        nn.Linear(image_size * image_size * num_channels, 256), 
+                                        nn.Linear(image_size * image_size * num_channels, 256),
                                         nn.ReLU(),
                                         nn.Linear(256, 256),
                                         nn.ReLU(),
-                                        nn.Linear(256, 256),
+                                        nn.Linear(256, 128),
                                         nn.ReLU(),
-                                        nn.Linear(256, self.image_feat_dim),
+                                        nn.Linear(128, self.image_feat_dim),
                                         nn.ReLU(),
                                         )
 
@@ -45,15 +45,9 @@ class PPOLSTMCommAgentGoal(nn.Module):
                                         nn.Linear(embedding_size, embedding_size), 
                                         nn.ReLU(),
                                         )
+
         self.location_encoder = nn.Linear(2, self.loc_dim)
-        self.feature_fusion = nn.Sequential(nn.Linear(self.image_feat_dim+self.loc_dim+self.embedding_size+N_att, 256), 
-                                        nn.ReLU(),
-                                        nn.Linear(256, 256),
-                                        nn.ReLU(),
-                                        nn.Linear(256, 256),
-                                        nn.ReLU(),
-                                        )
-        self.lstm = nn.LSTM(256, 128)
+        self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.embedding_size, 128)
         for name, param in self.lstm.named_parameters():
             if "bias" in name:
                 nn.init.constant_(param, 0)
@@ -65,17 +59,14 @@ class PPOLSTMCommAgentGoal(nn.Module):
 
     def get_states(self, input, lstm_state, done, tracks=None):
         batch_size = lstm_state[0].shape[1]
-        image, location, goal, message = input
-        image_feat = self.visual_encoder(image / self.N_val) # (L*B, feat_dim)
+        image, location, message = input
+        image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
         location = location / self.grid_size # (L*B,2)
         location_feat = self.location_encoder(location)
         message_feat = self.message_encoder(message) # (L*B,1)
         message_feat = message_feat.view(-1, self.embedding_size)
-        goal_feat = goal / self.N_val
 
-        hidden = torch.cat((image_feat, location_feat, message_feat, goal_feat), axis=1)
-        hidden = self.feature_fusion(hidden)
-        
+        hidden = torch.cat((image_feat, location_feat, message_feat), axis=1)
         # print("hidden", hidden.shape)
         # LSTM logic
         hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
@@ -100,14 +91,15 @@ class PPOLSTMCommAgentGoal(nn.Module):
         return self.critic(hidden)
 
     def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None, pos_sig=False, pos_lis=False):
-        image, location, goal, received_message = input
-        hidden, lstm_state = self.get_states((image, location, goal, received_message), lstm_state, done, tracks)
+        image, location, received_message = input
+        hidden, lstm_state = self.get_states((image, location, received_message), lstm_state, done, tracks)
 
         action_logits = self.actor(hidden)
         action_probs = Categorical(logits=action_logits)
         action_pmf = nn.Softmax(dim=1)(action_logits) 
         if action is None:
             action = action_probs.sample()
+
         message_logits = self.message_head(hidden)
         message_probs = Categorical(logits=message_logits)
         message_pmf = nn.Softmax(dim=1)(message_logits) # probability mass function of message
@@ -115,10 +107,9 @@ class PPOLSTMCommAgentGoal(nn.Module):
         if pos_lis:
             # create counterfactual case where message is zero
             zero_message = torch.zeros_like(received_message).to(received_message.device)
-            hidden_cf, _ = self.get_states((image, location, goal, zero_message), lstm_state, done, tracks)
+            hidden_cf, _ = self.get_states((image, location, zero_message), lstm_state, done, tracks)
             action_cf_logits = self.actor(hidden_cf)
-            action_cf_pmf = nn.Softmax(dim=1)(action_cf_logits)
-
+            action_cf_pmf = nn.Softmax(dim=1)(action_cf_logits) 
         # For positive signalling and listening
         if message is None:
             message = message_probs.sample()

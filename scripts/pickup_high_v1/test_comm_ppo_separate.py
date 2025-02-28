@@ -1,6 +1,4 @@
-# Edit: 20Dec2024
-# docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
-# CUDA_VISIBLE_DEIVCES=1 python -m scripts.goal_pickup.test_comm_ppo_separate
+# Created 28 Feb2025: TODO
 import os
 import random
 import time
@@ -17,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.goal_condition_pickup import *
+from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.goal_cond_models import PPOLSTMCommAgentGoal
 
@@ -64,9 +62,9 @@ class Args:
     model_name = "dec_ppo_invisible_possig"
     model_step = "1B"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
-    ckpt_path = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
-    ckpt_path2 = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/goal_condition_pickup/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/pickup_high_v1/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:

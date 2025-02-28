@@ -56,8 +56,6 @@ def extract_message(log_data, N_att=2, N_i=2, window_size=8, lag_time=0):
         log_locs = data["log_locs"] # (max_steps, num_agents, 2)
         log_target_id = data["log_target_food_id"]
         log_rewards = data["log_rewards"][:, 0]
-        first_index = np.argmax(log_rewards > 0)
-        # print("stop index", first_index)
         print("log_s_message agent0:", log_s_message[:, 0])
         print("log_s_message agent1:", log_s_message[:, 1])
         # print("target dist: ", np.sum((log_attributes[log_target_id]-log_goal)**2))
@@ -73,41 +71,35 @@ def extract_message(log_data, N_att=2, N_i=2, window_size=8, lag_time=0):
         # has_neg_one = np.any(first_seen_time_indices == -1, axis=1)
         has_neg_one = np.any(first_seen_time_indices == -1)
         check_window_size = np.any(19-first_seen_time_indices < window_size+lag_time)
-        if not(has_neg_one or check_window_size): # not(has_neg_one or check_window_size) and first_index < 10:
+        if not(has_neg_one or check_window_size):
             for agent_id in range(num_agents):
-                print(f"agent {agent_id}")
-                # print(log_s_message[:, agent_id])
-                sent_message = np.zeros((N_i, window_size))
-                seen_attribute = np.zeros((N_i, 3))
                 start_idx_list = []
                 for item_id in range(N_i):
                     
                     start_idx = int(first_seen_time_indices[agent_id, item_id])
                     start_idx_list.append(start_idx)
-                    print(f"start index item {item_id}: {start_idx}")
-                    agent_pos = log_locs[start_idx, agent_id, :]
-                    item_pos = log_foods["position"][item_id]
-                    diff = np.array(log_goal) - np.array(log_attributes[item_id])
-                    square_error = np.expand_dims(np.array(np.sum(diff*2)), axis=0)
 
-                    mask_att = diff*log_masks[agent_id]
-                    # seen_attribute[item_id, :] = np.concatenate((square_error, agent_pos), axis=0)
-                    # seen_attribute[item_id, :] =  np.array(log_attributes[item_id])
-                    # seen_attribute[item_id, :] = np.concatenate((mask_att, agent_pos), axis=0)
-                    seen_attribute[item_id, :] = np.concatenate((np.array(log_attributes[item_id]), square_error))
-                    # seen_attribute[item_id, :] = agent_pos
-                    # 
-                    # print(log_s_message.shape)
-                    # print(f"{start_idx}, {start_idx+window_size}")
+                    agent_pos = log_locs[start_idx, agent_id, :] # x_a, y_a
+                    agent_goal = np.array(log_goal)  # g1,g2,...
+                    agent_mask = log_masks[agent_id] # mask
+
+                    item_pos = log_foods["position"][item_id] # x_i, y_i
+                    item_att = np.array(log_attributes[item_id]) # a1,a2,...
+                    diff_att = agent_goal - item_att # g1-a1, g2-a2,...
+
+                    mask_att = item_att * agent_mask
+                    mask_att_diff = diff_att * agent_mask
+                    mse = np.expand_dims(np.mean(mask_att_diff**2), axis=0)
+
                     start_idx += lag_time
-                    # print(start_idx)
-                    sent_message[item_id] = log_s_message[start_idx:start_idx+window_size, agent_id]
-                if target_item_only:
-                    messages[agent_id].append(sent_message[log_target_id].flatten())  # Collect all time steps for the agent
-                    attributes[agent_id].append(seen_attribute[log_target_id].flatten())
-                else:
-                    messages[agent_id].append(sent_message.flatten())  # Collect all time steps for the agent
-                    attributes[agent_id].append(seen_attribute.flatten())
+
+                    extract_message = log_s_message[start_idx:start_idx+window_size, agent_id]
+
+                    extract_attribute = np.concatenate((mse, agent_pos))
+                    # extract_attribute = mask_att
+                    messages[agent_id].append(extract_message)  # Collect all time steps for the agent
+                    attributes[agent_id].append(extract_attribute)
+
         else:
             neg_episode+=1
 
@@ -116,7 +108,7 @@ def extract_message(log_data, N_att=2, N_i=2, window_size=8, lag_time=0):
 
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    log_file_path = "../logs/goal_condition_pickup/dec_ppo_invisible_possig/grid5_img5_ni2_natt2_nval10_nw16_998400000/seed1/mode_train/normal/trajectory.pkl"
+    log_file_path = "../logs/goal_condition_pickup/dec_ppo_invisible/grid5_img5_ni2_natt2_nval10_nw16_716800000/seed1/mode_train/normal/trajectory.pkl"
     num_episodes = 2000
     if os.path.exists(log_file_path):
         # Load log data
