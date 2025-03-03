@@ -79,7 +79,7 @@ class Environment(ParallelEnv):
             self.score_unit = 2
             self.start_steps = 0
             self.last_steps = 125
-            self.score_list = [(i+1)*score_unit for i in range(start_steps, last_steps) if (i+1) % 5 != 0]
+            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
 
         self.max_score = self.N_val
         self.food_ener_fully_visible = food_ener_fully_visible

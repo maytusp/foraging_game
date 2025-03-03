@@ -49,7 +49,7 @@ def prepare_tsne_data(log_data):
             print("start_idx none")
             # If the agent never sees the target, skip this episode
             continue
-
+        print(log_s_message_embs.shape)
         sent_message_embs = log_s_message_embs[start_idx:start_idx+10, plot_agent].flatten()
         tsne_data.append(sent_message_embs)  # Collect all time steps for the agent
         scores.append(score)  # Same score for all time steps

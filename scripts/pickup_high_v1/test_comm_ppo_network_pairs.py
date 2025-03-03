@@ -48,7 +48,7 @@ class Args:
     total_episodes: int = 5000
     n_words = 16
     """vocab size"""
-    image_size = 5
+    image_size = 3
     """number of observation grid"""
     N_att = 2
     """number of attributes"""
@@ -60,13 +60,14 @@ class Args:
     max_steps=10
     """grid size"""
     mode = "train"
-    agent_visible = True
-    model_name = "dec_ppo"
+    agent_visible = False
+    model_name = "dec_ppo_invisible"
+    network_pairs = "1-1" # population training evaluation
     model_step = "204800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/pickup_high_v1/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    saved_dir = f"logs/pickup_high_v1/{model_name}{network_pairs}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
