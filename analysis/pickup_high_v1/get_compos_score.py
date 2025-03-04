@@ -37,8 +37,8 @@ def extract_message_attribute(log_data):
                 item_loc = distractor_loc
 
             extract_message = log_s_messages[:, agent_id]
+            # extract_attribute =  [score, item_loc[0], item_loc[1]]
             extract_attribute =  [score, item_loc[0], item_loc[1]]
-            
             messages[agent_id].append(extract_message)  # Collect all time steps for the agent
             attributes[agent_id].append(extract_attribute)
 
@@ -46,7 +46,7 @@ def extract_message_attribute(log_data):
 
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible/grid5_img3_ni2_nw16_ms10_204800000/seed1/mode_train/normal/trajectory.pkl"
+    log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible/grid5_img3_ni2_nw16_ms10_204800000/seed1/mode_test/normal/trajectory.pkl"
     num_episodes = 2000
     if os.path.exists(log_file_path):
         # Load log data

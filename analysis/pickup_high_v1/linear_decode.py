@@ -91,10 +91,10 @@ def save_classification_report_csv(report_dict, accuracy, filename):
 
 if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
-    label_list = ['item_score', 'item_loc_x', 'item_loc_y']
+    label_list = ['item_score']# , 'item_loc_x', 'item_loc_y']
     seen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_train/normal/trajectory.pkl"
     unseen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_test/normal/trajectory.pkl"
-    agent_id = 1
+    agent_id = 0
     label_encoder = sklearn.preprocessing.LabelEncoder()
     for k in label_list:
         groundtruth_name = k
@@ -130,28 +130,31 @@ if __name__ == "__main__":
         seen_report_path = f"reports/{groundtruth_name}_seen.csv"
         save_classification_report_csv(report_seen, accuracy_seen, seen_report_path)
 
-        # if k == "item_score":
-        #     # Load log data
-        #     unseen_data = load_trajectory(unseen_log_file_path)
-        #     unseen_attributes, unseen_messages = extract_message(unseen_data) # attributes_dict[agent_id][episode_id] -> Dict
-        #     unseen_label_dict = extract_label(unseen_attributes, agent_id=agent_id)
-            
-        #     unseen_message_arr = np.array(unseen_messages[agent_id])
-        #     unseen_label_arr = np.array(unseen_label_dict[groundtruth_name])
-        #     unseen_label_arr = label_encoder.fit_transform(unseen_label_arr)
-        #     X_test_unseen, y_test_unseen = unseen_message_arr, unseen_label_arr
+        if k == "item_score":
+            # Load log data
+            unseen_data = load_trajectory(unseen_log_file_path)
+            unseen_attributes, unseen_messages = extract_message(unseen_data) # attributes_dict[agent_id][episode_id] -> Dict
+            unseen_label_dict = extract_label(unseen_attributes, agent_id=agent_id)
 
-        #     clf = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=1000, class_weight="balanced")
-        #     clf.fit(X_train, y_train)
-        #     # Evaluate on unseen data
-        #     y_pred_unseen = clf.predict(X_test_unseen)
-        #     accuracy_unseen = accuracy_score(y_test_unseen, y_pred_unseen)
-        #     report_unseen = classification_report(y_test_unseen, y_pred_unseen, output_dict=True)
-            
-        #     print("Unseen Combinations")
-        #     print(f"Classification Accuracy: {accuracy_unseen:.2f}")
-        #     # print(pd.DataFrame(report_unseen).transpose())
+            unseen_message_arr = np.array(unseen_messages[agent_id])
+            unseen_label_arr = np.array(unseen_label_dict[groundtruth_name])
 
-        #     # Save unseen classification report as CSV
-        #     unseen_report_path = f"reports/{groundtruth_name}_unseen.csv"
-        #     save_classification_report_csv(report_unseen, accuracy_unseen, unseen_report_path)
+            X_train_unseen, X_test_unseen, y_train_unseen, y_test_unseen = train_test_split(
+                unseen_message_arr, unseen_label_arr, test_size=0.3, random_state=42
+            )
+            X_test_unseen, y_test_unseen = unseen_message_arr, unseen_label_arr
+
+            clf = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=1000, class_weight="balanced")
+            clf.fit(X_train_unseen, y_train_unseen)
+            # Evaluate on unseen data
+            y_pred_unseen = clf.predict(X_test_unseen)
+            accuracy_unseen = accuracy_score(y_test_unseen, y_pred_unseen)
+            report_unseen = classification_report(y_test_unseen, y_pred_unseen, output_dict=True)
+            
+            print("Unseen Combinations")
+            print(f"Classification Accuracy: {accuracy_unseen:.2f}")
+            # print(pd.DataFrame(report_unseen).transpose())
+
+            # Save unseen classification report as CSV
+            unseen_report_path = f"reports/{groundtruth_name}_unseen.csv"
+            save_classification_report_csv(report_unseen, accuracy_unseen, unseen_report_path)

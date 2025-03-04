@@ -35,8 +35,8 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = False
-    ablate_type = "noise" # zero, noise
+    ablate_message = True
+    ablate_type = "zero" # zero, noise
     agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
