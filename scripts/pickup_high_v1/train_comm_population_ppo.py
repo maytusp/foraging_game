@@ -122,7 +122,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "pickup_high_v1"
     """the wandb's project name"""
@@ -204,16 +204,16 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     next_obs_dict, _ = envs.reset(seed=args.seed)
 
-    for i in range(args.num_networks):
-        agents[i] = PPOLSTMCommAgent(num_actions=num_actions, 
+    for network_id in range(args.num_networks):
+        agents[network_id] = PPOLSTMCommAgent(num_actions=num_actions, 
                                     grid_size=args.grid_size, 
                                     n_words=args.n_words, 
                                     embedding_size=16, 
                                     num_channels=num_channels, 
                                     image_size=args.image_size).to(device)
         if args.load_pretrained:
-            agents[i].load_state_dict(torch.load(args.ckpt_path, map_location=device))
-        optimizers[i] = optim.Adam(agents[i].parameters(), lr=args.learning_rate, eps=1e-5)
+            agents[network_id].load_state_dict(torch.load(args.ckpt_path, map_location=device))
+        optimizers[network_id] = optim.Adam(agents[network_id].parameters(), lr=args.learning_rate, eps=1e-5)
 
     for i in range(num_agents):
         # ALGO Logic: Storage setup
@@ -234,15 +234,15 @@ if __name__ == "__main__":
         next_r_messages[i] = torch.tensor(next_r_messages[i]).squeeze().to(device)
         next_done[i] = torch.zeros(args.num_envs).to(device)
         next_lstm_state[i] = (
-            torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
-            torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
+            torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
+            torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
         )  # hidden and cell states (see https://youtu.be/8HyCNIVRbSU)
 
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
-    possible_agents = [i for i in range(args.num_networks)]
-    selected_agents = [0,1]
+    possible_networks = [i for i in range(args.num_networks)]
+    selected_networks = [0,1]
     # for visualization
     running_ep_r = 0.0
     running_ep_l = 0.0
@@ -252,18 +252,20 @@ if __name__ == "__main__":
         if iteration % args.reset_iteration == 0:
             for i in range(num_agents):
                 next_lstm_state[i] = (
-                    torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
-                    torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
+                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
+                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                 )
-            selected_agents = np.random.choice(possible_agents, num_agents, replace=args.self_play_option)
+            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
-            # Annealing the rate if instructed to do so.
-            if args.anneal_lr:
+
+        if args.anneal_lr:
+            for network_id in range(args.num_networks):
+                # Annealing the rate if instructed to do so.
                 frac = 1.0 - (iteration - 1.0) / args.num_iterations
                 lrnow = frac * args.learning_rate
-                optimizers[i].param_groups[0]["lr"] = lrnow
+                optimizers[network_id].param_groups[0]["lr"] = lrnow
 
 
         for step in range(0, args.num_steps):
@@ -282,7 +284,7 @@ if __name__ == "__main__":
                 r_messages[i][step] = next_r_messages[i].squeeze()
                 dones[i][step] = next_done[i]
 
-                network_id = selected_agents[i] # Two embodied agents have chance to share the same neural networks during training (self-play)
+                network_id = selected_networks[i] # Two embodied agents have chance to share the same neural networks during training (self-play)
 
                 # ALGO LOGIC: action logic
                 with torch.no_grad():
@@ -300,6 +302,8 @@ if __name__ == "__main__":
             env_action, env_message = get_action_message_for_env(action, s_message)
             next_obs_dict, all_reward, all_terminations, all_truncations, infos = envs.step({"action": env_action, "message": env_message})
             env_info = (all_reward, all_terminations, all_truncations)
+
+            # Log experience from the environment into batches: separated by agent id
             for i in range(num_agents):
                 next_obs[i], next_locs[i], next_r_messages[i], (reward[i], terminations, truncations) = extract_dict_separate(next_obs_dict, env_info, device, i, num_agents, use_message=True)
             
@@ -308,9 +312,11 @@ if __name__ == "__main__":
                 next_obs[i], next_done[i] = torch.Tensor(next_obs[i]).to(device), torch.Tensor(next_done[i]).to(device)
                 next_r_messages[i] = torch.tensor(next_r_messages[i]).to(device)
 
-                if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
-                    save_path = os.path.join(args.save_dir, f"agent_{i}_step_{global_step}.pt")
-                    torch.save(agents[i].state_dict(), save_path)
+            # Save Model Checkpoints: loop over networks not agents
+            if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
+                for network_id in range(args.num_networks):
+                    save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{global_step}.pt")
+                    torch.save(agents[network_id].state_dict(), save_path)
                     print(f"Model saved to {save_path}")
 
             for info in infos:
@@ -347,7 +353,7 @@ if __name__ == "__main__":
         advantages = {}
         returns = {}
         for i in range(num_agents):
-            network_id = selected_agents[i]
+            network_id = selected_networks[i]
             # bootstrap value if not done
             with torch.no_grad():
                 next_value = agents[network_id].get_value(
@@ -453,10 +459,10 @@ if __name__ == "__main__":
                     message_entropy_loss = message_entropy.mean()
                     loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss) - (args.m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
 
-                    optimizers[i].zero_grad()
+                    optimizers[network_id].zero_grad()
                     loss.backward()
-                    nn.utils.clip_grad_norm_(agents[i].parameters(), args.max_grad_norm)
-                    optimizers[i].step()
+                    nn.utils.clip_grad_norm_(agents[network_id].parameters(), args.max_grad_norm)
+                    optimizers[network_id].step()
 
                 if args.target_kl is not None and action_approx_kl > args.target_kl:
                     break
@@ -467,26 +473,26 @@ if __name__ == "__main__":
 
             # TRY NOT TO MODIFY: record rewards for plotting purposes
             if args.visualize_loss and (global_step // args.num_envs) % args.log_every == 0:
-                writer.add_scalar(f"agent{i}/charts/learning_rate", optimizers[i].param_groups[0]["lr"], global_step)
-                writer.add_scalar(f"agent{i}/losses/value_loss", v_loss.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/action_loss", pg_loss.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/message_loss", mg_loss.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/action_entropy", action_entropy_loss.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/message_entropy", message_entropy_loss.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/action_approx_kl", action_approx_kl.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/message_approx_kl", message_approx_kl.item(), global_step)
-                writer.add_scalar(f"agent{i}/losses/action_clipfrac", np.mean(action_clipfracs), global_step)
-                writer.add_scalar(f"agent{i}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
-                writer.add_scalar(f"agent{i}/losses/explained_variance", explained_var, global_step)
+                writer.add_scalar(f"agent{network_id}/charts/learning_rate", optimizers[network_id].param_groups[0]["lr"], global_step)
+                writer.add_scalar(f"agent{network_id}/losses/value_loss", v_loss.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/action_loss", pg_loss.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/message_loss", mg_loss.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/action_entropy", action_entropy_loss.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/message_entropy", message_entropy_loss.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/old_action_approx_kl", old_action_approx_kl.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/old_message_approx_kl", old_message_approx_kl.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/action_approx_kl", action_approx_kl.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/message_approx_kl", message_approx_kl.item(), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/action_clipfrac", np.mean(action_clipfracs), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
+                writer.add_scalar(f"agent{network_id}/losses/explained_variance", explained_var, global_step)
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
                 print("SPS:", int(global_step / (time.time() - start_time)))
 
-    for i in range(num_agents):
-        final_save_path = os.path.join(args.save_dir, f"final_model_agent_{i}.pt")
-        torch.save(agents[i].state_dict(), final_save_path)
-        print(f"Final model of agent {i} saved to {final_save_path}")
+    for network_id in range(args.num_networks):
+        final_save_path = os.path.join(args.save_dir, f"final_model_agent_{network_id}.pt")
+        torch.save(agents[network_id].state_dict(), final_save_path)
+        print(f"Final model of network {network_id} saved to {final_save_path}")
 
     envs.close()
     writer.close()

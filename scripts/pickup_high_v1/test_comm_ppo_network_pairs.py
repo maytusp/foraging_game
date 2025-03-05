@@ -45,7 +45,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 5000
+    total_episodes: int = 400
     n_words = 16
     """vocab size"""
     image_size = 3
@@ -61,11 +61,11 @@ class Args:
     """grid size"""
     mode = "test"
     agent_visible = False
-    model_name = "dec_ppo_selfplay_invisible"
-    network_pairs = "0-0" # population training evaluation
+    model_name = "pop_ppo_nnet3"
+    network_pairs = "1-1" # population training evaluation
     selected_networks = network_pairs.split("-")
 
-    model_step = "204800000"
+    model_step = "665600000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
