@@ -24,6 +24,7 @@ def extract_message(log_data, N_att=2, N_i=2, window_size=8, lag_time=0, use_all
     for episode, data in log_data.items():
         # Get sent messages and target food score
         log_s_message = data["log_s_messages"]
+        log_s_message_embs = data["log_s_message_embs"]
         log_masks = data["log_masks"]
         log_attributes = data["log_attributes"]
         log_goal = np.array(data["log_goal"])

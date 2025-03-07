@@ -14,6 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from get_compos_score import load_trajectory
 import os
+from transforms import *
 
 def extract_message(log_data):
     attributes = {0:[], 1:[]}
@@ -23,6 +24,7 @@ def extract_message(log_data):
     for episode, data in log_data.items():
         # Get sent messages and target food score
         log_s_messages = data["log_s_messages"]
+        log_s_message_embs = data["log_s_message_embs"]
         who_see_target = data["who_see_target"]
         target_score = data["log_target_food_dict"]["score"]
         target_loc = data["log_target_food_dict"]["location"] # (2,)
@@ -39,8 +41,9 @@ def extract_message(log_data):
             else:
                 score = distractor_score
                 item_loc = distractor_loc
-
+            # if agent_id == who_see_target:
             extract_message = log_s_messages[:, agent_id]
+            # extract_message = log_s_message_embs[:, :, agent_id].flatten()
             extract_attribute = {
                                 "item_score": score,
                                 "item_location": item_loc,
@@ -91,9 +94,9 @@ def save_classification_report_csv(report_dict, accuracy, filename):
 
 if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
-    label_list = ['item_score']# , 'item_loc_x', 'item_loc_y']
-    seen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_train/normal/trajectory.pkl"
-    unseen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_test/normal/trajectory.pkl"
+    label_list = ['item_score', 'item_loc_x', 'item_loc_y']
+    seen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible0-1/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_train/normal/trajectory.pkl"
+    unseen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible0-1/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_test/normal/trajectory.pkl"
     agent_id = 0
     label_encoder = sklearn.preprocessing.LabelEncoder()
     for k in label_list:
@@ -106,6 +109,8 @@ if __name__ == "__main__":
 
         seen_message_arr = np.array(seen_messages[agent_id])
         seen_label_arr = np.array(seen_label_dict[groundtruth_name])
+        if "score" in k:
+            seen_label_arr = transform_to_range_class(seen_label_arr)
         # seen_label_arr = label_encoder.fit_transform(seen_label_arr)
 
         # visualise_class(label_arr)
@@ -127,7 +132,7 @@ if __name__ == "__main__":
         print(f"Classification Accuracy: {accuracy_seen:.2f}")
         # print(pd.DataFrame(report_seen).transpose())
         # Save seen classification report as CSV
-        seen_report_path = f"reports/{groundtruth_name}_seen.csv"
+        seen_report_path = f"reports/see_target{groundtruth_name}_seen.csv"
         save_classification_report_csv(report_seen, accuracy_seen, seen_report_path)
 
         if k == "item_score":
@@ -138,14 +143,17 @@ if __name__ == "__main__":
 
             unseen_message_arr = np.array(unseen_messages[agent_id])
             unseen_label_arr = np.array(unseen_label_dict[groundtruth_name])
+            unseen_label_arr = transform_to_range_class(unseen_label_arr)
 
-            X_train_unseen, X_test_unseen, y_train_unseen, y_test_unseen = train_test_split(
-                unseen_message_arr, unseen_label_arr, test_size=0.3, random_state=42
-            )
-            X_test_unseen, y_test_unseen = unseen_message_arr, unseen_label_arr
+            X_test_unseen = unseen_message_arr
+            y_test_unseen = unseen_label_arr
+            # X_train_unseen, X_test_unseen, y_train_unseen, y_test_unseen = train_test_split(
+            #     unseen_message_arr, unseen_label_arr, test_size=0.3, random_state=42
+            # )
+            # X_test_unseen, y_test_unseen = unseen_message_arr, unseen_label_arr
 
-            clf = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=1000, class_weight="balanced")
-            clf.fit(X_train_unseen, y_train_unseen)
+            # clf = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=1000, class_weight="balanced")
+            # clf.fit(X_train_unseen, y_train_unseen)
             # Evaluate on unseen data
             y_pred_unseen = clf.predict(X_test_unseen)
             accuracy_unseen = accuracy_score(y_test_unseen, y_pred_unseen)
@@ -156,5 +164,5 @@ if __name__ == "__main__":
             # print(pd.DataFrame(report_unseen).transpose())
 
             # Save unseen classification report as CSV
-            unseen_report_path = f"reports/{groundtruth_name}_unseen.csv"
+            unseen_report_path = f"reports/see_target{groundtruth_name}_unseen.csv"
             save_classification_report_csv(report_unseen, accuracy_unseen, unseen_report_path)
