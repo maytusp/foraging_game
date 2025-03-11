@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_high_v1 import *
+from environments.pickup_high_v3 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -68,9 +68,9 @@ class Args:
     
     model_step = "307200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    # ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
-    # ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
-    # saved_dir = f"logs/pickup_high_v1/{model_name}{network_pairs}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    # ckpt_path = f"checkpoints/pickup_high_v3/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
+    # ckpt_path2 = f"checkpoints/pickup_high_v3/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
+    # saved_dir = f"logs/pickup_high_v3/{model_name}{network_pairs}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     # if ablate_message:
     #     saved_dir = os.path.join(saved_dir, ablate_type)
     # else:
@@ -87,9 +87,9 @@ if __name__ == "__main__":
             # Update the network pair and dependent paths/parameters
             network_pairs = f"{i}-{j}"
             selected_networks = network_pairs.split("-")
-            args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
-            args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-            args.saved_dir = f"logs/pickup_high_v1/exp2/{args.model_name}/pair_{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+            args.ckpt_path = f"checkpoints/pickup_high_v3/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
+            args.ckpt_path2 = f"checkpoints/pickup_high_v3/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
+            args.saved_dir = f"logs/pickup_high_v3/exp2/{args.model_name}/pair_{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
             if args.ablate_message:
                 args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
             else:

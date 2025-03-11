@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
 import seaborn as sns
 import editdistance
+from language_analysis import Disent, TopographicSimilarity
 import os
 # Load the .pkl file
 def load_trajectory(file_path):
@@ -15,14 +16,13 @@ def load_trajectory(file_path):
 # Extract and prepare data for t-SNE
 def extract_data(log_data):
     message_data = {"agent0": [], "agent1":[]}
+    attribute_data = []
     scores = {"agent0": [], "agent1":[]}
     item_locs = {"agent0": [], "agent1":[]}
-    switch_agent = {0:1, 1:0}
     for id, (episode, data) in enumerate(log_data.items()):
 
         log_s_messages = data["log_s_messages"]
         who_see_target = data["who_see_target"]
-        another_agent = switch_agent[who_see_target]
         target_score = data["log_target_food_dict"]["score"]
         target_loc = data["log_target_food_dict"]["location"] # (2,)
         distractor_score = data["log_distractor_food_dict"]["score"][0]
@@ -31,11 +31,37 @@ def extract_data(log_data):
         for agent_id in range(2):
             messages = log_s_messages[:, agent_id].flatten()
             message_data[f"agent{agent_id}"].append(messages)  # Collect all time steps for the agent
+            extract_attribute = [target_score, target_loc[0], target_loc[1], 
+                                distractor_score, distractor_loc[0], distractor_loc[1]]
+        attribute_data.append(extract_attribute)
+    return message_data, attribute_data
 
 
-    return message_data
+def get_topsim(message_data,attribute_data, num_networks):
+    sender_list = [i for i in range(num_networks)]
+    data = []
+    n_samples = 1000000
+    extracted_message = []
+    extracted_attribute = []
+    receiver = 0
+    avg_topsim = 0
+    max_eval_episodes=1000
+    max_message_length=5
+    for sender in sender_list:
+        extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
+        extracted_attribute.append(attribute_data[f"{sender}-{receiver}"])
+        n_samples = min(extracted_message[sender].shape[0], n_samples)
 
 
+    for agent_id in range(len(sender_list)):
+        messages = np.array(extracted_message[sender_list[agent_id]])
+        attributes = np.array(extracted_attribute[sender_list[agent_id]])
+        topsim = TopographicSimilarity.compute_topsim(attributes[:max_eval_episodes], messages[:max_eval_episodes, :max_message_length])     
+        avg_topsim += topsim
+        print(f"agent_id {agent_id} has topsim {topsim}")
+    avg_topsim /= num_networks
+
+    return avg_topsim
 
 def get_similarity(message_data, num_networks):
     sender_list = [i for i in range(num_networks)]
@@ -80,9 +106,7 @@ def plot_heatmap(similarity_mat, saved_fig_path):
         
 
 if __name__ == "__main__":
-    # Path to the trajectory .pkl file
-    
-    model_name = "pop_ppo_2net_selfplay_invisible"
+    model_name = "dec_ppo_invisible"
     combination_name = "grid5_img3_ni2_nw16_ms10_307200000"
     seed = 1
     saved_fig_dir = f"figs"
@@ -90,23 +114,27 @@ if __name__ == "__main__":
     os.makedirs(saved_fig_dir, exist_ok=True)
     mode = "train"
     num_networks = 2
-    network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
+    network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
     log_file_path = {}
     message_data = {}
+    attribute_data = {}
     for pair in network_pairs:
         print(f"loading network pair {pair}")
-        log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+        log_file_path[pair] =  f"../../logs/pickup_high_v1/exp2/{model_name}/pair_{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
     
         
         # Load log data
         log_data = load_trajectory(log_file_path[pair])
 
         # Prepare data for t-SNE
-        message_data[pair] = extract_data(log_data)
+        message_data[pair], attribute_data[pair] = extract_data(log_data)
 
 
     similarity_mat, avg_sim = get_similarity(message_data, num_networks)
     print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
+    
+    avg_topsim = get_topsim(message_data, attribute_data, num_networks)
+    print(f"avg topsim = {avg_topsim}")
     plot_heatmap(similarity_mat, saved_fig_path)
     
 

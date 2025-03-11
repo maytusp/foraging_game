@@ -1,3 +1,4 @@
+# Displacement
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
@@ -17,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_high_v1 import *
+from environments.pickup_high_v3 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -80,9 +81,9 @@ class Args:
 
     n_words = 16
     image_size = 3
-    N_i = 2
+    N_i = 4
     grid_size = 5
-    max_steps = 10
+    max_steps = 15
     fully_visible_score = False
     agent_visible = False
     mode = "train"
@@ -101,7 +102,7 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_high_v1/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_high_v3/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     
@@ -110,7 +111,7 @@ class Args:
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_high_v1/pop_ppo_24net_invisible/grid5_img3_ni2_nw16_ms10/seed1/agent_{a}_step_51200000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_high_v3/pop_ppo_24net_invisible/grid5_img3_ni2_nw16_ms10/seed1/agent_{a}_step_51200000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
 
@@ -123,9 +124,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_high_v1"
+    wandb_project_name: str = "pickup_high_v3"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -292,6 +293,7 @@ if __name__ == "__main__":
                     action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[network_id].get_action_and_value((next_obs[i], next_locs[i], next_r_messages[i]), 
                                                                                                         next_lstm_state[i], next_done[i])
                     values[i][step] = value[i].flatten()
+                    # print(f"agent {i} sends message {s_message[i]}")
 
                 actions[i][step] = action[i]
                 s_messages[i][step] = s_message[i]
