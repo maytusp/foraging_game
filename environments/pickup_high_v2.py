@@ -1,4 +1,5 @@
-# 28 Feb 2025 Pickup high v1 Stable version
+# 28 Feb 2025 Pickup high v2 for studying communication through behaviour:
+# The only difference to v1 is items are randomly placed across the map
 # Agents are spawn on the different sides with their seen-score items
 # This is for study experiment1: what is encoded in communication?
 # Visible vs Invisible Agents

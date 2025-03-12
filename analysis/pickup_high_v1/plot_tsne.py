@@ -38,8 +38,8 @@ def prepare_tsne_data(log_data):
             else:
                 score = distractor_score
                 item_loc = distractor_loc
-            # if agent_id==who_see_target:
-            if 50<=score<=200: # f
+            if agent_id==who_see_target:
+                # if 50<=score<=200: # f
                 tsne_data[f"agent{agent_id}"].append(message_embs)  # Collect all time steps for the agent
                 scores[f"agent{agent_id}"].append(score)  # Same score for all time steps
                 item_locs[f"agent{agent_id}"].append([item_loc[0], item_loc[1]])
@@ -105,13 +105,47 @@ def plot_tsne_see_target(tsne_results, see_target, plot_agent="agent0"):
     plt.grid(True)
     plt.show()
 
+
+# Plot t-SNE
+def plot_tsne_loc_see_target(tsne_results, item_locs, see_target, plot_agent="agent0"):
+    item_locs = np.int32(np.array(item_locs[plot_agent]))
+    see_target = np.int32(np.array(see_target[plot_agent]))  # Ensure see_target is an array
+    
+    # Encode each data point as a binary string "VHST" (V=vertical, H=horizontal, S=see_target)
+    group_v_labels = [f"v{v}t{s}" for v, s in zip(item_locs[:, 0], see_target)]
+    group_h_labels = [f"h{h}t{s}" for h, s in zip(item_locs[:, 1], see_target)]
+    
+    
+    
+    # Scatter plot with grouping by score
+    plt.figure(figsize=(10, 8))
+    sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=group_v_labels, palette='tab10', s=50, alpha=0.7)
+    plt.legend(title="item's vertical position")
+    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
+    plt.xlabel("t-SNE Dimension 1")
+    plt.ylabel("t-SNE Dimension 2")
+    plt.grid(True)
+    # plt.show()
+
+    
+    # Scatter plot with grouping by score
+    plt.figure(figsize=(10, 8))
+
+    sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=group_h_labels, palette='tab10', s=50, alpha=0.7)
+    plt.legend(title="item's horizontal position")
+    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
+    plt.xlabel("t-SNE Dimension 1")
+    plt.ylabel("t-SNE Dimension 2")
+    plt.grid(True)
+    plt.show()
+
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
     model_name = "dec_ppo_invisible"
     combination_name = "grid5_img3_ni2_nw16_ms10_204800000"
     seed = 1
     mode = "train"
-    log_file_path =  f"../../logs/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+    log_file_path =  f"../../logs/pickup_high_v1/{model_name}/pair_0-0/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
     plot_agent = "agent0"
     if os.path.exists(log_file_path):
         # Load log data
@@ -124,7 +158,8 @@ if __name__ == "__main__":
         tsne_results = tsne.fit_transform(tsne_data)
         # Plot t-SNE
         # plot_tsne(tsne_results, scores , plot_agent)
-        # plot_tsne_loc(tsne_results, item_locs , plot_agent)
-        plot_tsne_see_target(tsne_results, see_target, plot_agent)
+        plot_tsne_loc(tsne_results, item_locs , plot_agent)
+        # plot_tsne_see_target(tsne_results, see_target, plot_agent)
+        # plot_tsne_loc_see_target(tsne_results, item_locs, see_target, plot_agent)
     else:
         print(f"Log file not found: {log_file_path}")

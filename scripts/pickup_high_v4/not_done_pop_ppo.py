@@ -1,4 +1,4 @@
-# Displacement
+# Created: 5 Mar 2025
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_high_v3 import *
+from environments.pickup_high_v4 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -81,13 +81,13 @@ class Args:
 
     n_words = 16
     image_size = 3
-    N_i = 4
-    grid_size = 7
-    max_steps = 15
+    N_i = 2
+    grid_size = 5
+    max_steps = 10
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "pop_ppo_24net"
+    model_name = "dec_ppo_selfplay"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -102,20 +102,18 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_high_v3/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_high_v4/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
-    
     if load_pretrained:
-        pretrained_global_step = 51200000
+        global_step = 384000000
         learning_rate = 2e-4
-        print(f"LOAD from {pretrained_global_step}")
-        ckpt_path = {
-                    a: f"checkpoints/pickup_high_v3/pop_ppo_24net_invisible/grid5_img3_ni2_nw16_ms10/seed1/agent_{a}_step_51200000.pt" for a in range(num_networks)
-                    }
     visualize_loss = True
-
-    save_frequency = int(4e5)
+    ckpt_path = {
+                0:f"", 
+                1:f""
+                }
+    save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
@@ -124,9 +122,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_high_v3"
+    wandb_project_name: str = "pickup_high_v4"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -206,18 +204,18 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     next_obs_dict, _ = envs.reset(seed=args.seed)
 
-    for network_id in range(args.num_networks):
-        agents[network_id] = PPOLSTMCommAgent(num_actions=num_actions, 
+    for i in range(args.num_networks):
+        agents[i] = PPOLSTMCommAgent(num_actions=num_actions, 
                                     grid_size=args.grid_size, 
                                     n_words=args.n_words, 
                                     embedding_size=16, 
                                     num_channels=num_channels, 
                                     image_size=args.image_size).to(device)
         if args.load_pretrained:
-            agents[network_id].load_state_dict(torch.load(args.ckpt_path[network_id], map_location=device))
-        optimizers[network_id] = optim.Adam(agents[network_id].parameters(), lr=args.learning_rate, eps=1e-5)
+            agents[i].load_state_dict(torch.load(args.ckpt_path, map_location=device))
+        optimizers[i] = optim.Adam(agents[i].parameters(), lr=args.learning_rate, eps=1e-5)
 
-    for i in range(num_agents):
+    for i in range(args.num_networks):
         # ALGO Logic: Storage setup
         obs[i] = torch.zeros((args.num_steps, args.num_envs, num_channels, args.image_size, args.image_size)).to(device) # obs: vision
         locs[i] = torch.zeros((args.num_steps, args.num_envs, 2)).to(device) # obs: location
@@ -236,15 +234,15 @@ if __name__ == "__main__":
         next_r_messages[i] = torch.tensor(next_r_messages[i]).squeeze().to(device)
         next_done[i] = torch.zeros(args.num_envs).to(device)
         next_lstm_state[i] = (
-            torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
-            torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
+            torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
+            torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
         )  # hidden and cell states (see https://youtu.be/8HyCNIVRbSU)
 
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    selected_networks = [0,1]
+    selected_networks = [possible_networks] * args.num_envs # example: four parallel environments: net0 plays with net1, net1 plays with net2, ...
     # for visualization
     running_ep_r = 0.0
     running_ep_l = 0.0
@@ -254,20 +252,18 @@ if __name__ == "__main__":
         if iteration % args.reset_iteration == 0:
             for i in range(num_agents):
                 next_lstm_state[i] = (
-                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
-                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
+                    torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
+                    torch.zeros(agents[i].lstm.num_layers, args.num_envs, agents[i].lstm.hidden_size).to(device),
                 )
-            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
+            selected_networks = np.random.choice(possible_networks, num_agents*args.num_env, replace=args.self_play_option)
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
-
-        if args.anneal_lr:
-            for network_id in range(args.num_networks):
-                # Annealing the rate if instructed to do so.
+            # Annealing the rate if instructed to do so.
+            if args.anneal_lr:
                 frac = 1.0 - (iteration - 1.0) / args.num_iterations
                 lrnow = frac * args.learning_rate
-                optimizers[network_id].param_groups[0]["lr"] = lrnow
+                optimizers[i].param_groups[0]["lr"] = lrnow
 
 
         for step in range(0, args.num_steps):
@@ -293,7 +289,6 @@ if __name__ == "__main__":
                     action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[network_id].get_action_and_value((next_obs[i], next_locs[i], next_r_messages[i]), 
                                                                                                         next_lstm_state[i], next_done[i])
                     values[i][step] = value[i].flatten()
-                    # print(f"agent {i} sends message {s_message[i]}")
 
                 actions[i][step] = action[i]
                 s_messages[i][step] = s_message[i]
@@ -305,8 +300,6 @@ if __name__ == "__main__":
             env_action, env_message = get_action_message_for_env(action, s_message)
             next_obs_dict, all_reward, all_terminations, all_truncations, infos = envs.step({"action": env_action, "message": env_message})
             env_info = (all_reward, all_terminations, all_truncations)
-
-            # Log experience from the environment into batches: separated by agent id
             for i in range(num_agents):
                 next_obs[i], next_locs[i], next_r_messages[i], (reward[i], terminations, truncations) = extract_dict_separate(next_obs_dict, env_info, device, i, num_agents, use_message=True)
             
@@ -315,15 +308,9 @@ if __name__ == "__main__":
                 next_obs[i], next_done[i] = torch.Tensor(next_obs[i]).to(device), torch.Tensor(next_done[i]).to(device)
                 next_r_messages[i] = torch.tensor(next_r_messages[i]).to(device)
 
-            # Save Model Checkpoints: loop over networks not agents
-            if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
-                for network_id in range(args.num_networks):
-                    if args.load_pretrained:
-                        saved_step = global_step + args.pretrained_global_step
-                    else:
-                        saved_step = global_step
-                    save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{saved_step}.pt")
-                    torch.save(agents[network_id].state_dict(), save_path)
+                if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
+                    save_path = os.path.join(args.save_dir, f"agent_{i}_step_{global_step}.pt")
+                    torch.save(agents[i].state_dict(), save_path)
                     print(f"Model saved to {save_path}")
 
             for info in infos:
@@ -410,17 +397,17 @@ if __name__ == "__main__":
                     mbenvinds = envinds[start:end]
                     mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
                     _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agents[network_id].get_action_and_value(
-                        (b_obs[i][mb_inds], b_locs[i][mb_inds], b_r_messages[i][mb_inds]),
-                        (initial_lstm_state[i][0][:, mbenvinds], initial_lstm_state[i][1][:, mbenvinds]),
-                        b_dones[i][mb_inds],
-                        b_actions[i].long()[mb_inds],
-                        b_s_messages[i].long()[mb_inds],
-                        tracks[i][mb_inds],
+                        (b_obs[network_id][mb_inds], b_locs[network_id][mb_inds], b_r_messages[network_id][mb_inds]),
+                        (initial_lstm_state[network_id][0][:, mbenvinds], initial_lstm_state[network_id][1][:, mbenvinds]),
+                        b_dones[network_id][mb_inds],
+                        b_actions[network_id].long()[mb_inds],
+                        b_s_messages[network_id].long()[mb_inds],
+                        tracks[network_id][mb_inds],
                     )
-                    action_logratio = new_action_logprob - b_action_logprobs[i][mb_inds]
+                    action_logratio = new_action_logprob - b_action_logprobs[network_id][mb_inds]
                     action_ratio = action_logratio.exp()
 
-                    message_logratio = new_message_logprob - b_message_logprobs[i][mb_inds]
+                    message_logratio = new_message_logprob - b_message_logprobs[network_id][mb_inds]
                     message_ratio = message_logratio.exp()
 
                     with torch.no_grad():
@@ -433,7 +420,7 @@ if __name__ == "__main__":
                         message_approx_kl = ((message_ratio - 1) - message_logratio).mean()
                         message_clipfracs += [((message_ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
 
-                    mb_advantages = b_advantages[i][mb_inds]
+                    mb_advantages = b_advantages[network_id][mb_inds]
                     if args.norm_adv:
                         mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
@@ -450,17 +437,17 @@ if __name__ == "__main__":
                     # Value loss
                     newvalue = newvalue.view(-1)
                     if args.clip_vloss:
-                        v_loss_unclipped = (newvalue - b_returns[i][mb_inds]) ** 2
-                        v_clipped = b_values[i][mb_inds] + torch.clamp(
-                            newvalue - b_values[i][mb_inds],
+                        v_loss_unclipped = (newvalue - b_returns[network_id][mb_inds]) ** 2
+                        v_clipped = b_values[network_id][mb_inds] + torch.clamp(
+                            newvalue - b_values[network_id][mb_inds],
                             -args.clip_coef,
                             args.clip_coef,
                         )
-                        v_loss_clipped = (v_clipped - b_returns[i][mb_inds]) ** 2
+                        v_loss_clipped = (v_clipped - b_returns[network_id][mb_inds]) ** 2
                         v_loss_max = torch.max(v_loss_unclipped, v_loss_clipped)
                         v_loss = 0.5 * v_loss_max.mean()
                     else:
-                        v_loss = 0.5 * ((newvalue - b_returns[i][mb_inds]) ** 2).mean()
+                        v_loss = 0.5 * ((newvalue - b_returns[network_id][mb_inds]) ** 2).mean()
 
                     action_entropy_loss = action_entropy.mean()
                     message_entropy_loss = message_entropy.mean()
@@ -474,7 +461,7 @@ if __name__ == "__main__":
                 if args.target_kl is not None and action_approx_kl > args.target_kl:
                     break
 
-            y_pred, y_true = b_values[i].cpu().numpy(), b_returns[i].cpu().numpy()
+            y_pred, y_true = b_values[network_id].cpu().numpy(), b_returns[network_id].cpu().numpy()
             var_y = np.var(y_true)
             explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
@@ -496,10 +483,10 @@ if __name__ == "__main__":
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
                 print("SPS:", int(global_step / (time.time() - start_time)))
 
-    for network_id in range(args.num_networks):
-        final_save_path = os.path.join(args.save_dir, f"final_model_agent_{network_id}.pt")
+    for i in range(num_agents):
+        final_save_path = os.path.join(args.save_dir, f"final_model_agent_{i}.pt")
         torch.save(agents[network_id].state_dict(), final_save_path)
-        print(f"Final model of network {network_id} saved to {final_save_path}")
+        print(f"Final model of agent {i} saved to {final_save_path}")
 
     envs.close()
     writer.close()

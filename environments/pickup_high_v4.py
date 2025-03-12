@@ -1,4 +1,4 @@
-# 11 Mar 2025 Pickup high v3 for displacement study
+# 12 Mar 2025 Pickup high v3 for studying limited message length and n_word
 # Agents are spawn on the different sides with their seen-score items
 # This is for study experiment1: what is encoded in communication?
 # Visible vs Invisible Agents
@@ -26,15 +26,15 @@ AGENT_ENERGY = 20
 
 class Environment(ParallelEnv):
     metadata = {"name": "goal_cond_pickup"}
-    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=1, use_message=False, 
+    def __init__(self, truncated=False, torch_order=True, num_agents=2, n_words=10, message_length=2, use_message=False, 
                                                                                                         seed=42, 
                                                                                                         agent_visible=False,
                                                                                                         food_ener_fully_visible=False, 
                                                                                                         identical_item_obs=False,
                                                                                                         N_i = 2,
                                                                                                         grid_size=5,
-                                                                                                        image_size=5,
-                                                                                                        max_steps=15,
+                                                                                                        image_size=3,
+                                                                                                        max_steps=10,
                                                                                                         mode="train",
                                                                                                         comm_range=1
                                                                                                         ):
@@ -61,10 +61,9 @@ class Environment(ParallelEnv):
             {"image": spaces.Box(0, 255, shape=self.image_shape, dtype=np.float32),
             "location": spaces.Box(0, self.grid_size, shape=(2,), dtype=np.float32),
             "energy": spaces.Box(0, 500, shape=(1,), dtype=np.float32),
-            "isInCommRange": spaces.Box(0, 1, shape=(1,), dtype=np.int32),
             })
         if self.use_message:
-            self.single_observation_space["message"] = spaces.Box(0, n_words-1, shape=(message_length,), dtype=np.int64)
+            self.single_observation_space["message"] = spaces.Box(0, n_words-1, shape=(1,), dtype=np.int64)
             self.single_action_space = spaces.Dict({"action":spaces.Discrete(NUM_ACTIONS), "message":spaces.Discrete(n_words)})
         else:
             self.single_action_space = spaces.Discrete(NUM_ACTIONS)
@@ -97,7 +96,7 @@ class Environment(ParallelEnv):
                                     6: "cattle",
                                 }
         self.agent_spawn_range = {0:((0, 0), (1, self.grid_size-1)), 1:((self.grid_size-2, 0), (self.grid_size-1, self.grid_size-1))}
-        self.food_spawn_range = {0:((0, 0), (0, self.grid_size-1)), 1:((self.grid_size-1, 0), (self.grid_size-1, self.grid_size-1))} # TODO add condition for 4 and 6 items
+        self.food_spawn_range = {0:((0, 0), (0, self.grid_size-1)), 1:((self.grid_size-1, 0), (self.grid_size-1, self.grid_size-1))}
         self.reset()
         
     
@@ -144,17 +143,18 @@ class Environment(ParallelEnv):
 
         self.collected_foods = []
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
-        self.count_non_zeros = 0
+        self.count_non_zeros = {i:0 for i in range(self.num_agents)}
         return self.observe(), self.infos
 
-    def check_comm_range(self):
+    def check_comm(self, agent_id):
         '''
-        check whether agents can communicate or not
+        check whether agents can communicate or not. 
+        Agents cannot communicate if they already reach the maximum length of message.
+        We manipulate when the agent receives so we have to track back to the sender agent {0:1, 1:0}[agent_id]
         '''
-        agent0_pos = self.agent_maps[0].position
-        agent1_pos = self.agent_maps[1].position
-        if (agent0_pos[0] >= agent1_pos[0] - self.comm_range and agent0_pos[0] <= agent1_pos[0] + self.comm_range and
-            agent0_pos[1] >= agent1_pos[1] - self.comm_range and agent0_pos[1] <= agent1_pos[1] + self.comm_range):
+        
+        sender_id = {0:1, 1:0}[agent_id]
+        if self.count_non_zeros[sender_id] <= self.message_length:
             return 1
         else:
             return 0
@@ -277,12 +277,9 @@ class Environment(ParallelEnv):
                 agent_obs[i]['image'] = image
                 agent_obs[i]['location'] = agent.position
                 agent_obs[i]['energy'] = np.array([agent.energy])
-                agent_obs[i]['isInCommRange'] = np.array([self.check_comm_range()])
-                # print(f"isCommRange shape {agent_obs[i]['isInCommRange'].shape}")
-                if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
-                    if self.check_comm_range():
+                if self.use_message:
+                    if self.check_comm(i):
                         agent_obs[i]['message'] = self.sent_message[i]
-                        
                     else:
                         agent_obs[i]['message'] = np.array([0])
                         # print(f"agent_obs[i]['message'] {agent_obs[i]['message'].shape}")
@@ -300,11 +297,6 @@ class Environment(ParallelEnv):
                     4: "pick_up",
                     }
         return action_map[action]
-        
-    def extract_message(self, message, agent_id):
-        received_message = [v[1]['message'] for k, v in enumerate(message.items()) if k != agent_id]
-        received_message = np.array(received_message)
-        return received_message
 
 
     def normalize_reward(self, reward):
@@ -325,6 +317,8 @@ class Environment(ParallelEnv):
         # Gather each agent's chosen action for consensus on movement
         actions = {}
         self.rewards = {i:0 for i in self.agents}
+        # print(agent_action_dict)
+        # print(self.count_non_zeros)
         for i, agent in enumerate(self.agent_maps):
             if self.use_message: # Tuple TODO
                 agent_actions, received_message = agent_action_dict[i]["action"], agent_action_dict
@@ -332,11 +326,10 @@ class Environment(ParallelEnv):
                 agent_actions = agent_action_dict[i]
             
             if self.use_message and received_message is not None:
- 
-                if not(self.check_comm_range()):
-                    if self.extract_message(received_message, i) != 0:
-                        self.count_non_zeros += 1
-                self.sent_message[i] = self.extract_message(received_message, i)
+                if agent_action_dict[i]["message"] != 0:
+                    self.count_non_zeros[i] += 1
+                    
+                self.sent_message[i] = np.array([agent_action_dict[{0:1, 1:0}[i]]['message']])
 
             if int_action:
                 if len(self.possible_agents)==1:
@@ -428,7 +421,7 @@ class Environment(ParallelEnv):
                 if self.collected_foods[0] == self.target_food_id:
                     self.rewards[agent.id] += 1
                     self.rewards[agent.id] += ((self.max_steps - self.curr_steps) / self.max_steps) # get more reward if use fewer steps
-                    self.rewards[agent.id] -= ((self.count_non_zeros) / (self.max_steps * 2)) # punishment if agent sends non-zero message outside communication range
+                    # self.rewards[agent.id] -= ((self.count_non_zeros[[agent.id]]) / (self.max_steps * 2)) # punishment if agent sends non-zero message outside communication range
                     success = 1
                 else:
                     self.rewards[agent.id] -= 1
@@ -469,7 +462,7 @@ class EnvAgent:
         self.fully_visible = fully_visible
         # Agent observation field adjusted to (24, 4) for the 5x5 grid view, exluding agent position
     
-    def observe(self, environment): #TODO Check this again
+    def observe(self, environment):
         # Define the 5x5 field of view around the agent, excluding its center
         occupancy_data = []
         food_attribute_data = np.zeros((environment.image_size, environment.image_size, environment.N_att))
@@ -620,7 +613,7 @@ class Food:
         self.done = False
         self.reduced_strength = 0
         self.visible_to_agent = visible_to_agent
-        self.attribute  = energy_score # TODO add another channel referring to item category
+        self.attribute  = energy_score
         
 
 if __name__ == "__main__":
