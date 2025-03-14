@@ -1,10 +1,12 @@
 # 11 Mar 2025 Pickup high v3 for displacement study
+# Introducing Seasons [0,1,2,3]
 # Agents are spawn on the different sides with their seen-score items
 # This is for study experiment1: what is encoded in communication?
 # Visible vs Invisible Agents
 # Different Receptive Fields
 # Different Environment Size
 # Different Number of Items
+# TODO We may not need to limit communication range
 import pygame
 import numpy as np
 import random
@@ -34,7 +36,7 @@ class Environment(ParallelEnv):
                                                                                                         N_i = 2,
                                                                                                         grid_size=5,
                                                                                                         image_size=5,
-                                                                                                        max_steps=15,
+                                                                                                        max_steps=30,
                                                                                                         mode="train",
                                                                                                         comm_range=1
                                                                                                         ):
@@ -62,6 +64,7 @@ class Environment(ParallelEnv):
             "location": spaces.Box(0, self.grid_size, shape=(2,), dtype=np.float32),
             "energy": spaces.Box(0, 500, shape=(1,), dtype=np.float32),
             "isInCommRange": spaces.Box(0, 1, shape=(1,), dtype=np.int32),
+            "season" : spaces.Box(0, 1, shape=(1,), dtype=np.int32),
             })
         if self.use_message:
             self.single_observation_space["message"] = spaces.Box(0, n_words-1, shape=(message_length,), dtype=np.int64)
@@ -73,6 +76,8 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
+        self.season_list = [0,1,2,3]
+        self.num_season = len(self.season_list)
         if mode == "train":
             self.score_unit = 5
             self.start_steps = 0
@@ -102,6 +107,9 @@ class Environment(ParallelEnv):
         
     
     def reset(self, seed=42, options=None):
+        self.init_season = np.random.choice(self.season_list, size=1, replace=False)[0]
+        self.curr_season = self.init_season
+        self.food_collecting_seasons =  np.random.choice(self.season_list, size=self.N_i, replace=False)
         self.curr_steps = 0
         self.episode_lengths = {i:0 for i in range(len(self.possible_agents))}
         self.cumulative_rewards = {i:0 for i in range(len(self.possible_agents))}
@@ -136,7 +144,8 @@ class Environment(ParallelEnv):
                             id=food_id,
                             energy_score=self.selected_score[food_id],
                             visible_to_agent=self.score_visible_to_agent[food_id],
-                            identical_item_obs=self.identical_item_obs) for food_id in range(self.N_i) # id runs from 0 to N_i-1
+                            identical_item_obs=self.identical_item_obs,
+                            collecting_season=self.food_collecting_seasons[food_id]) for food_id in range(self.N_i) # id runs from 0 to N_i-1
                     ]
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
@@ -267,7 +276,7 @@ class Environment(ParallelEnv):
             image = self.agent_maps[0].observe(self)
             if self.torch_order:
                 image = np.transpose(image, (2,0,1))
-            return {"image": image, "location": self.agent_maps[0].position, "energy": self.agent_maps[0].energy}
+            return {"image": image, "location": self.agent_maps[0].position, "energy": selwf.agent_maps[0].energy}
         else:
             agent_obs = {i:{} for i in range(self.num_agents)}
             for i, agent in enumerate(self.agent_maps):
@@ -278,6 +287,7 @@ class Environment(ParallelEnv):
                 agent_obs[i]['location'] = agent.position
                 agent_obs[i]['energy'] = np.array([agent.energy])
                 agent_obs[i]['isInCommRange'] = np.array([self.check_comm_range()])
+                agent_obs[i]['season'] = self.curr_season
                 # print(f"isCommRange shape {agent_obs[i]['isInCommRange'].shape}")
                 if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
                     if self.check_comm_range():
@@ -318,6 +328,7 @@ class Environment(ParallelEnv):
 
     def step(self, agent_action_dict, int_action=True):
         success = 0
+        self.miss = False # for checking if agent pickup wrongly
         self.curr_steps+=1
         # Update food state: Clear all agents if not carried
         self.update_food()
@@ -378,41 +389,42 @@ class Environment(ParallelEnv):
             elif action == "pick_up":
                 hit = False
                 for food in self.foods:
-                    if (self.l2_dist(food.position, agent.position) <= np.sqrt(2)):
-                        # If the combined strength satisfies the required strength, the food is picked up sucessfully
-                        if food.strength_required - food.reduced_strength <= agent.strength and not food.carried:
-                            # cancel the step punishment for agents that pick up previously if the item is successfully picked
-                            # for agent_id in food.pre_carried:
-                                # self.agent_maps[agent_id].energy += 1
-                                # self.rewards[agent_id] += 0.1
-                            food.carried += food.pre_carried
-                            food.carried.append(agent.id)
-                            food.pre_carried.clear()
-                            # Dismiss the dropped food item at home
-                            food.position = (-2000,-2000)
-                            food.done = True
-                            self.collected_foods.append(food.id)
-                            hit = True
-                            break
+                    if food.collecting_season == self.curr_season:
+                        if (self.l2_dist(food.position, agent.position) <= np.sqrt(2)):
+                            # If the combined strength satisfies the required strength, the food is picked up sucessfully
+                            if food.strength_required - food.reduced_strength <= agent.strength and not food.carried:
+                                # cancel the step punishment for agents that pick up previously if the item is successfully picked
+                                # for agent_id in food.pre_carried:
+                                    # self.agent_maps[agent_id].energy += 1
+                                    # self.rewards[agent_id] += 0.1
+                                food.carried += food.pre_carried
+                                food.carried.append(agent.id)
+                                food.pre_carried.clear()
+                                # Dismiss the dropped food item at home
+                                food.position = (-2000,-2000)
+                                food.done = True
+                                self.collected_foods.append(food.id)
+                                hit = True
+                                break
 
-                        # If food is too heavy, the heaviness is reduced by the strength of the picking agent.
-                        # Other agents can pick up if the combined strength satisfies the required strength
-                        elif food.strength_required - food.reduced_strength > agent.strength and not food.carried:
-                            food.reduced_strength += agent.strength
-                            food.pre_carried.append(agent.id) # agent.id prepares to carry the food.
-                            hit = True
-                            # step punishment if another agent doesn't pick up
-                            # agent.energy -= 1
-                            # self.rewards[agent.id] -= 0.1
+                            # If food is too heavy, the heaviness is reduced by the strength of the picking agent.
+                            # Other agents can pick up if the combined strength satisfies the required strength
+                            elif food.strength_required - food.reduced_strength > agent.strength and not food.carried:
+                                food.reduced_strength += agent.strength
+                                food.pre_carried.append(agent.id) # agent.id prepares to carry the food.
+                                hit = True
+                                # step punishment if another agent doesn't pick up
+                                # agent.energy -= 1
+                                # self.rewards[agent.id] -= 0.1
 
                 if not(hit):
-                    self.failed_action(agent)
+                    self.miss = True
 
             # Update grid state 
             self.update_grid()
 
             # If max steps
-            if self.curr_steps == self.max_steps: #TODO Change this to the end
+            if self.curr_steps == self.max_steps or self.miss: #TODO Change this to the end
                 agent.done = True
                 for j in range(len(self.possible_agents)):
                     self.dones[j] = True
@@ -437,6 +449,10 @@ class Environment(ParallelEnv):
         # normalize reward
         self.norm_rewards = self.normalize_reward(self.rewards)
 
+        # update season
+        self.init_season += 1
+        self.curr_season  = self.init_season % self.num_season
+        
         for agent in self.agent_maps:
             self.cumulative_rewards[agent.id] += self.rewards[agent.id]
             self.episode_lengths[agent.id] += 1
@@ -498,18 +514,21 @@ class EnvAgent:
                     if obj is None:
                         row.append([0])  # Empty grid
                     elif isinstance(obj, Food): # Observe Food
-                        if len(obj.carried) > 0:
-                            obs_occupancy = list(map(lambda x:x+carry_add, food_occupancy)) # if food is carried
-                        else:
-                            obs_occupancy = food_occupancy
-                        row.append(obs_occupancy)
+                        if obj.collecting_season == environment.curr_season: # Food can only be observed in its season
+                            if len(obj.carried) > 0:
+                                obs_occupancy = list(map(lambda x:x+carry_add, food_occupancy)) # if food is carried
+                            else:
+                                obs_occupancy = food_occupancy
+                            row.append(obs_occupancy)
 
-                        # observe food's attribute
-                        if self.fully_visible: # If agent can see all attributes
-                            food_attribute_data[dx+ob_range, dy+ob_range] = obj.attribute
-                        else: # This is default case where agent can see some attributes
-                            mask = (obj.visible_to_agent == self.id)  # Creates a boolean mask
-                            food_attribute_data[dx+ob_range, dy+ob_range] = mask * obj.attribute
+                            # observe food's attribute
+                            if self.fully_visible: # If agent can see all attributes
+                                food_attribute_data[dx+ob_range, dy+ob_range] = obj.attribute
+                            else: # This is default case where agent can see some attributes
+                                mask = (obj.visible_to_agent == self.id)  # Creates a boolean mask
+                                food_attribute_data[dx+ob_range, dy+ob_range] = mask * obj.attribute
+                        else:
+                            row.append([0])
 
                     elif isinstance(obj, EnvAgent) and self.agent_visible: # Observe another agent
                         if obj.carrying_food is not None:
@@ -600,7 +619,7 @@ class EnvAgent:
 
 
 class Food:
-    def __init__(self, position, food_type, id, energy_score, visible_to_agent, identical_item_obs):
+    def __init__(self, position, food_type, id, energy_score, visible_to_agent, identical_item_obs, collecting_season):
         self.type_to_strength_map = {
                                     1:6, # Spinach
                                     2:6,  # Watermelon
@@ -621,6 +640,8 @@ class Food:
         self.reduced_strength = 0
         self.visible_to_agent = visible_to_agent
         self.attribute  = energy_score # TODO add another channel referring to item category
+        self.collecting_season = collecting_season
+        
         
 
 if __name__ == "__main__":

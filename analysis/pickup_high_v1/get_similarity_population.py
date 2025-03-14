@@ -118,10 +118,11 @@ if __name__ == "__main__":
     log_file_path = {}
     message_data = {}
     attribute_data = {}
+    saved_path = f"../../logs/pickup_high_v1/exp2/{model_name}
     for pair in network_pairs:
         print(f"loading network pair {pair}")
         log_file_path[pair] =  f"../../logs/pickup_high_v1/exp2/{model_name}/pair_{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
-    
+
         
         # Load log data
         log_data = load_trajectory(log_file_path[pair])
@@ -137,4 +138,7 @@ if __name__ == "__main__":
     print(f"avg topsim = {avg_topsim}")
     plot_heatmap(similarity_mat, saved_fig_path)
     
+    # Save the variables
+    np.savez(save_file, similarity_mat=similarity_mat, avg_sim=avg_sim, avg_topsim=avg_topsim)
 
+    print(f"Saved to {save_file}")
