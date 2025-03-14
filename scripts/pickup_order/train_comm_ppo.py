@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_high_v4 import *
+from environments.pickup_order import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -63,12 +63,12 @@ class Args:
     log_every = 32
 
     n_words = 16
-    image_size = 3
+    image_size = 5
     N_i = 2
     grid_size = 5
     max_steps=10
     fully_visible_score = False
-    agent_visible = False
+    agent_visible = True
     mode = "train"
     model_name = "ps_ppo"
     
@@ -85,7 +85,7 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_high_v4/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_order/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     if load_pretrained:
@@ -104,7 +104,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_high_v4"
+    wandb_project_name: str = "pickup_order"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""

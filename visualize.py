@@ -85,10 +85,10 @@ if __name__ == "__main__":
     NUM_EPISODES = 20
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environments.pickup_high_v3 import *
-    # from environments.environment import *
+    from environments.pickup_order import *
+    # from environments.pickup_high_v1 import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment(image_size=3, grid_size=6, N_i=6, agent_visible=True)
+    env = Environment(image_size=3, grid_size=5, N_i=4, agent_visible=True)
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
