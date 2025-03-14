@@ -63,7 +63,7 @@ class Args:
     log_every = 32
 
     n_words = 16
-    image_size = 5
+    image_size = 3
     N_i = 2
     grid_size = 5
     max_steps=10
