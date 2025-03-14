@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -66,10 +66,10 @@ class Args:
     log_every = 32
 
     n_words = 16
-    image_size = 5
+    image_size = 3
     N_i = 2
     grid_size = 5
-    max_steps=10
+    max_steps = 20
     fully_visible_score = False
     agent_visible = True
     mode = "train"
