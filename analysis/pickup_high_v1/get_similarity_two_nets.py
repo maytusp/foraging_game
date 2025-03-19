@@ -63,6 +63,32 @@ def get_topsim(message_data,attribute_data, num_networks):
 
     return avg_topsim
 
+def get_topsim_no_pop(message_data,attribute_data, num_networks):
+    sender_list = [i for i in range(num_networks)]
+    data = []
+    n_samples = 1000000
+    extracted_message = []
+    extracted_attribute = []
+    avg_topsim = 0
+    max_eval_episodes=1000
+    max_message_length=5
+    for sender in sender_list:
+        receiver = {0:1, 1:0}[sender]
+        extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
+        extracted_attribute.append(attribute_data[f"{sender}-{receiver}"])
+        n_samples = min(extracted_message[sender].shape[0], n_samples)
+
+
+    for agent_id in range(len(sender_list)):
+        messages = np.array(extracted_message[sender_list[agent_id]])
+        attributes = np.array(extracted_attribute[sender_list[agent_id]])
+        topsim = TopographicSimilarity.compute_topsim(attributes[:max_eval_episodes], messages[:max_eval_episodes, :max_message_length])     
+        avg_topsim += topsim
+        print(f"agent_id {agent_id} has topsim {topsim}")
+    avg_topsim /= num_networks
+
+    return avg_topsim
+
 def get_similarity(message_data, num_networks):
     sender_list = [i for i in range(num_networks)]
     data = []
@@ -117,9 +143,9 @@ def load_score(filename):
 
 
 if __name__ == "__main__":
-    model_name = "pop_ppo_6net"
-    combination_name = "grid5_img3_ni2_nw16_ms10_358400000"
-    seed = 3
+    model_name = "dec_ppo"
+    combination_name = "grid5_img3_ni2_nw32_ms10_153600000"
+    seed = 1
     saved_fig_dir = f"figs"
     saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
     saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
@@ -127,8 +153,8 @@ if __name__ == "__main__":
     os.makedirs(saved_fig_dir, exist_ok=True)
     os.makedirs(saved_score_dir, exist_ok=True)
     mode = "train"
-    num_networks = 3
-    network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
+    num_networks = 2
+    network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
     log_file_path = {}
     sr_dict = {}
     sr_mat = np.zeros((num_networks, num_networks))
@@ -164,14 +190,14 @@ if __name__ == "__main__":
     plot_heatmap(similarity_mat, saved_fig_path_langsim)
     plot_heatmap(sr_mat, saved_fig_path_sr)
     
-    avg_topsim = get_topsim(message_data, attribute_data, num_networks)
-    print(f"avg topsim = {avg_topsim}")
-
+    # avg_topsim = get_topsim_no_pop(message_data, attribute_data, num_networks)
+    # print(f"avg topsim = {avg_topsim}")
+    print(f"SR {sr_mat}")
     
-    # Save the variables
-    np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
-                                                            avg_sim=avg_sim, 
-                                                            avg_topsim=avg_topsim, 
-                                                            sr_mat=sr_mat,
-                                                            ic=ic)
+    # # Save the variables
+    # np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
+    #                                                         avg_sim=avg_sim, 
+    #                                                         avg_topsim=avg_topsim, 
+    #                                                         sr_mat=sr_mat,
+    #                                                         ic=ic)
 
