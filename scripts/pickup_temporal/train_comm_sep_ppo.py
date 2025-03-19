@@ -68,7 +68,7 @@ class Args:
     n_words = 4
     image_size = 3
     N_i = 2
-    grid_size = 7
+    grid_size = 5
     max_steps = 20
     fully_visible_score = False
     agent_visible = True
