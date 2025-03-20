@@ -35,7 +35,7 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = False
+    ablate_message = True
     ablate_type = "noise" # zero, noise
     fully_visible_score = False
     identical_item_obs = False
@@ -44,10 +44,10 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 5000
-    n_words = 16
+    total_episodes: int = 1000
+    n_words = 4
     """vocab size"""
-    image_size = 5
+    image_size = 3
     """number of observation grid"""
     N_att = 2
     """number of attributes"""
@@ -56,12 +56,12 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    max_steps=20
+    max_steps = 20
     """grid size"""
     mode = "train"
     agent_visible = True
     model_name = "dec_ppo"
-    model_step = "204800000"
+    model_step = "179200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
@@ -175,29 +175,15 @@ if __name__ == "__main__":
         log_s_message_embs = torch.zeros((env.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
 
         single_env = envs.vec_envs[0].unwrapped.par_env
-        log_target_food_dict = {}
+        log_food_dict = {}
         log_distractor_food_dict = {"location":[], "type":[], "score":[]}
         
-        target_food_id = single_env.target_food_id
-        target_food = single_env.foods[target_food_id]
-        log_target_food_dict['location'] = target_food.position
-        log_target_food_dict['type'] = target_food.food_type
-        log_target_food_dict['score'] = target_food.energy_score
+        food_list = single_env.foods
+        log_food_dict['location'] = [food.position for food in food_list]
+        log_food_dict['spawn_time'] = single_env.selected_time
 
-        log_who_see_target = target_food.visible_to_agent
-
-        for food_id in range(len(single_env.foods)):
-            if food_id != target_food_id:
-                distractor_food = single_env.foods[food_id]
-                log_distractor_food_dict['location'].append(distractor_food.position)
-                log_distractor_food_dict['type'].append(distractor_food.food_type)
-                log_distractor_food_dict['score'].append(distractor_food.energy_score)
         ############################################################
         while not next_done[0]:
-            # print(f"step {ep_step}")
-            next_obs_arr = next_obs.detach().cpu().numpy()
-            energy_obs["agent0"] = energy_obs["agent0"].union(set(next_obs_arr[0,1,:,:].flatten()))
-            energy_obs["agent1"] = energy_obs["agent1"].union(set(next_obs_arr[1,1,:,:].flatten()))
 
             if args.visualize and not(args.save_trajectory):
                 single_env = envs.vec_envs[0].unwrapped.par_env
@@ -205,14 +191,6 @@ if __name__ == "__main__":
                 frames.append(frame.transpose((1, 0, 2)))
 
             with torch.no_grad():
-                if args.ablate_message:
-                    if args.ablate_type == "zero":
-                        next_r_messages = torch.zeros_like(next_r_messages).to(device)
-                    elif args.ablate_type == "noise":
-                        next_r_messages = torch.randint(0, 10, next_r_messages.shape).to(device)
-                    else:
-                        raise Exception("only zero and noise are allowed")
-
                 ######### Logging #################
                 if args.save_trajectory:
                     log_obs[ep_step] = next_obs
@@ -235,6 +213,13 @@ if __name__ == "__main__":
 
                 action = torch.cat((action0, action1), dim=0)
                 s_message = torch.cat((s_message0, s_message1), dim=0)
+                if args.ablate_message:
+                    if args.ablate_type == "zero":
+                        s_message = torch.zeros_like(s_message).to(device)
+                    elif args.ablate_type == "noise":
+                        s_message = torch.randint(0, args.n_words, s_message.shape).to(device)
+                    else:
+                        raise Exception("only zero and noise are allowed")
                 if args.memory_transfer:
                     h1 = torch.tensor(h0)
                     c1 = torch.tensor(c0)
@@ -297,8 +282,7 @@ if __name__ == "__main__":
             # print("log_r_messages", log_r_messages)
             # Combine all your data into a dictionary
             log_data[f"episode_{episode_id}"] = {
-                "log_target_food_dict": log_target_food_dict,
-                "log_distractor_food_dict": log_distractor_food_dict,
+                "log_food_dict": log_food_dict,
                 "log_s_message_embs": log_s_message_embs,
                 "log_obs": log_obs,
                 "log_locs": log_locs,
@@ -306,19 +290,7 @@ if __name__ == "__main__":
                 "log_actions": log_actions,
                 "log_s_messages": log_s_messages,
                 "log_rewards": log_rewards,
-                "who_see_target": log_who_see_target
             }
-
-        if not(args.save_trajectory):
-            # Open the log file in append mode
-            with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
-                
-                # Redirect the print statements to the log file
-                print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)
-
-                print(f"Agent Item Score Observations \n {energy_obs}", file=log_file)
-                print(f"Final Score Obs Agent0:  \n {next_obs_arr[0,1,:,:]}", file=log_file)
-                print(f"Final Score Obs Agent1:  \n {next_obs_arr[1,1,:,:]}", file=log_file)
 
         running_rewards += returns
 

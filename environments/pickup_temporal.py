@@ -29,7 +29,7 @@ class Environment(ParallelEnv):
                                                                                                         agent_visible=False,
                                                                                                         identical_item_obs=False,
                                                                                                         N_i = 2,
-                                                                                                        grid_size=6,
+                                                                                                        grid_size=5,
                                                                                                         image_size=3,
                                                                                                         max_steps=20,
                                                                                                         mode="train",
@@ -45,8 +45,9 @@ class Environment(ParallelEnv):
         self.image_size = image_size # receptive field size
         self.N_val = 255 # number of possible values, 255 is like standard RGB image
         self.N_i = N_i # number of food items
-        self.freeze_dur = self.N_i # the duration that agents cannot move, to observe items spawn near itself
+        self.freeze_dur = self.N_i*3 # the duration that agents cannot move, to observe items spawn near itself
         self.comm_range = comm_range
+        self.see_range = self.image_size // 2
         self.num_channels = 1
         self.identical_item_obs = identical_item_obs
         self.n_words = n_words
@@ -81,7 +82,7 @@ class Environment(ParallelEnv):
                                     6: "cattle",
                                 }
         self.deviate = self.image_size // 2
-        self.agent_spawn_range = {0:((0, 0), (1, self.grid_size-1)), 1:((self.grid_size-2, 0), (self.grid_size-1, self.grid_size-1))}
+        self.agent_spawn_range = {0:((0, 1), (0, self.grid_size-2)), 1:((self.grid_size-1, 1), (self.grid_size-1, self.grid_size-2))}
         self.reset()
         
     
@@ -94,7 +95,8 @@ class Environment(ParallelEnv):
         self.infos = {}
 
         self.grid = np.full((self.grid_size, self.grid_size), None)
-        self.prev_pos_list = []
+        self.prev_food_pos = []
+        self.prev_agent_pos = []
         self.reg_food_spawn_range = {}
         self.reg_agent_spawn_range = np.random.choice([0,1], size=2, replace=False)
         #  position, food_type, id)
@@ -187,13 +189,25 @@ class Environment(ParallelEnv):
             food.pre_carried.clear() # clear list
             food.is_moved = False
 
-    def min_dist(self,curr_pos, min_distance):
+    def min_dist(self,curr_pos, prev_pos_list, min_distance):
         satisfy = True
-        for prev_pos in self.prev_pos_list:
+        for prev_pos in prev_pos_list:
             if self.manhattan_dist(curr_pos, prev_pos) < min_distance:
                 satisfy = False
                 break
         return satisfy
+
+    def min_agent_dist(self, curr_pos, prev_pos_list):
+        if len(prev_pos_list) == 0:
+            return True
+        else:
+            agent0_pos = curr_pos
+            agent1_pos = prev_pos_list[0]
+            if (agent0_pos[0] >= agent1_pos[0] - self.image_size and agent0_pos[0] <= agent1_pos[0] + self.image_size and
+                agent0_pos[1] >= agent1_pos[1] - self.image_size and agent0_pos[1] <= agent1_pos[1] + self.image_size):
+                return False
+            else:
+                return True
 
 
     def random_agent_position(self, agent_id):
@@ -209,7 +223,8 @@ class Environment(ParallelEnv):
             self.random_effort+=1
             if self.random_effort == 100:
                 print("FAILED")
-            if self.grid[pos[0], pos[1]] is None:
+            if self.grid[pos[0], pos[1]] is None and self.min_agent_dist(pos, self.prev_agent_pos):
+                self.prev_agent_pos.append(pos)
                 return pos
             
 
@@ -231,7 +246,8 @@ class Environment(ParallelEnv):
             if self.random_effort_food == 100:
                 print("FOOD SPAWN FAILED")
             pos = (random.randint(min_x, max_x), random.randint(min_y, max_y))
-            if self.grid[pos[0], pos[1]] is None:
+            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos, self.prev_food_pos, 2):
+                self.prev_food_pos.append(pos)
                 return pos
 
     def l2_dist(self, pos1, pos2):
