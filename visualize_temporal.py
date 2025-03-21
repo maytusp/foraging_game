@@ -87,10 +87,10 @@ if __name__ == "__main__":
     NUM_EPISODES = 20
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environments.pickup_temporal import *
+    from environments.pickup_mix import *
     # from environments.pickup_high_v1 import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment(image_size=3, grid_size=5, N_i=2, agent_visible=True, use_message=True)
+    env = Environment(image_size=3, grid_size=6, N_i=4, agent_visible=True, use_message=True)
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
     envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
     clock = pygame.time.Clock()
@@ -125,9 +125,9 @@ if __name__ == "__main__":
             observations, rewards, dones, _, infos = envs.step({"action": agent_actions, "message": agent_messages})
             # print("reward", rewards)
             # print(f"agent0: \n {nonzero_sum_channels(observations[0]['image'])}")
-            # print(f"Agent0 I: \n {observations[0]['image'][0]}")
+            print(f"Agent0 obs: \n {observations['image'][0][1]}")
+            print(f"Agent1 obs: \n {observations['image'][1][1]}")
             print(f"Agent0 M: \n {observations['message']}")
-            # print(f"Agent1 I: \n {observations[1]['image'][0]}")
             # print(f"Agent1 M: \n {observations['message']}")
             
             # print(f"score: {observations[1]['image']}")
