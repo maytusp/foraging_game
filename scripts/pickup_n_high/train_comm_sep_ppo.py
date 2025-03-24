@@ -1,5 +1,5 @@
 # Created: 28 Feb 2025
-# The code is for training agents with separated networks during training and execution (no parameter sharing) for pickup_mix
+# The code is for training agents with separated networks during training and execution (no parameter sharing) for pickup_n_high
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_mix import *
+from environments.pickup_n_high import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -88,7 +88,7 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_mix/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_n_high/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     if load_pretrained:
@@ -110,7 +110,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_mix"
+    wandb_project_name: str = "pickup_n_high"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""

@@ -1,8 +1,10 @@
-# 19 Mar 2025: Agents have to pick items in chronologically orders. 
-# The earlier spawn item is picked up before the later spawn item
+# 22 Mar 2025: Given N items, agents have to pick 2 highest-score items
 # Communication range is limited
 # Agent is visible to each other
-
+# order chicken straw spinach water
+# high straw spinach
+#TODO Agent sees scores of foods spawned on its side
+#TODO Remove low-score item from the order
 import pygame
 import numpy as np
 import random
@@ -31,9 +33,9 @@ class Environment(ParallelEnv):
                                                                                                         N_i = 2,
                                                                                                         grid_size=5,
                                                                                                         image_size=3,
-                                                                                                        max_steps=40,
+                                                                                                        max_steps=50,
                                                                                                         mode="train",
-                                                                                                        comm_range=1
+                                                                                                        comm_range=2
                                                                                                         ):
         np.random.seed(seed)
         self.mode = mode
@@ -45,10 +47,12 @@ class Environment(ParallelEnv):
         self.image_size = image_size # receptive field size
         self.N_val = 255 # number of possible values, 255 is like standard RGB image
         self.N_i = N_i # number of food items
-        self.freeze_dur = self.N_i*3 # the duration that agents cannot move, to observe items spawn near itself
+        self.N_att = 1
+        self.N_collect = 2 # number of items to be collected
+        self.freeze_dur = self.N_i*2 # the duration that agents cannot move, to observe items spawn near itself
         self.comm_range = comm_range
         self.see_range = self.image_size // 2
-        self.num_channels = 1
+        self.num_channels = 1 + self.N_att
         self.identical_item_obs = identical_item_obs
         self.n_words = n_words
         self.torch_order = torch_order
@@ -71,7 +75,18 @@ class Environment(ParallelEnv):
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
 
+        if mode == "train":
+            self.score_unit = 5
+            self.start_steps = 0
+            self.last_steps = 50
+            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
+        elif mode == "test":
+            self.score_unit = 2
+            self.start_steps = 0
+            self.last_steps = 125
+            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
 
+        self.max_score = self.N_val
         self.max_steps = max_steps
         self.food_type2name =  {
                                     1: "spinach",
@@ -82,11 +97,7 @@ class Environment(ParallelEnv):
                                     6: "cattle",
                                 }
         self.deviate = self.image_size // 2
-        
-        if self.N_i > 2:
-            self.agent_spawn_range = {0:((0, 2), (0, self.grid_size-3)), 1:((self.grid_size-1, 2), (self.grid_size-1, self.grid_size-3))}
-        else:
-            self.agent_spawn_range = {0:((0, 1), (0, self.grid_size-2)), 1:((self.grid_size-1, 1), (self.grid_size-1, self.grid_size-2))}
+        self.agent_spawn_range = {0:((0, 2), (0, self.grid_size-3)), 1:((self.grid_size-1, 2), (self.grid_size-1, self.grid_size-3))}
         self.reset()
         
     
@@ -117,19 +128,32 @@ class Environment(ParallelEnv):
             self.grid[agent.position[0], agent.position[1]] = agent
 
         # spawn foods
-        self.selected_agents = np.random.choice([0]* (self.N_i//2) + [1]*(self.N_i//2), size=self.N_i, replace=False) # item_id --> agent_id who sees it at first
+        # temporal order allocation
+        # Score allocation
+        self.selected_score = np.random.choice(self.score_list, size=self.N_i, replace=False) # item_id --> score
+        self.target_food_ids = set(np.argsort(self.selected_score)[-self.N_collect:]) # item_id order
+        self.score_visible_to_agent = np.random.choice([0]* (self.N_i//2) + [1]*(self.N_i//2), size=self.N_i, replace=False)
+
+        self.selected_agents = self.score_visible_to_agent # item_id --> agent_id who sees it at first
         if self.mode == "train":
             self.selected_time = np.random.choice([i for i in range(self.freeze_dur)], size=self.N_i, replace=False) # item_id --> time_id
         if self.mode == "test":
             self.selected_time = np.random.choice([i for i in range(1,self.freeze_dur-1)], size=self.N_i, replace=False) # item_id --> time_id
-        self.pickup_order = np.argsort(self.selected_time) # item_id order
-        self.sorted_selected_time = np.sort(self.selected_time) # time_id
+        self.occurrence_order = np.argsort(self.selected_time) # item_id order
+        self.pickup_order = [i for i in self.occurrence_order if i in self.target_food_ids]
+        # print("high-score items:", self.target_food_ids)
+        # print("pickup_order", self.pickup_order)
+        self.sorted_selected_time = np.sort(self.selected_time) # time_id for items appearing
+        
+
 
         self.foods = [Food(position=self.random_food_position(food_id), 
-                            food_type = food_id+1,
-                            id=food_id,
-                            identical_item_obs=self.identical_item_obs) for food_id in range(self.N_i) # id runs from 0 to N_i-1
-                    ]
+                        food_type = food_id+1,
+                        id=food_id,
+                        energy_score=self.selected_score[food_id],
+                        visible_to_agent=self.score_visible_to_agent[food_id],
+                        identical_item_obs=self.identical_item_obs) for food_id in range(self.N_i) # id runs from 0 to N_i-1
+                ]
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
@@ -318,9 +342,9 @@ class Environment(ParallelEnv):
         pass
 
     def step(self, agent_action_dict, int_action=True):
-        self.wrong_pickup_order = False
+        self.wrong_pickup = False
         if self.count_item < self.N_i and self.curr_steps == self.sorted_selected_time[self.count_item]: # selected_time: item_id --> time_id
-            curr_item_id = self.pickup_order[self.count_item]
+            curr_item_id = self.occurrence_order[self.count_item]
             self.foods[curr_item_id].visible = True
             self.count_item += 1
             
@@ -391,11 +415,11 @@ class Environment(ParallelEnv):
                         if food.strength_required - food.reduced_strength <= agent.strength and not food.carried:
                             # cancel the step punishment for agents that pick up previously if the item is successfully picked
                             curr_food_order = len(self.collected_foods)
-                            if self.pickup_order[curr_food_order] == food.id:
+                            if food.id in self.target_food_ids:
                                 self.collected_foods.append(food.id)
                                 hit = True
                             else:
-                                self.wrong_pickup_order = True
+                                self.wrong_pickup = True
 
                             food.carried += food.pre_carried
                             food.carried.append(agent.id)
@@ -427,7 +451,7 @@ class Environment(ParallelEnv):
             self.update_grid()
 
             # If max steps or pickup wrongly
-            if self.curr_steps == self.max_steps or self.wrong_pickup_order:
+            if self.curr_steps == self.max_steps or self.wrong_pickup:
                 agent.done = True
                 for j in range(len(self.possible_agents)):
                     self.dones[j] = True
@@ -437,7 +461,7 @@ class Environment(ParallelEnv):
         # One food is collected
         # Reward if food has highest energy among others
         # Punishment otherwise
-        if len(self.collected_foods) == self.N_i:
+        if len(self.collected_foods) == self.N_collect:
             # terminal_reward
             for agent in self.agent_maps:
                 self.rewards[agent.id] += 1
@@ -460,7 +484,10 @@ class Environment(ParallelEnv):
                                 "collect": len(self.collected_foods),
                                 "success": success,
                                 "pickup_order": self.pickup_order,  # item_id order
-                                "item_positions":{i: self.foods[i].position for i in range(self.N_i)}, # item_id --> item_position
+                                "food_positions":{i: self.foods[i].position for i in range(self.N_i)}, # item_id --> item_position
+                                "target_ids": self.target_food_ids,
+                                "food_scores": {f.id: f.energy_score for f in self.foods},
+                                "score_visible_to_agent" : self.score_visible_to_agent,
                                 },
                             }
     
@@ -482,6 +509,7 @@ class EnvAgent:
     def observe(self, environment):
         # Define the 5x5 field of view around the agent, excluding its center
         occupancy_data = []
+        food_attribute_data = np.zeros((environment.image_size, environment.image_size, environment.N_att))
         ob_range = environment.image_size // 2
         begin = -ob_range
         end = ob_range + 1
@@ -513,8 +541,11 @@ class EnvAgent:
                             else:
                                 obs_occupancy = food_occupancy
                             row.append(obs_occupancy)
+                            mask = (obj.visible_to_agent == self.id)  # Creates a boolean mask
+                            food_attribute_data[dx+ob_range, dy+ob_range] = mask * obj.attribute
                         else:
                             row.append([0])
+
 
 
                     elif isinstance(obj, EnvAgent) and self.agent_visible: # Observe another agent
@@ -529,11 +560,12 @@ class EnvAgent:
                     row.append(wall_occupancy)  # Out-of-bounds grid (treated as empty)
             occupancy_data.append(row)
         occupancy_data = np.array(occupancy_data)
-        return occupancy_data
+        obs_out = np.concatenate((occupancy_data, food_attribute_data), axis=2)
+        return obs_out
 
 
 class Food:
-    def __init__(self, position, food_type, id, identical_item_obs):
+    def __init__(self, position, food_type, id, energy_score, visible_to_agent, identical_item_obs):
         self.type_to_strength_map = {
                                     1:6, # Spinach
                                     2:6,  # Watermelon
@@ -548,14 +580,18 @@ class Food:
         self.strength_required = self.type_to_strength_map[food_type]
         self.carried = [] # keep all agents that already picked up this food
         self.pre_carried = [] # keep all agents that try to pick up this food, no need to be successful
+        self.energy_score = energy_score
         self.id = id
         self.done = False
         self.reduced_strength = 0
+        self.visible_to_agent = visible_to_agent
+        self.attribute  = energy_score # TODO add another channel referring to item category
         self.visible = False # item's visibility changes at the observed time
         
+
 
 if __name__ == "__main__":
     env = Environment()
     for i in range(100):
         env.reset()
-        print(f"target id: {env.target_food_id}")
+        print(f"target id: {env.target_food_ids}")

@@ -1,4 +1,6 @@
-# Created 28 Feb2025: TODO
+# Edit: 20Dec2024
+# docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
+# CUDA_VISIBLE_DEIVCES=1 python -m scripts.goal_pickup.test_comm_ppo_separate
 import os
 import random
 import time
@@ -15,10 +17,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_temporal import *
+from environments.goal_condition_pickup import *
 from utils.process_data import *
-from models.pickup_models import PPOLSTMCommAgent
-
+from models.goal_cond_models import PPOLSTMCommAgentGoal
 
 
 
@@ -33,10 +34,11 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = True
+    visualize = False
     save_trajectory = False
     ablate_message = False
     ablate_type = "noise" # zero, noise
+    agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -44,10 +46,10 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 10000
-    n_words = 4
+    total_episodes: int = 100
+    n_words = 16
     """vocab size"""
-    image_size = 3
+    image_size = 5
     """number of observation grid"""
     N_att = 2
     """number of attributes"""
@@ -56,16 +58,15 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    max_steps = 20
     """grid size"""
     mode = "train"
     agent_visible = False
-    model_name = "dec_ppo_invisible"
-    model_step = "332800000"
-    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
-    ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/pickup_temporal/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    model_name = "debug"
+    model_step = "998400000"
+    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
+    ckpt_path = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/goal_condition_pickup/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/goal_condition_pickup/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
     if args.visualize:
-        from visualize_temporal import *
+        from visualize import *
         from moviepy.editor import *
     os.makedirs(args.saved_dir, exist_ok=True)
     # TRY NOT TO MODIFY: seeding
@@ -94,10 +95,11 @@ if __name__ == "__main__":
                         agent_visible=args.agent_visible,
                         n_words=args.n_words,
                         seed=args.seed, 
+                        N_att=args.N_att,
+                        N_val=args.N_val,
                         N_i = args.N_i,
                         grid_size=args.grid_size,
                         image_size=args.image_size,
-                        max_steps=args.max_steps,
                         mode=args.mode)
 
     num_channels = env.num_channels
@@ -109,21 +111,27 @@ if __name__ == "__main__":
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
     envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
 
-    agent0 = PPOLSTMCommAgent(num_actions=num_actions, 
+    agent0 = PPOLSTMCommAgentGoal(num_actions=num_actions, 
                                 grid_size=args.grid_size, 
                                 n_words=args.n_words, 
                                 embedding_size=16, 
                                 num_channels=num_channels, 
-                                image_size=args.image_size).to(device)
+                                N_val=args.N_val, 
+                                N_att=args.N_att, 
+                                image_size=args.image_size,
+                                ).to(device)
     agent0.load_state_dict(torch.load(args.ckpt_path, map_location=device))
     agent0.eval()
 
-    agent1 = PPOLSTMCommAgent(num_actions=num_actions, 
+    agent1 = PPOLSTMCommAgentGoal(num_actions=num_actions, 
                                 grid_size=args.grid_size, 
                                 n_words=args.n_words, 
                                 embedding_size=16, 
                                 num_channels=num_channels, 
-                                image_size=args.image_size).to(device)
+                                N_val=args.N_val, 
+                                N_att=args.N_att, 
+                                image_size=args.image_size,
+                                ).to(device)
     agent1.load_state_dict(torch.load(args.ckpt_path2, map_location=device))
     agent1.eval()
     
@@ -147,7 +155,7 @@ if __name__ == "__main__":
     num_success_episodes=0
     
     next_obs_dict, _ = envs.reset()
-    next_obs, next_locs, _, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
+    next_obs, next_locs, next_goals, next_r_messages = extract_dict_with_goal(next_obs_dict, device, use_message=True)
 
     next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
 
@@ -172,18 +180,27 @@ if __name__ == "__main__":
         log_actions = torch.zeros((env.max_steps, num_agents)).to(device) # action: physical action
         log_s_messages = torch.zeros((env.max_steps, num_agents), dtype=torch.int64).to(device) # action: sent message
         log_rewards = torch.zeros((env.max_steps, num_agents)).to(device)
-        log_s_message_embs = torch.zeros((env.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
 
-        single_env = envs.vec_envs[0].unwrapped.par_env
-        log_food_dict = {}
-        log_distractor_food_dict = {"location":[], "type":[], "score":[]}
+        log_r_message_embs = torch.zeros((env.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
         
-        food_list = single_env.foods
-        log_food_dict['location'] = [food.position for food in food_list]
-        log_food_dict['spawn_time'] = single_env.selected_time
+    
+        single_env = envs.vec_envs[0].unwrapped.par_env
+        log_target_food_dict = {}
+        log_foods = {}
+        
+        target_food_id = single_env.target_food_id
+        target_food = single_env.foods[target_food_id]
+        log_target_food_dict['location'] = target_food.position
+        log_target_food_dict['attribute'] = target_food.attribute
+        log_foods["attribute"] = [food.attribute for food in single_env.foods]
+        log_foods["position"] = [food.position for food in single_env.foods]
+        ############### Logging #########################
 
-        ############################################################
         while not next_done[0]:
+            # print(f"step {ep_step}")
+            next_obs_arr = next_obs.detach().cpu().numpy()
+            energy_obs["agent0"] = energy_obs["agent0"].union(set(next_obs_arr[0,1,:,:].flatten()))
+            energy_obs["agent1"] = energy_obs["agent1"].union(set(next_obs_arr[1,1,:,:].flatten()))
 
             if args.visualize and not(args.save_trajectory):
                 single_env = envs.vec_envs[0].unwrapped.par_env
@@ -191,11 +208,18 @@ if __name__ == "__main__":
                 frames.append(frame.transpose((1, 0, 2)))
 
             with torch.no_grad():
+                if args.ablate_message:
+                    if args.ablate_type == "zero":
+                        next_r_messages = torch.zeros_like(next_r_messages).to(device)
+                    elif args.ablate_type == "noise":
+                        next_r_messages = torch.randint(0, 10, next_r_messages.shape).to(device)
+                    else:
+                        raise Exception("only zero and noise are allowed")
+
                 ######### Logging #################
-                if args.save_trajectory:
-                    log_obs[ep_step] = next_obs
-                    log_locs[ep_step] = next_locs
-                    log_r_messages[ep_step] = next_r_messages.squeeze().to(device)
+                log_obs[ep_step] = next_obs
+                log_locs[ep_step] = next_locs
+                log_r_messages[ep_step] = next_r_messages.squeeze().to(device)
                 ###################################
 
                 (h0,c0) = (next_lstm_state[0][:,0,:].unsqueeze(1), next_lstm_state[1][:,0,:].unsqueeze(1))
@@ -204,22 +228,17 @@ if __name__ == "__main__":
 
                 action0, _, _, s_message0, _, _, _, (new_h0, new_c0) = agent0.get_action_and_value((next_obs[0].unsqueeze(0),
                                                                                             next_locs[0].unsqueeze(0), 
+                                                                                            next_goals[0].unsqueeze(0),
                                                                                             next_r_messages[0].unsqueeze(0)),
                                                                                             (h0,c0), next_done[0])
                 action1, _, _, s_message1, _, _, _, (new_h1, new_c1) = agent1.get_action_and_value((next_obs[1].unsqueeze(0),
                                                                                             next_locs[1].unsqueeze(0),
+                                                                                            next_goals[1].unsqueeze(0),
                                                                                             next_r_messages[1].unsqueeze(0)),
                                                                                             (h1,c1), next_done[1])
 
                 action = torch.cat((action0, action1), dim=0)
                 s_message = torch.cat((s_message0, s_message1), dim=0)
-                if args.ablate_message:
-                    if args.ablate_type == "zero":
-                        s_message = torch.zeros_like(s_message).to(device)
-                    elif args.ablate_type == "noise":
-                        s_message = torch.randint(0, args.n_words, s_message.shape).to(device)
-                    else:
-                        raise Exception("only zero and noise are allowed")
                 if args.memory_transfer:
                     h1 = torch.tensor(h0)
                     c1 = torch.tensor(c0)
@@ -237,7 +256,7 @@ if __name__ == "__main__":
                 # print(f"step {ep_step} agent_actions = {action}")
             env_action, env_message = action.cpu().numpy(), s_message.cpu().numpy()
             next_obs_dict, reward, terminations, truncations, infos = envs.step({"action": env_action, "message": env_message})
-            next_obs, next_locs, _, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
+            next_obs, next_locs, next_goals, next_r_messages = extract_dict_with_goal(next_obs_dict, device, use_message=True)
             # Sanity check: if messages are swapped properly
             # print("sent", s_message)
             # print("swap", next_r_messages)
@@ -265,13 +284,16 @@ if __name__ == "__main__":
             num_success_episodes += 1
 
         if args.save_trajectory:
+            log_masks = infos[0]['episode']['attribute_masks']
+            log_attributes = infos[0]['episode']['food_attributes']
+            log_goal = infos[0]['episode']['goal_attribute']
             with torch.no_grad():
-                # message sent from agent0 to agent1 --> use agent1's embedding
-                log_s_message_embs[:, :, 0] = agent1.message_encoder(log_s_messages[:, 0])
-                # message sent from agent1 to agent0 --> use agent0's embedding
-                log_s_message_embs[:, :, 1] = agent0.message_encoder(log_s_messages[:, 1])
+                # agent0 embedding
+                log_r_message_embs[:, :, 0] = agent0.message_encoder(log_r_messages[:, 0])
+                # agent1 embedding
+                log_r_message_embs[:, :, 1] = agent1.message_encoder(log_r_messages[:, 1])
 
-            log_s_message_embs = log_s_message_embs.cpu().numpy()
+            log_r_message_embs = log_r_message_embs.cpu().numpy()
             log_obs = log_obs.cpu().numpy()
             log_locs = log_locs.cpu().numpy()
             log_r_messages = log_r_messages.cpu().numpy()
@@ -282,20 +304,38 @@ if __name__ == "__main__":
             # print("log_r_messages", log_r_messages)
             # Combine all your data into a dictionary
             log_data[f"episode_{episode_id}"] = {
-                "log_food_dict": log_food_dict,
-                "log_s_message_embs": log_s_message_embs,
+                "log_foods": log_foods,
+                "log_target_food_dict": log_target_food_dict,
+                "log_target_food_id" : target_food_id,
+                "log_attributes" : log_attributes,
+                "log_goal" : log_goal,
+                "log_masks" : log_masks,
+                "log_r_messages": log_r_messages,
+                "log_s_messages": log_s_messages,
+                "log_r_message_embs": log_r_message_embs,
                 "log_obs": log_obs,
                 "log_locs": log_locs,
-                "log_r_messages": log_r_messages,
                 "log_actions": log_actions,
-                "log_s_messages": log_s_messages,
                 "log_rewards": log_rewards,
             }
+
+        if not(args.save_trajectory):
+            # Open the log file in append mode
+            with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
+                
+                # Redirect the print statements to the log file
+                print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)
+                print("rewards", log_rewards)
+                # print(f"Target ID: {infos[0]['episode']['target_id']}", file=log_file)
+                # print(f"Goal Attribute: {infos[0]['episode']['goal_attribute']}", file=log_file)
+                # print(f"Food Attributes: \n {infos[0]['episode']['food_attributes']}", file=log_file)
+                # print(f"Agent Item Score Observations \n {energy_obs}", file=log_file)
+                # print(f"Final Score Obs Agent0:  \n {next_obs_arr[0,1,:,:]}", file=log_file)
+                # print(f"Final Score Obs Agent1:  \n {next_obs_arr[1,1,:,:]}", file=log_file)
 
         running_rewards += returns
 
         if args.visualize: # and returns > 5:
-            print(len(frames))
             os.makedirs(args.video_save_dir, exist_ok=True)
             clip = ImageSequenceClip(frames, fps=5)
             clip.write_videofile(os.path.join(args.video_save_dir, f"ep_{episode_id}_r={infos[0]['episode']['r']}.mp4"), codec="libx264")

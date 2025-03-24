@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_temporal import *
+from environments.pickup_n_high import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -33,9 +33,9 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = True
-    save_trajectory = False
-    ablate_message = False
+    visualize = False
+    save_trajectory = True
+    ablate_message = True
     ablate_type = "noise" # zero, noise
     fully_visible_score = False
     identical_item_obs = False
@@ -44,7 +44,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 10000
+    total_episodes: int = 1000
     n_words = 4
     """vocab size"""
     image_size = 3
@@ -59,13 +59,13 @@ class Args:
     max_steps = 20
     """grid size"""
     mode = "train"
-    agent_visible = False
-    model_name = "dec_ppo_invisible"
-    model_step = "332800000"
+    agent_visible = True
+    model_name = "dec_ppo"
+    model_step = "179200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
-    ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/pickup_temporal/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    ckpt_path = f"checkpoints/pickup_n_high/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/pickup_n_high/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/pickup_n_high/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
     if args.visualize:
-        from visualize_temporal import *
+        from visualize import *
         from moviepy.editor import *
     os.makedirs(args.saved_dir, exist_ok=True)
     # TRY NOT TO MODIFY: seeding

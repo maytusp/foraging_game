@@ -1,5 +1,5 @@
 # Created: 28 Feb 2025
-# The code is for training agents with separated networks during training and execution (no parameter sharing) for pickup_mix
+# The code is for training agents with separated networks during training and execution (no parameter sharing) for pickup_high_v2
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_mix import *
+from environments.pickup_high_v2 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -65,13 +65,13 @@ class Args:
 
     log_every = 32
 
-    n_words = 4
-    image_size = 3
-    N_i = 4
-    grid_size = 6
-    max_steps = 30
+    n_words = 16
+    image_size = 5
+    N_i = 2
+    grid_size = 5
+    max_steps=10
     fully_visible_score = False
-    agent_visible = False
+    agent_visible = True
     mode = "train"
     model_name = "dec_ppo"
     
@@ -88,7 +88,7 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_mix/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_high_v2/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     if load_pretrained:
@@ -110,7 +110,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_mix"
+    wandb_project_name: str = "pickup_high_v2"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=0, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}
@@ -233,7 +233,6 @@ if __name__ == "__main__":
     running_ep_l = 0.0
     running_num_ep = 0
     for iteration in range(1, args.num_iterations + 1):
-        print(f"iteration {iteration}")
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
             # Annealing the rate if instructed to do so.
@@ -454,7 +453,6 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{i}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
                 writer.add_scalar(f"agent{i}/losses/explained_variance", explained_var, global_step)
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-                print("SPS:", int(global_step / (time.time() - start_time)))
     
     for i in range(num_agents):
         final_save_path = os.path.join(args.save_dir, f"final_model_agent_{i}.pt")

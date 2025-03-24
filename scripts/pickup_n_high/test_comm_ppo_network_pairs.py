@@ -45,8 +45,8 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
-    n_words = 4
+    total_episodes: int = 5000
+    n_words = 16
     """vocab size"""
     image_size = 3
     """number of observation grid"""
@@ -57,16 +57,16 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    max_steps = 10
+    max_steps=10
     """grid size"""
     mode = "train"
     agent_visible = False
-    model_name = "pop_ppo_15net_invisible"
-    num_networks = 15
+    model_name = "dec_ppo_invisible"
+    num_networks=2
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    model_step = "947200000"
+    model_step = "307200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     # ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
     # ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
@@ -89,7 +89,7 @@ if __name__ == "__main__":
             selected_networks = network_pairs.split("-")
             args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
             args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-            args.saved_dir = f"logs/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+            args.saved_dir = f"logs/pickup_high_v1/exp2/{args.model_name}/pair_{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
             if args.ablate_message:
                 args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
             else:

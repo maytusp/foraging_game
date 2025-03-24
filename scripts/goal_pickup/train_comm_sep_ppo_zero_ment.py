@@ -1,5 +1,5 @@
-# Created: 28 Feb 2025
-# The code is for training agents with separated networks during training and execution (no parameter sharing) for pickup_mix
+# Created: 17 Feb 2024
+# The code is for training goal-conditioned agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
@@ -18,9 +18,10 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_mix import *
+from environments.goal_condition_pickup import *
 from utils.process_data import *
-from models.pickup_models import PPOLSTMCommAgent
+from models.goal_cond_models import PPOLSTMCommAgentGoal
+
 
 @dataclass
 class Args:
@@ -29,7 +30,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -55,8 +56,6 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01 # ori 0.01
     """coefficient of the action_entropy"""
-    m_ent_coef: float = 0.002
-    """coefficient of the message_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
@@ -65,20 +64,21 @@ class Args:
 
     log_every = 32
 
-    n_words = 4
-    image_size = 3
-    N_i = 4
-    grid_size = 6
-    max_steps = 30
-    fully_visible_score = False
-    agent_visible = False
+    n_words = 16
+    """vocab size"""
+    image_size = 5
+    """number of observation grid"""
+    N_att = 2
+    """number of attributes"""
+    N_val = 10
+    """number of values"""
+    N_i = 2
+    """number of items"""
+    grid_size = 5
+    """grid size"""
     mode = "train"
-    model_name = "dec_ppo"
-    
-    if not(agent_visible):
-        model_name+= "_invisible"
-    
 
+    model_name = "dec_ppo_invisible_no_ent_loss"
     """train or test (different attribute combinations)"""
     # to be filled in runtime
     batch_size: int = 0
@@ -87,18 +87,19 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_mix/{model_name}/{train_combination_name}/seed{seed}/"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_natt{N_att}_nval{N_val}_nw{n_words}"
+    save_dir = f"checkpoints/goal_condition_pickup/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
     if load_pretrained:
         global_step = 384000000
         learning_rate = 2e-4
+        ckpt_path = {
+                    0:f"checkpoints/goal_condition_pickup/{model_name}/grid5_img5_ni2_natt2_nval10_nw16/seed1/agent_0_step_{global_step}.pt", 
+                    1:f"checkpoints/goal_condition_pickup/{model_name}/grid5_img5_ni2_natt2_nval10_nw16/seed1/agent_1_step_{global_step}.pt"
+                    }
     visualize_loss = True
-    ckpt_path = {
-                0:f"", 
-                1:f""
-                }
+
     save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
@@ -110,13 +111,15 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_mix"
+    wandb_project_name: str = "goal_condition_pickup"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
-
+    fully_visible_score = False
+    """Fully visible food highest score for pretraining"""
+    agent_visible = False
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -154,10 +157,11 @@ if __name__ == "__main__":
                         agent_visible=args.agent_visible,
                         n_words=args.n_words,
                         seed=args.seed, 
+                        N_att=args.N_att,
+                        N_val=args.N_val,
                         N_i = args.N_i,
                         grid_size=args.grid_size,
                         image_size=args.image_size,
-                        max_steps=args.max_steps,
                         mode="train")
                         
     num_channels = env.num_channels
@@ -167,13 +171,14 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=0, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}
     optimizers = {}
     obs = {}
     locs = {}
+    goals = {}
     r_messages = {}
     actions = {}
     s_messages = {}
@@ -183,15 +188,17 @@ if __name__ == "__main__":
     dones = {}
     values = {}
 
-    next_obs, next_locs, next_r_messages,next_done, next_lstm_state = {}, {}, {}, {}, {}
+    next_obs, next_locs, next_r_messages, next_goals, next_done, next_lstm_state = {}, {}, {}, {}, {}, {}
     # TRY NOT TO MODIFY: start the game
     next_obs_dict, _ = envs.reset(seed=args.seed)
     for i in range(num_agents):
-        agents[i] = PPOLSTMCommAgent(num_actions=num_actions, 
+        agents[i] = PPOLSTMCommAgentGoal(num_actions=num_actions, 
                                     grid_size=args.grid_size, 
                                     n_words=args.n_words, 
                                     embedding_size=16, 
                                     num_channels=num_channels, 
+                                    N_val=args.N_val, 
+                                    N_att=args.N_att, 
                                     image_size=args.image_size).to(device)
         if args.load_pretrained:
             print(f"load agent{i} from {args.ckpt_path[i]}")
@@ -202,6 +209,7 @@ if __name__ == "__main__":
         # ALGO Logic: Storage setup
         obs[i] = torch.zeros((args.num_steps, args.num_envs, num_channels, args.image_size, args.image_size)).to(device) # obs: vision
         locs[i] = torch.zeros((args.num_steps, args.num_envs, 2)).to(device) # obs: location
+        goals[i] = torch.zeros((args.num_steps, args.num_envs, args.N_att)).to(device)
         r_messages[i] = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # obs: received message
         actions[i] = torch.zeros((args.num_steps, args.num_envs)).to(device) # action: physical action
         s_messages[i] = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # action: sent message
@@ -212,7 +220,7 @@ if __name__ == "__main__":
         values[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
 
 
-        next_obs[i], next_locs[i], next_r_messages[i], _ = extract_dict_separate(next_obs_dict, None, device, i, num_agents, use_message=True)
+        next_obs[i], next_locs[i], next_goals[i], next_r_messages[i], _ = extract_dict_separate_with_goal(next_obs_dict, None, device, i, num_agents, use_message=True)
         # print(next_obs[i].shape, next_locs[i].shape)
         next_r_messages[i] = torch.tensor(next_r_messages[i]).squeeze().to(device)
         next_done[i] = torch.zeros(args.num_envs).to(device)
@@ -233,7 +241,6 @@ if __name__ == "__main__":
     running_ep_l = 0.0
     running_num_ep = 0
     for iteration in range(1, args.num_iterations + 1):
-        print(f"iteration {iteration}")
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
             # Annealing the rate if instructed to do so.
@@ -255,12 +262,13 @@ if __name__ == "__main__":
             for i in range(num_agents):
                 obs[i][step] = next_obs[i]
                 locs[i][step] = next_locs[i]
+                goals[i][step] = next_goals[i]
                 r_messages[i][step] = next_r_messages[i].squeeze()
                 dones[i][step] = next_done[i]
 
                 # ALGO LOGIC: action logic
                 with torch.no_grad():
-                    action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[i].get_action_and_value((next_obs[i], next_locs[i], next_r_messages[i]), 
+                    action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[i].get_action_and_value((next_obs[i], next_locs[i], next_goals[i], next_r_messages[i]), 
                                                                                                         next_lstm_state[i], next_done[i])
                     values[i][step] = value[i].flatten()
 
@@ -275,7 +283,7 @@ if __name__ == "__main__":
             next_obs_dict, all_reward, all_terminations, all_truncations, infos = envs.step({"action": env_action, "message": env_message})
             env_info = (all_reward, all_terminations, all_truncations)
             for i in range(num_agents):
-                next_obs[i], next_locs[i], next_r_messages[i], (reward[i], terminations, truncations) = extract_dict_separate(next_obs_dict, env_info, device, i, num_agents, use_message=True)
+                next_obs[i], next_locs[i], next_goals[i], next_r_messages[i], (reward[i], terminations, truncations) = extract_dict_separate_with_goal(next_obs_dict, env_info, device, i, num_agents, use_message=True)
             
                 next_done[i] = np.logical_or(terminations, truncations)
                 rewards[i][step] = torch.tensor(reward[i]).to(device).view(-1)
@@ -308,6 +316,7 @@ if __name__ == "__main__":
         #TODO Implement seprate network for this part
         b_obs = {}
         b_locs = {}
+        b_goals = {}
         b_r_messages = {}
         b_action_logprobs = {}
         b_s_messages = {}
@@ -324,7 +333,7 @@ if __name__ == "__main__":
             # bootstrap value if not done
             with torch.no_grad():
                 next_value = agents[i].get_value(
-                    (next_obs[i], next_locs[i], next_r_messages[i]),
+                    (next_obs[i], next_locs[i], next_goals[i], next_r_messages[i]),
                     next_lstm_state[i],
                     next_done[i],
                 ).reshape(1, -1)
@@ -344,6 +353,7 @@ if __name__ == "__main__":
             # flatten the batch
             b_obs[i] = obs[i].reshape((-1,num_channels, args.image_size, args.image_size))
             b_locs[i] = locs[i].reshape(-1, 2)
+            b_goals[i] = goals[i].reshape(-1, args.N_att)
             b_r_messages[i] = r_messages[i].reshape(-1)
             b_action_logprobs[i] = action_logprobs[i].reshape(-1)
             b_s_messages[i] = s_messages[i].reshape(-1)
@@ -370,7 +380,7 @@ if __name__ == "__main__":
                     mbenvinds = envinds[start:end]
                     mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
                     _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agents[i].get_action_and_value(
-                        (b_obs[i][mb_inds], b_locs[i][mb_inds], b_r_messages[i][mb_inds]),
+                        (b_obs[i][mb_inds], b_locs[i][mb_inds], b_goals[i][mb_inds], b_r_messages[i][mb_inds]),
                         (initial_lstm_state[i][0][:, mbenvinds], initial_lstm_state[i][1][:, mbenvinds]),
                         b_dones[i][mb_inds],
                         b_actions[i].long()[mb_inds],
@@ -424,7 +434,7 @@ if __name__ == "__main__":
 
                     action_entropy_loss = action_entropy.mean()
                     message_entropy_loss = message_entropy.mean()
-                    loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss) - (args.m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
+                    loss = pg_loss + mg_loss - args.ent_coef * (action_entropy_loss) + v_loss * args.vf_coef
 
                     optimizers[i].zero_grad()
                     loss.backward()
@@ -454,7 +464,6 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{i}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
                 writer.add_scalar(f"agent{i}/losses/explained_variance", explained_var, global_step)
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-                print("SPS:", int(global_step / (time.time() - start_time)))
     
     for i in range(num_agents):
         final_save_path = os.path.join(args.save_dir, f"final_model_agent_{i}.pt")

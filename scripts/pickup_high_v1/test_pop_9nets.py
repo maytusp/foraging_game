@@ -61,21 +61,14 @@ class Args:
     """grid size"""
     mode = "train"
     agent_visible = False
-    model_name = "pop_ppo_15net_invisible"
-    num_networks = 15
+    model_name = "pop_ppo_9net_invisible"
+    num_networks = 9
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    model_step = "947200000"
+    model_step = "691200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    # ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
-    # ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
-    # saved_dir = f"logs/pickup_high_v1/{model_name}{network_pairs}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
-    # if ablate_message:
-    #     saved_dir = os.path.join(saved_dir, ablate_type)
-    # else:
-    #     saved_dir = os.path.join(saved_dir, "normal")
-    # video_save_dir = os.path.join(saved_dir, "vids")
+
 
 
 if __name__ == "__main__":
