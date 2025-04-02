@@ -33,7 +33,8 @@ class Environment(ParallelEnv):
                                                                                                         image_size=3,
                                                                                                         max_steps=40,
                                                                                                         mode="train",
-                                                                                                        comm_range=1
+                                                                                                        comm_range=1,
+                                                                                                        freeze_dur=6,
                                                                                                         ):
         np.random.seed(seed)
         self.mode = mode
@@ -45,7 +46,7 @@ class Environment(ParallelEnv):
         self.image_size = image_size # receptive field size
         self.N_val = 255 # number of possible values, 255 is like standard RGB image
         self.N_i = N_i # number of food items
-        self.freeze_dur = self.N_i*3 # the duration that agents cannot move, to observe items spawn near itself
+        self.freeze_dur = freeze_dur # self.N_i*3 # the duration that agents cannot move, to observe items spawn near itself
         self.comm_range = comm_range
         self.see_range = self.image_size // 2
         self.num_channels = 1
@@ -120,8 +121,10 @@ class Environment(ParallelEnv):
         self.selected_agents = np.random.choice([0]* (self.N_i//2) + [1]*(self.N_i//2), size=self.N_i, replace=False) # item_id --> agent_id who sees it at first
         if self.mode == "train":
             self.selected_time = np.random.choice([i for i in range(self.freeze_dur)], size=self.N_i, replace=False) # item_id --> time_id
-        if self.mode == "test":
+        elif self.mode == "test":
             self.selected_time = np.random.choice([i for i in range(1,self.freeze_dur-1)], size=self.N_i, replace=False) # item_id --> time_id
+        elif self.mode == "test_ood":
+            self.selected_time = np.random.choice([i for i in range(self.freeze_dur,self.freeze_dur+4)], size=self.N_i, replace=False) # item_id --> time_id
         self.pickup_order = np.argsort(self.selected_time) # item_id order
         self.sorted_selected_time = np.sort(self.selected_time) # time_id
 

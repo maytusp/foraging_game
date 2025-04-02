@@ -33,8 +33,8 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = True
-    save_trajectory = False
+    visualize = False
+    save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
     fully_visible_score = False
@@ -44,24 +44,21 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 10000
+    total_episodes: int = 2000
     n_words = 4
     """vocab size"""
     image_size = 3
-    """number of observation grid"""
     N_att = 2
-    """number of attributes"""
     N_val = 10
-    """number of values"""
     N_i = 2
-    """number of items"""
     grid_size = 5
-    max_steps = 20
+    max_steps = 40
+    freeze_dur = 10
     """grid size"""
     mode = "train"
     agent_visible = False
     model_name = "dec_ppo_invisible"
-    model_step = "332800000"
+    model_step = "51200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
@@ -98,7 +95,8 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode=args.mode)
+                        mode=args.mode,
+                        freeze_dur=args.freeze_dur)
 
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -173,7 +171,7 @@ if __name__ == "__main__":
         log_s_messages = torch.zeros((env.max_steps, num_agents), dtype=torch.int64).to(device) # action: sent message
         log_rewards = torch.zeros((env.max_steps, num_agents)).to(device)
         log_s_message_embs = torch.zeros((env.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
-
+        log_r_message_embs = torch.zeros((env.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
         single_env = envs.vec_envs[0].unwrapped.par_env
         log_food_dict = {}
         log_distractor_food_dict = {"location":[], "type":[], "score":[]}
@@ -266,12 +264,12 @@ if __name__ == "__main__":
 
         if args.save_trajectory:
             with torch.no_grad():
-                # message sent from agent0 to agent1 --> use agent1's embedding
-                log_s_message_embs[:, :, 0] = agent1.message_encoder(log_s_messages[:, 0])
                 # message sent from agent1 to agent0 --> use agent0's embedding
-                log_s_message_embs[:, :, 1] = agent0.message_encoder(log_s_messages[:, 1])
+                log_r_message_embs[:, :, 0] = agent0.message_encoder(log_r_messages[:, 0])
+                # message sent from agent0 to agent1 --> use agent1's embedding
+                log_r_message_embs[:, :, 1] = agent1.message_encoder(log_r_messages[:, 1])
 
-            log_s_message_embs = log_s_message_embs.cpu().numpy()
+            log_r_message_embs = log_r_message_embs.cpu().numpy()
             log_obs = log_obs.cpu().numpy()
             log_locs = log_locs.cpu().numpy()
             log_r_messages = log_r_messages.cpu().numpy()
@@ -283,13 +281,14 @@ if __name__ == "__main__":
             # Combine all your data into a dictionary
             log_data[f"episode_{episode_id}"] = {
                 "log_food_dict": log_food_dict,
-                "log_s_message_embs": log_s_message_embs,
+                "log_r_message_embs": log_r_message_embs,
                 "log_obs": log_obs,
                 "log_locs": log_locs,
                 "log_r_messages": log_r_messages,
                 "log_actions": log_actions,
                 "log_s_messages": log_s_messages,
                 "log_rewards": log_rewards,
+                "episode_length": infos[0]['episode']['l'],
             }
 
         running_rewards += returns

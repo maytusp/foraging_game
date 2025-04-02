@@ -25,6 +25,7 @@ def prepare_tsne_data(log_data):
         target_loc = data["log_target_food_dict"]["location"] # (2,)
         distractor_score = data["log_distractor_food_dict"]["score"][0]
         distractor_loc = data["log_distractor_food_dict"]["location"][0] # (2,)
+        
         # if id<10:
         #     print(f"Episode {id}")
         #     print(f"who_see_target {who_see_target}")
@@ -49,13 +50,13 @@ def prepare_tsne_data(log_data):
 
 
 
-def plot_tsne_by_agent(tsne_data):
-    sender_list = [0, 1]
+def plot_tsne_by_agent(tsne_data, saved_fig_path, num_networks=3, receiver=2):
+    sender_list = [i for i in range(num_networks)]
     data = []
     agent_ids = []
 
     for sender in sender_list:
-        message_emb = np.array(tsne_data[f"{sender}-1"]["agent0"])
+        message_emb = np.array(tsne_data[f"{receiver}-{sender}"]["agent1"])
         n_samples = message_emb.shape[0]
         data.append(message_emb)
         agent_ids.append(np.array([sender] * n_samples))
@@ -66,8 +67,8 @@ def plot_tsne_by_agent(tsne_data):
     tsne_results = tsne.fit_transform(data)
 
     # Define colors and markers for each class
-    colors = ["red", "blue"]
-    labels = ["Agent 0", "Agent 1"]
+    colors = ["red", "blue", "green", "purple", "yellow", "orange", "cyan"]
+    labels = [i for i in range(num_networks)]
 
     plt.figure(figsize=(10, 8))
 
@@ -83,22 +84,28 @@ def plot_tsne_by_agent(tsne_data):
     plt.xlabel("t-SNE Dimension 1")
     plt.ylabel("t-SNE Dimension 2")
     plt.grid(True)
+    plt.savefig(saved_fig_path)
     plt.show()
 
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    model_name = "dec_ppo_invisible"
-    combination_name = "grid5_img3_ni2_nw16_ms10_204800000"
+    num_networks = 6
+    model_name = f"pop_ppo_{num_networks}net_invisible"
+    combination_name = "grid5_img3_ni2_nw4_ms10_486400000"
     seed = 1
     mode = "train"
-    network_pairs = ["0-0", "0-1", "1-1"]
+    
     log_file_path = {}
-    receiver = "agent1"
+    receiver = f"{num_networks-1}"
+    network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
     tsne_data = {}
+    saved_fig_dir = f"plots/by_agent/"
+    os.makedirs(saved_fig_dir, exist_ok=True)
+    saved_fig_path = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}")
     for pair in network_pairs:
-        if receiver[-1] in pair[-1]:
+        if receiver in pair[0]:
             print(f"loading network pair {pair}")
-            log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+            log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
         
             
             # Load log data
@@ -107,5 +114,5 @@ if __name__ == "__main__":
             # Prepare data for t-SNE
             tsne_data[pair] = prepare_tsne_data(log_data)
     # print(np.array(tsne_data["0-1"]["agent0"]).shape)
-    plot_tsne_by_agent(tsne_data)
+    plot_tsne_by_agent(tsne_data, saved_fig_path, num_networks, receiver)
 

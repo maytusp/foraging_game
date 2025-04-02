@@ -69,7 +69,7 @@ class Args:
     image_size = 3
     N_i = 4
     grid_size = 6
-    max_steps = 30
+    max_steps = 20
     fully_visible_score = False
     agent_visible = False
     mode = "train"

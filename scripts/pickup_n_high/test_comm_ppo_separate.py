@@ -45,23 +45,18 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     total_episodes: int = 1000
+
     n_words = 4
-    """vocab size"""
     image_size = 3
-    """number of observation grid"""
-    N_att = 2
-    """number of attributes"""
-    N_val = 10
-    """number of values"""
-    N_i = 2
-    """number of items"""
-    grid_size = 5
-    max_steps = 20
-    """grid size"""
+    N_i = 4
+    grid_size = 6
+    max_steps = 30
+
     mode = "train"
-    agent_visible = True
-    model_name = "dec_ppo"
-    model_step = "179200000"
+    agent_visible = False
+    model_name = "dec_ppo_invisible"
+    model_step = "998400000"
+
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_n_high/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_n_high/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
@@ -79,7 +74,7 @@ if __name__ == "__main__":
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
     if args.visualize:
-        from visualize import *
+        from visualize_temporal import *
         from moviepy.editor import *
     os.makedirs(args.saved_dir, exist_ok=True)
     # TRY NOT TO MODIFY: seeding

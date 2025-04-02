@@ -12,55 +12,73 @@ import sklearn.preprocessing
 import pandas as pd
 
 import matplotlib.pyplot as plt
-from get_compos_score import load_trajectory
 import os
-from transforms import *
+from utils import *
+
 
 # Extract and prepare data for t-SNE
 def extract_message(log_data):
-    tsne_data = {"agent0": [], "agent1":[]}
-    spawn_time = {"agent0": [], "agent1":[]}
-    item_locs = {"agent0": [], "agent1":[]}
-    item_times = {"agent0": [], "agent1":[]}
+    message_data = {0: [], 1:[]}
+    attributes =  {0: [], 1:[]}
+    max_message_length = 32
     for episode, data in log_data.items():
-        log_s_message_embs = data["log_s_message_embs"]
+        log_r_message_embs = data["log_r_message_embs"]
+        log_r_message_tokens = data["log_r_messages"]
         log_food_dict = data["log_food_dict"]
         food_loc = log_food_dict["location"] # list
         food_time = log_food_dict["spawn_time"] # list
-        message_indices = get_message_indices(data["log_locs"][:, 0], data["log_locs"][:, 1])
-        print(message_indices)
+        episode_length = data["episode_length"]
+        message_indices = get_message_indices(data["log_locs"][:, 0], data["log_locs"][:, 1], episode_length)
+
         for agent_id in range(2):
+            reciever_id = {0:1, 1:0}[agent_id]
             agent_loc = data["log_locs"][:, agent_id] #(num_steps, 2)
             food_id = get_food_id(agent_loc, food_loc)
-            # print(f"food id {food_id}")
             # Get sent messages and target food score
-            if log_s_message_embs.shape[2] == 2: # num_agents
-                message_embs = log_s_message_embs[:, :, agent_id].flatten()
+            if log_r_message_embs.shape[2] == 2: # num_agents
+                message_embs = log_r_message_embs[:, :, reciever_id]
             else:
-                message_embs = log_s_message_embs[:, agent_id, :].flatten()
+                message_embs = log_r_message_embs[:, reciever_id, :]
+            message_dim = message_embs.shape[1]
+            padded_message_embs = np.zeros((max_message_length, message_dim))
+            padded_message_tokens = np.zeros((max_message_length, 1))
+            message_tokens = log_r_message_tokens[:, reciever_id]
+            curr_message_length = len(message_indices)
+            
+            # print(f"curr_message_length {curr_message_length}")
+            # print(f"message_embs {message_embs.shape}")
             # print(food_time[food_id])
-            message_embs[f"agent{agent_id}"].append(message_embs)  # Collect all time steps for the agent
-            item_times[f"agent{agent_id}"].append(food_time[food_id])
-            item_locs[f"agent{agent_id}"].append(list(food_loc[food_id]))
+            if curr_message_length <= max_message_length and len(message_indices) > 2:
+                start_idx = message_indices[0]
+                extracted_message_embs = message_embs[start_idx:]
+                extracted_length = extracted_message_embs.shape[0]
+                padded_message_embs[:extracted_length] = extracted_message_embs
 
-    return message_embs, item_times, item_locs
+                message_data[agent_id].append(padded_message_embs.flatten())  # Collect all time steps for the agent
+                extract_attribute = {
+                                    "item_times": food_time[food_id],
+                                    "item_locations": list(food_loc[food_id]),
+                                    }
+                attributes[agent_id].append(extract_attribute)
 
-def extract_label(attributes_dict, agent_id=0):
+    return message_data, attributes
+
+def extract_label(attributes_dict, agent_id):
     num_episodes = len(attributes_dict[agent_id])
     # extract labels
-    item_score_arr = []
+    item_time_arr = []
     item_loc_x_arr = []
     item_loc_y_arr = []
     for ep in range(num_episodes):
         ep_data = attributes_dict[agent_id][ep]
-        item_score_arr.append(ep_data["item_score"])
-        item_loc_x_arr.append(ep_data["item_location"][0])
-        item_loc_y_arr.append(ep_data["item_location"][1])
+        item_time_arr.append(ep_data["item_times"])
+        item_loc_x_arr.append(ep_data["item_locations"][0])
+        item_loc_y_arr.append(ep_data["item_locations"][1])
 
     return {
-            "item_time": item_score_arr,
-            "item_loc_x": item_loc_x_arr,
-            "item_loc_y": item_loc_y_arr,
+            "spawned_time": item_time_arr,
+            "item_pos_x": item_loc_x_arr,
+            "item_pos_y": item_loc_y_arr,
 
             }
 def visualise_class(agent_pos_x_arr):
@@ -85,33 +103,32 @@ def save_classification_report_csv(report_dict, accuracy, filename):
 
 if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
-    label_list = ['item_score', 'item_loc_x', 'item_loc_y']
-    seen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible0-1/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_train/normal/trajectory.pkl"
-    unseen_log_file_path = "../../logs/pickup_high_v1/dec_ppo_invisible0-1/grid5_img3_ni2_nw16_ms10_307200000/seed1/mode_test/normal/trajectory.pkl"
+    label_list = ['spawned_time', 'item_pos_x', 'item_pos_y']
+    model_name = "dec_ppo_invisible"
+    combination_name = "grid8_img3_ni2_nw4_ms40_51200000"
+    seed = 1
+    mode = "test"
+    seen_log_file_path = f"../../logs/pickup_temporal/{model_name}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
     agent_id = 0
     label_encoder = sklearn.preprocessing.LabelEncoder()
+
+    # Load log data
+    seen_data = load_trajectory(seen_log_file_path)
+    messages, attributes_dict = extract_message(seen_data)
+    seen_label_dict = extract_label(attributes_dict, agent_id)
+
     for k in label_list:
         groundtruth_name = k
-
-        # Load log data
-        seen_data = load_trajectory(seen_log_file_path)
-        seen_attributes, seen_messages = extract_message(seen_data) # attributes_dict[agent_id][episode_id] -> Dict
-        seen_label_dict = extract_label(seen_attributes, agent_id=agent_id)
-
-        seen_message_arr = np.array(seen_messages[agent_id])
+        seen_message_arr = np.array(messages[agent_id])
         seen_label_arr = np.array(seen_label_dict[groundtruth_name])
-        if "score" in k:
-            seen_label_arr = transform_to_range_class(seen_label_arr)
-        # seen_label_arr = label_encoder.fit_transform(seen_label_arr)
 
-        # visualise_class(label_arr)
         # Split data into training and testing sets
         X_train, X_test_seen, y_train, y_test_seen = train_test_split(
-            seen_message_arr, seen_label_arr, test_size=0.3, random_state=42
+            seen_message_arr, seen_label_arr, test_size=0.4, random_state=1
         )
-
         
-        clf = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=1000, class_weight="balanced")
+        clf = LogisticRegression(multi_class="multinomial", penalty="l2", C=1e-3,
+                                solver="lbfgs", max_iter=2000, class_weight="balanced")
         clf.fit(X_train, y_train)
 
         # Evaluate on seen data
@@ -125,35 +142,3 @@ if __name__ == "__main__":
         # Save seen classification report as CSV
         seen_report_path = f"reports/see_target{groundtruth_name}_seen.csv"
         save_classification_report_csv(report_seen, accuracy_seen, seen_report_path)
-
-        if k == "item_score":
-            # Load log data
-            unseen_data = load_trajectory(unseen_log_file_path)
-            unseen_attributes, unseen_messages = extract_message(unseen_data) # attributes_dict[agent_id][episode_id] -> Dict
-            unseen_label_dict = extract_label(unseen_attributes, agent_id=agent_id)
-
-            unseen_message_arr = np.array(unseen_messages[agent_id])
-            unseen_label_arr = np.array(unseen_label_dict[groundtruth_name])
-            unseen_label_arr = transform_to_range_class(unseen_label_arr)
-
-            X_test_unseen = unseen_message_arr
-            y_test_unseen = unseen_label_arr
-            # X_train_unseen, X_test_unseen, y_train_unseen, y_test_unseen = train_test_split(
-            #     unseen_message_arr, unseen_label_arr, test_size=0.3, random_state=42
-            # )
-            # X_test_unseen, y_test_unseen = unseen_message_arr, unseen_label_arr
-
-            # clf = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=1000, class_weight="balanced")
-            # clf.fit(X_train_unseen, y_train_unseen)
-            # Evaluate on unseen data
-            y_pred_unseen = clf.predict(X_test_unseen)
-            accuracy_unseen = accuracy_score(y_test_unseen, y_pred_unseen)
-            report_unseen = classification_report(y_test_unseen, y_pred_unseen, output_dict=True)
-            
-            print("Unseen Combinations")
-            print(f"Classification Accuracy: {accuracy_unseen:.2f}")
-            # print(pd.DataFrame(report_unseen).transpose())
-
-            # Save unseen classification report as CSV
-            unseen_report_path = f"reports/see_target{groundtruth_name}_unseen.csv"
-            save_classification_report_csv(report_unseen, accuracy_unseen, unseen_report_path)

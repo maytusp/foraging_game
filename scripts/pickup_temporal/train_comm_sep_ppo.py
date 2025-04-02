@@ -65,11 +65,12 @@ class Args:
 
     log_every = 32
 
-    n_words = 4
+    n_words = 8
     image_size = 3
-    N_i = 4
-    grid_size = 6
-    max_steps = 40
+    N_i = 2
+    grid_size = 5
+    max_steps = 20
+    freeze_dur = 10
     fully_visible_score = False
     agent_visible = False
     mode = "train"
@@ -87,10 +88,10 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
     save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
+    load_pretrained = False
     if load_pretrained:
         global_step = 0
         learning_rate = 2.5e-4
@@ -158,7 +159,8 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode="train")
+                        mode="train",
+                        freeze_dur=args.freeze_dur)
                         
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -167,7 +169,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=0, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=4, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}

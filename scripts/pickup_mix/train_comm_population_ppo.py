@@ -28,13 +28,13 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -80,13 +80,13 @@ class Args:
 
     n_words = 16
     image_size = 3
-    N_i = 2
-    grid_size = 5
+    N_i = 4
+    grid_size = 6
     max_steps = 20
     fully_visible_score = False
-    agent_visible = True
+    agent_visible = False
     mode = "train"
-    model_name = "pop_ppo_24net"
+    model_name = f"pop_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -114,7 +114,7 @@ class Args:
                     }
     visualize_loss = True
 
-    save_frequency = int(4e5)
+    save_frequency = int(1e6)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"

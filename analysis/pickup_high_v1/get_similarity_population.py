@@ -117,61 +117,74 @@ def load_score(filename):
 
 
 if __name__ == "__main__":
-    model_name = "pop_ppo_6net"
-    combination_name = "grid5_img3_ni2_nw16_ms10_358400000"
-    seed = 3
-    saved_fig_dir = f"figs"
-    saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
-    saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
-    saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
-    os.makedirs(saved_fig_dir, exist_ok=True)
-    os.makedirs(saved_score_dir, exist_ok=True)
-    mode = "train"
-    num_networks = 3
-    network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
-    log_file_path = {}
-    sr_dict = {}
-    sr_mat = np.zeros((num_networks, num_networks))
-    message_data = {}
-    attribute_data = {}
-    
-    # For Interchangeability
-    ic_numerator = []
-    ic_denominator = []
-    
-    for pair in network_pairs:
-        row, col = pair.split("-")
-        row, col = int(row), int(col)
-        print(f"loading network pair {pair}")
-        log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
-        sr_dict[pair] = load_score(f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/score.txt")
-        sr_mat[row, col] = sr_dict[pair]["Success Rate"]
-        if row == col:
-            ic_numerator.append(sr_dict[pair]["Success Rate"])
-        else:
-            ic_denominator.append(sr_dict[pair]["Success Rate"])
-        # Load log data
-        log_data = load_trajectory(log_file_path[pair])
+    checkpoints_dict = {"pop_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
+                        "pop_ppo_6net_invisible": {'seed1': 486400000, 'seed2': 486400000, 'seed3':486400000},
+                        "pop_ppo_9net_invisible": {'seed1': 691200000, 'seed2': 691200000, 'seed3':691200000},
+                        "pop_ppo_12net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
+                        "pop_ppo_15net_invisible": {'seed1': 947200000, 'seed2': 819200000, 'seed3':819200000},
+                        }
 
-        # Prepare data for t-SNE
-        message_data[pair], attribute_data[pair] = extract_data(log_data)
-        
+    for num_networks in [12]: # [3,6,9,12,15]:
+        for seed in range(1,4):
+            if num_networks == 9 and seed == 3:
+                continue
+            
+            model_name = f"pop_ppo_{num_networks}net_invisible"
+            ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
+            combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
 
-    ic = np.mean(ic_numerator) / np.mean(ic_denominator)
-    similarity_mat, avg_sim = get_similarity(message_data, num_networks)
-    print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
-    print(f"Interchangeability: {ic}")
-    plot_heatmap(similarity_mat, saved_fig_path_langsim)
-    plot_heatmap(sr_mat, saved_fig_path_sr)
-    
-    avg_topsim = get_topsim(message_data, attribute_data, num_networks)
-    print(f"avg topsim = {avg_topsim}")
+            print(f"{model_name}/{combination_name}")
+            saved_fig_dir = f"figs/population"
+            saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
+            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
+            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
+            os.makedirs(saved_fig_dir, exist_ok=True)
+            os.makedirs(saved_score_dir, exist_ok=True)
+            mode = "train"
+            network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
+            log_file_path = {}
+            sr_dict = {}
+            sr_mat = np.zeros((num_networks, num_networks))
+            message_data = {}
+            attribute_data = {}
+            
+            # For Interchangeability
+            ic_numerator = []
+            ic_denominator = []
+            
+            for pair in network_pairs:
+                row, col = pair.split("-")
+                row, col = int(row), int(col)
+                print(f"loading network pair {pair}")
+                log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+                sr_dict[pair] = load_score(f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/score.txt")
+                sr_mat[row, col] = sr_dict[pair]["Success Rate"]
+                if row == col:
+                    ic_numerator.append(sr_dict[pair]["Success Rate"])
+                else:
+                    ic_denominator.append(sr_dict[pair]["Success Rate"])
+                # Load log data
+                log_data = load_trajectory(log_file_path[pair])
 
-    
-    # Save the variables
-    np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
-                                                            avg_sim=avg_sim, 
-                                                            avg_topsim=avg_topsim, 
-                                                            sr_mat=sr_mat,
-                                                            ic=ic)
+                # Prepare data for t-SNE
+                message_data[pair], attribute_data[pair] = extract_data(log_data)
+                
+
+            ic = np.mean(ic_numerator) / np.mean(ic_denominator)
+            similarity_mat, avg_sim = get_similarity(message_data, num_networks)
+            print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
+            print(f"Interchangeability: {ic}")
+            plot_heatmap(similarity_mat, saved_fig_path_langsim)
+            plot_heatmap(sr_mat, saved_fig_path_sr)
+            
+            avg_topsim = get_topsim(message_data, attribute_data, num_networks)
+            print(f"avg topsim = {avg_topsim}")
+
+            
+            # Save the variables
+            np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
+                                                                    avg_sim=avg_sim, 
+                                                                    avg_topsim=avg_topsim, 
+                                                                    sr_mat=sr_mat,
+                                                                    ic=ic)
 

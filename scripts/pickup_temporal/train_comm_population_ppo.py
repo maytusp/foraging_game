@@ -34,7 +34,7 @@ class Args:
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -78,15 +78,16 @@ class Args:
 
     log_every = 32
 
-    n_words = 16
+    n_words = 4
     image_size = 3
     N_i = 2
     grid_size = 5
     max_steps = 20
+    freeze_dur = 6
     fully_visible_score = False
-    agent_visible = True
+    agent_visible = False
     mode = "train"
-    model_name = "pop_ppo_24net"
+    model_name = f"pop_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -100,7 +101,7 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
     save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
@@ -176,7 +177,8 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode="train")
+                        mode="train",
+                        freeze_dur=args.freeze_dur)
     
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)

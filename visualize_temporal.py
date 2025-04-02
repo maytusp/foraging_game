@@ -42,8 +42,8 @@ def visualize_environment(environment, step):
         x, y = agent.position[1] * cell_size, agent.position[0] * cell_size
         screen.blit(agent_images[agent_id], (x, y))
         
-        energy_text = font.render(f"Agent: {int(agent.id)}", True, BLACK)
-        screen.blit(energy_text, (x, y - 20))  # Display text slightly above the agent
+        # energy_text = font.render(f"Agent: {int(agent.id)}", True, BLACK)
+        # screen.blit(energy_text, (x, y - 20))  # Display text slightly above the agent
 
         # Draw a square centered at the agent position representing visual fieldss
         square_size = environment.image_size * cell_size

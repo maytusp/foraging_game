@@ -46,7 +46,7 @@ def get_topsim(message_data,attribute_data, num_networks):
     receiver = 0
     avg_topsim = 0
     max_eval_episodes=1000
-    max_message_length=5
+    max_message_length=10
     for sender in sender_list:
         extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
         extracted_attribute.append(attribute_data[f"{sender}-{receiver}"])
@@ -141,10 +141,9 @@ def load_score(filename):
             scores[x[0].strip()] = float(x[1].strip())
     return scores
 
-
 if __name__ == "__main__":
-    model_name = "dec_ppo"
-    combination_name = "grid5_img3_ni2_nw32_ms10_153600000"
+    model_name = "dec_ppo_invisible"
+    # combination_name = "grid5_img3_ni2_nw32_ms10_281600000"
     seed = 1
     saved_fig_dir = f"figs"
     saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
@@ -160,7 +159,6 @@ if __name__ == "__main__":
     sr_mat = np.zeros((num_networks, num_networks))
     message_data = {}
     attribute_data = {}
-    
     # For Interchangeability
     ic_numerator = []
     ic_denominator = []
@@ -190,8 +188,8 @@ if __name__ == "__main__":
     plot_heatmap(similarity_mat, saved_fig_path_langsim)
     plot_heatmap(sr_mat, saved_fig_path_sr)
     
-    # avg_topsim = get_topsim_no_pop(message_data, attribute_data, num_networks)
-    # print(f"avg topsim = {avg_topsim}")
+    avg_topsim = get_topsim_no_pop(message_data, attribute_data, num_networks)
+    print(f"avg topsim = {avg_topsim}")
     print(f"SR {sr_mat}")
     
     # # Save the variables
