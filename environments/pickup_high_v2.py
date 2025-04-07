@@ -79,7 +79,7 @@ class Environment(ParallelEnv):
         elif mode == "test":
             self.score_unit = 20
             self.start_steps = 0
-            self.last_steps = 25
+            self.last_steps = 12
             self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 25 != 0]
 
         self.max_score = self.N_val
