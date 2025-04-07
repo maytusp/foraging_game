@@ -37,7 +37,6 @@ class Args:
     save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -61,12 +60,12 @@ class Args:
     """grid size"""
     mode = "train"
     agent_visible = False
-    model_name = "pop_ppo_6net_invisible"
-    num_networks = 6
+    model_name = "ring_ppo_4net_invisible"
+    num_networks = 4
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    model_step = "332800000"
+    model_step = "256000000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 

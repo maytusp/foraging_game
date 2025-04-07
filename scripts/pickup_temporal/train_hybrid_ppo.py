@@ -62,9 +62,9 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 2
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -87,7 +87,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = f"pop_ppo_{num_networks}net"
+    model_name = f"hybrid_ppo"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -104,7 +104,7 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
     save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
+    load_pretrained = False
 
     if load_pretrained:
         pretrained_global_step = 665600000

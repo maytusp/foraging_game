@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_temporal import *
+from environments.pickup_mix import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -28,7 +28,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -36,7 +36,7 @@ class Args:
     """the number of parallel game environments"""
     num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
-    anneal_lr: bool = False
+    anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
     gamma: float = 0.99
     """the discount factor gamma"""
@@ -62,9 +62,9 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 2
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -78,16 +78,15 @@ class Args:
 
     log_every = 32
 
-    n_words = 4
+    n_words = 16
     image_size = 3
-    N_i = 2
-    grid_size = 5
+    N_i = 4
+    grid_size = 6
     max_steps = 20
-    freeze_dur = 6
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = f"pop_ppo_{num_networks}net"
+    model_name = f"hybrid_ppo"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -101,21 +100,21 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
-    save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
+    save_dir = f"checkpoints/pickup_mix/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
-
+    load_pretrained = False
+    
     if load_pretrained:
-        pretrained_global_step = 665600000
+        pretrained_global_step = 51200000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6/seed1/agent_{a}_step_665600000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_mix/pop_ppo_24net_invisible/grid5_img3_ni2_nw16_ms10/seed1/agent_{a}_step_51200000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
 
-    save_frequency = int(4e5)
+    save_frequency = int(1e6)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
@@ -126,7 +125,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_temporal"
+    wandb_project_name: str = "pickup_mix"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -177,8 +176,7 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode="train",
-                        freeze_dur=args.freeze_dur)
+                        mode="train")
     
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -187,7 +185,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=16, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}

@@ -118,16 +118,14 @@ def load_score(filename):
 
 if __name__ == "__main__":
     checkpoints_dict = {"pop_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-                        "pop_ppo_6net_invisible": {'seed1': 486400000, 'seed2': 486400000, 'seed3':486400000},
-                        "pop_ppo_9net_invisible": {'seed1': 691200000, 'seed2': 691200000, 'seed3':691200000},
-                        "pop_ppo_12net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
+                        "pop_ppo_6net_invisible": {'seed1': 332800000, 'seed2': 332800000, 'seed3':332800000},
+                        "pop_ppo_9net_invisible": {'seed1': 486400000, 'seed2': 486400000, 'seed3':486400000},
+                        "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
                         "pop_ppo_15net_invisible": {'seed1': 947200000, 'seed2': 819200000, 'seed3':819200000},
                         }
 
-    for num_networks in [12]: # [3,6,9,12,15]:
+    for num_networks in [3,6,9,12,15]: # [3,6,9,12,15]:
         for seed in range(1,4):
-            if num_networks == 9 and seed == 3:
-                continue
             
             model_name = f"pop_ppo_{num_networks}net_invisible"
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]

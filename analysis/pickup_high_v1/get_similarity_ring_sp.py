@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 sr_mat[row, col] = sr_dict[pair]["Success Rate"]
                 if row == col:
                     ic_numerator.append(sr_dict[pair]["Success Rate"])
-                elif row-col % num_networks == 1:
+                elif min(abs(row-col), num_networks-abs(row-col)) == 1:
                     ic_denominator.append(sr_dict[pair]["Success Rate"])
                 # Load log data
                 log_data = load_trajectory(log_file_path[pair])

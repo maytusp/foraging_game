@@ -20,10 +20,10 @@ import supersuit as ss
 from environments.pickup_temporal import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_temporal.train_3net_seed2
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 2
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -104,7 +104,7 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
     save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
+    load_pretrained = False
 
     if load_pretrained:
         pretrained_global_step = 665600000

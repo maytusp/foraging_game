@@ -118,10 +118,11 @@ def load_score(filename):
 
 if __name__ == "__main__":
     checkpoints_dict = {
+                        "ring_ppo_4net_invisible": {'seed1':256000000},
                         "ring_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
                         }
 
-    for num_networks in [9]: # [3,6,9,12,15]:
+    for num_networks in [4]: # [3,6,9,12,15]:
         for seed in range(1,2):
             
             model_name = f"ring_ppo_{num_networks}net_invisible"
@@ -137,6 +138,7 @@ if __name__ == "__main__":
             os.makedirs(saved_score_dir, exist_ok=True)
             mode = "train"
             network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
+            print(network_pairs)
             log_file_path = {}
             sr_dict = {}
             sr_mat = np.zeros((num_networks, num_networks))
@@ -156,7 +158,8 @@ if __name__ == "__main__":
                 sr_mat[row, col] = sr_dict[pair]["Success Rate"]
                 if row == col:
                     ic_numerator.append(sr_dict[pair]["Success Rate"])
-                elif row-col % num_networks == 1:
+                elif min(abs(row-col), num_networks-abs(row-col)) == 1:
+                    print(f"row{row} col{col}")
                     ic_denominator.append(sr_dict[pair]["Success Rate"])
                 # Load log data
                 log_data = load_trajectory(log_file_path[pair])
