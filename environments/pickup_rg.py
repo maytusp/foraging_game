@@ -181,15 +181,6 @@ class Environment(ParallelEnv):
             if not(food.done):
                 self.grid[food.position[0], food.position[1]] = food
                 
-    def update_food(self):
-        '''
-        All agents have to pick up food at the same time step.
-        '''
-        for food in self.foods:
-            food.reduced_strength = 0 # clear reduced strenth due to combined strength
-            food.pre_carried.clear() # clear list
-            food.is_moved = False
-
     def min_dist(self,curr_pos, min_distance):
         satisfy = True
         for prev_pos in self.prev_pos_list:
@@ -306,10 +297,8 @@ class Environment(ParallelEnv):
         success = 0
         episode_successs = True
         self.curr_steps+=1
-        # Update food state: Clear all agents if not carried
-        self.update_food()
-        # One step in the simulation
-        # Gather each agent's chosen action for consensus on movement
+        if self.curr_steps == 1:
+            self.agent_obs = self.observe()
         actions = {}
         self.rewards = {i:0 for i in self.agents}
         
@@ -380,7 +369,7 @@ class Environment(ParallelEnv):
                                 },
                             }
     
-        return self.observe(), self.norm_rewards, self.dones, self.truncated, self.infos
+        return self.agent_obs, self.norm_rewards, self.dones, self.truncated, self.infos
 # Original Code: Non-vectorise
 # # Define the classes
 class EnvAgent:
