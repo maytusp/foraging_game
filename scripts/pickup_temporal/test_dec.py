@@ -15,11 +15,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_mix import *
+from environments.pickup_temporal import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-
-
 
 
 @dataclass
@@ -33,8 +31,8 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = True
-    save_trajectory = False
+    visualize = False
+    save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
     fully_visible_score = False
@@ -44,22 +42,25 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 2000
+    total_episodes: int = 100
     n_words = 4
+    """vocab size"""
     image_size = 3
+    N_att = 2
     N_val = 10
-    N_i = 4
-    grid_size = 6
+    N_i = 2
+    grid_size = 5
     max_steps = 20
+    freeze_dur = 6
     """grid size"""
     mode = "train"
     agent_visible = False
-    model_name = "dec_ppo_invisible"
-    model_step = "409600000"
-    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    ckpt_path = f"checkpoints/pickup_mix/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
-    ckpt_path2 = f"checkpoints/pickup_mix/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/pickup_mix/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    model_name = "pop_ppo_3net_invisible"
+    model_step = "1638400000"
+    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
+    ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/pickup_temporal/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
@@ -92,7 +93,8 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode=args.mode)
+                        mode=args.mode,
+                        freeze_dur=args.freeze_dur)
 
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)

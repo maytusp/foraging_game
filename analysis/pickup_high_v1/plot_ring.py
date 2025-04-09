@@ -41,12 +41,12 @@ def compute_avg_sr_ls(sr_mat, ls_mat):
 
 
 
-saved_fig_dir = f"figs/population/plots"
+saved_fig_dir = f"plots/population/ring/15net/"
 os.makedirs(saved_fig_dir, exist_ok=True)
 model_name_list = []
 checkpoints_dict = {
-                    "ring_sp_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-                    "ring_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
+    "ring_sp_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
+    "ring_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
                     }
 
 total_sr = {}
@@ -72,28 +72,36 @@ for model_name in checkpoints_dict.keys():
     total_ls[model_name] = np.mean(np.array(total_ls[model_name]), axis=0)
 
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+# Set seaborn style and global font settings
 sns.set(style="whitegrid")
-fig, axes = plt.subplots(1, 2, figsize=(15, 5))
-sns.lineplot(x=distance_list, y=total_sr['ring_sp_ppo_9net_invisible'], marker="o", ax=axes[0], label='self-play')
-sns.lineplot(x=distance_list, y=total_sr['ring_ppo_9net_invisible'], marker="o", ax=axes[0], label='w/o self-play')
-# axes[0].fill_between(distance_list, np.array(mean_ls) - np.array(std_ls), np.array(mean_ls) + np.array(std_ls), alpha=0.2)
-axes[0].set_xlabel('Distance')
-axes[0].set_ylabel('Success Rate')
-axes[0].set_title('Success Rate vs Distance')
-axes[0].set_xticks(distance_list)
-axes[0].legend()
+plt.rcParams.update({'font.size': 18, 'axes.labelsize': 18, 'axes.titlesize': 20, 
+                     'xtick.labelsize': 16, 'ytick.labelsize': 16, 'legend.fontsize': 14})
 
-
-sns.lineplot(x=distance_list, y=total_ls['ring_sp_ppo_9net_invisible'], marker="o", ax=axes[1], label='self-play')
-sns.lineplot(x=distance_list, y=total_ls['ring_ppo_9net_invisible'], marker="o", ax=axes[1], label='w/o self-play')
-# axes[0].fill_between(distance_list, np.array(mean_ls) - np.array(std_ls), np.array(mean_ls) + np.array(std_ls), alpha=0.2)
-axes[1].set_xlabel('Distance')
-axes[1].set_ylabel('Language Similarity')
-axes[1].set_title('Language Similarity vs Distance')
-axes[1].set_xticks(distance_list)
-axes[1].legend()
-
+# Plot 1: Success Rate vs Distance
+plt.figure(figsize=(6, 5))
+sns.lineplot(x=distance_list, y=total_sr['ring_sp_ppo_15net_invisible'], marker="o", label='self-play')
+sns.lineplot(x=distance_list, y=total_sr['ring_ppo_15net_invisible'], marker="o", label='w/o self-play')
+plt.xlabel('Distance')
+plt.ylabel('Success Rate')
+plt.xticks(distance_list)
+plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(saved_fig_dir, "plot_ring.png"))
-plt.show()
-# print(mean_sr, std_sr)
+plt.savefig(os.path.join(saved_fig_dir, "sr_vs_distance.png"))
+plt.close()
+
+# Plot 2: Language Similarity vs Distance
+plt.figure(figsize=(6, 5))
+sns.lineplot(x=distance_list, y=total_ls['ring_sp_ppo_15net_invisible'], marker="o", label='self-play')
+sns.lineplot(x=distance_list, y=total_ls['ring_ppo_15net_invisible'], marker="o", label='w/o self-play')
+plt.xlabel('Distance')
+plt.ylabel('Language Similarity')
+plt.xticks(distance_list)
+plt.legend()
+plt.tight_layout()
+plt.savefig(os.path.join(saved_fig_dir, "ls_vs_distance.png"))
+plt.close()
+

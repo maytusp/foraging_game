@@ -69,9 +69,14 @@ def get_similarity(message_data, num_networks):
     similarity_mat = np.zeros((num_networks,num_networks))
     n_samples = 1000000
     extracted_message = []
-    receiver = 0
+
     for sender in sender_list:
-        extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
+        if sender == num_networks-1:
+            receiver = 0
+        else:
+            receiver = sender + 1
+        print(f"{receiver}-{sender}")
+        extracted_message.append(np.array(message_data[f"{receiver}-{sender}"]["agent0"]))
         n_samples = min(extracted_message[sender].shape[0], n_samples)
 
 
@@ -118,10 +123,11 @@ def load_score(filename):
 
 if __name__ == "__main__":
     checkpoints_dict = {
-                        "ring_sp_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-                        }
+"ring_sp_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
+"ring_sp_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
+}
 
-    for num_networks in [9]: # [3,6,9,12,15]:
+    for num_networks in [15]: # [3,6,9,12,15]:
         for seed in range(1,2):
             
             model_name = f"ring_sp_ppo_{num_networks}net_invisible"
@@ -136,7 +142,7 @@ if __name__ == "__main__":
             os.makedirs(saved_fig_dir, exist_ok=True)
             os.makedirs(saved_score_dir, exist_ok=True)
             mode = "train"
-            network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
+            network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)] + [f"0-{num_networks-1}"]
             log_file_path = {}
             sr_dict = {}
             sr_mat = np.zeros((num_networks, num_networks))

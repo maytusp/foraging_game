@@ -33,10 +33,11 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = False
+    visualize = True
     save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
+    agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -44,7 +45,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
+    total_episodes: int = 1
     n_words = 4
     """vocab size"""
     image_size = 3
@@ -60,14 +61,21 @@ class Args:
     """grid size"""
     mode = "train"
     agent_visible = False
-    model_name = "ring_sp_ppo_9net_invisible"
-    num_networks = 9
+    model_name = "pop_ppo_15net_invisible"
+    num_networks = 15
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    model_step = "460800000"
+    model_step = "947200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-
+    # ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
+    # ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
+    # saved_dir = f"logs/pickup_high_v1/{model_name}{network_pairs}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    # if ablate_message:
+    #     saved_dir = os.path.join(saved_dir, ablate_type)
+    # else:
+    #     saved_dir = os.path.join(saved_dir, "normal")
+    # video_save_dir = os.path.join(saved_dir, "vids")
 
 
 if __name__ == "__main__":
@@ -75,13 +83,15 @@ if __name__ == "__main__":
     
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
     for i in range(args.num_networks):
-        for j in range(i+1):
+        for j in range(1):
             # Update the network pair and dependent paths/parameters
             network_pairs = f"{i}-{j}"
+            print(f"pair {network_pairs}")
             selected_networks = network_pairs.split("-")
             args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
             args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-            args.saved_dir = f"logs/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+            args.saved_dir = f"logs/demos/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+            args.video_save_dir = os.path.join(args.saved_dir, "vids")
             if args.ablate_message:
                 args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
             else:
@@ -180,7 +190,7 @@ if __name__ == "__main__":
                 log_obs = torch.zeros((env.max_steps, num_agents, num_channels, args.image_size, args.image_size)).to(device) # obs: vision
                 log_locs = torch.zeros((env.max_steps, num_agents, 2)).to(device) # obs: location
                 log_r_messages = torch.zeros((env.max_steps, num_agents), dtype=torch.int64).to(device) # obs: received message
-                log_actions = torch.zeros((env.max_steps, num_agents)).to(device) # action: physical action
+                log_actions = torch.zeros((env.max_steps, num_agents)).to(device) - 1 # action: physical action
                 log_s_messages = torch.zeros((env.max_steps, num_agents), dtype=torch.int64).to(device) -1 # action: sent message
                 log_rewards = torch.zeros((env.max_steps, num_agents)).to(device)
                 log_s_message_embs = torch.zeros((env.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
@@ -210,7 +220,7 @@ if __name__ == "__main__":
                     energy_obs["agent0"] = energy_obs["agent0"].union(set(next_obs_arr[0,1,:,:].flatten()))
                     energy_obs["agent1"] = energy_obs["agent1"].union(set(next_obs_arr[1,1,:,:].flatten()))
 
-                    if args.visualize and not(args.save_trajectory):
+                    if args.visualize:
                         single_env = envs.vec_envs[0].unwrapped.par_env
                         frame = visualize_environment(single_env, ep_step)
                         frames.append(frame.transpose((1, 0, 2)))
@@ -304,6 +314,9 @@ if __name__ == "__main__":
                     log_actions = log_actions.cpu().numpy()
                     log_s_messages = log_s_messages.cpu().numpy()
                     log_rewards = log_rewards.cpu().numpy()
+                    print("message", log_s_messages[:, 0])
+                    print("action 2 ", log_actions[:, 1])
+                    print("message 2", log_s_messages[:, 1])
                     import pickle
                     # print("log_r_messages", log_r_messages)
                     # Combine all your data into a dictionary

@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_temporal import *
+from environments.pickup_mix import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -44,25 +44,22 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 2000
-    n_words = 4
-    """vocab size"""
+    total_episodes: int = 100
+    n_words = 16
     image_size = 3
-    N_att = 2
     N_val = 10
-    N_i = 2
-    grid_size = 5
-    max_steps = 40
-    freeze_dur = 10
+    N_i = 4
+    grid_size = 6
+    max_steps = 20
     """grid size"""
     mode = "train"
     agent_visible = False
     model_name = "dec_ppo_invisible"
-    model_step = "51200000"
+    model_step = "972800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
-    ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
-    saved_dir = f"logs/pickup_temporal/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
+    ckpt_path = f"checkpoints/pickup_mix/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
+    ckpt_path2 = f"checkpoints/pickup_mix/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
+    saved_dir = f"logs/pickup_mix/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
@@ -95,8 +92,7 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode=args.mode,
-                        freeze_dur=args.freeze_dur)
+                        mode=args.mode)
 
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)

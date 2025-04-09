@@ -24,7 +24,7 @@ from models.pickup_models import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 2
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
