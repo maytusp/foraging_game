@@ -19,7 +19,7 @@ from keyboard_control import *
 
 
 # Environment Parameters
-NUM_ACTIONS = 2
+NUM_ACTIONS = 3
 
 AGENT_STRENGTH = 3
 AGENT_ENERGY = 20
@@ -33,8 +33,8 @@ class Environment(ParallelEnv):
                                                                                                         identical_item_obs=False,
                                                                                                         N_i = 2,
                                                                                                         grid_size=5,
-                                                                                                        image_size=5,
-                                                                                                        max_steps=6,
+                                                                                                        image_size=3,
+                                                                                                        max_steps=5,
                                                                                                         mode="train",
                                                                                                         ):
         np.random.seed(seed)
@@ -100,6 +100,7 @@ class Environment(ParallelEnv):
     
     def reset(self, seed=42, options=None):
         self.curr_steps = 0
+        self.cue_step = False
         self.episode_lengths = {i:0 for i in range(len(self.possible_agents))}
         self.cumulative_rewards = {i:0 for i in range(len(self.possible_agents))}
         self.dones = {i:False for i in range(len(self.possible_agents))}
@@ -257,7 +258,11 @@ class Environment(ParallelEnv):
         else:
             agent_obs = {i:{} for i in range(self.num_agents)}
             for i, agent in enumerate(self.agent_maps):
-                image = agent.observe(self)
+                if self.cue_step:
+                    image = np.ones_like(agent.observe(self)) * 100
+                else:
+                    image = agent.observe(self)
+
                 if self.torch_order:
                     image = np.transpose(image, (2,0,1))
                 agent_obs[i]['image'] = image
@@ -273,8 +278,10 @@ class Environment(ParallelEnv):
         input: action integer tensor frm the moel, the value is from 0 to 5
         output: action string that matches environment
         '''
-        action_map = {0 : "idle",
-                    1: "pick_up",
+        action_map = {
+                    0 : "idle",
+                    1 : "not_pick_up",
+                    2:  "pick_up",
                     }
         return action_map[action]
         
@@ -299,6 +306,10 @@ class Environment(ParallelEnv):
         self.curr_steps+=1
         if self.curr_steps == 1:
             self.agent_obs = self.observe()
+        elif self.curr_steps == self.max_steps - 1: # Give visual cue to make decision in the step before the last step
+            self.cue_step = True
+            self.agent_obs = self.observe()
+
         actions = {}
         self.rewards = {i:0 for i in self.agents}
         
@@ -323,6 +334,7 @@ class Environment(ParallelEnv):
                 else:
                     action = agent_actions[i] # integer action to string action
             actions[i] = (agent, action)
+            
 
         # End conditions
         # One food is collected
@@ -331,19 +343,29 @@ class Environment(ParallelEnv):
         if self.curr_steps == self.max_steps:
             self.pickup_agent_id = self.score_visible_to_agent[self.target_food_id]
             self.idle_agent_id = {0:1, 1:0}[self.pickup_agent_id]
-
+            self.dones = {i:True for i in range(len(self.possible_agents))}
             # terminal_reward
             for action_key in actions.keys():
                 (agent, action) = actions[action_key]
-                self.dones = {i:True for i in range(len(self.possible_agents))}
 
                 # failed action
-                if agent.id == self.pickup_agent_id and action != "pick_up":
+                if action == "idle":
                     episode_successs = False
-                elif agent.id == self.idle_agent_id and action != "idle":
+                elif agent.id == self.pickup_agent_id and action != "pick_up":
                     episode_successs = False
-                    
+                elif agent.id == self.idle_agent_id and action != "not_pick_up":
+                    episode_successs = False
+        else:
+            for action_key in actions.keys():
+                (agent, action) = actions[action_key]
 
+                if action != "idle":
+                    episode_successs = False
+                    self.dones = {i:True for i in range(len(self.possible_agents))}
+                    break
+
+                    
+        if self.dones[0]:
             for agent in self.agent_maps:
                 if episode_successs:
                     self.rewards[agent.id] += 1
