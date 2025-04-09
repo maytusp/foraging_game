@@ -57,7 +57,7 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    max_steps = 10
+    max_steps = 6
     """grid size"""
     mode = "train"
     agent_visible = False

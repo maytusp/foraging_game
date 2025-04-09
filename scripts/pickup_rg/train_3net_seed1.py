@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(4e8)
+    total_timesteps: int = int(1e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -63,7 +63,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 9
+    num_networks = 3
     reset_iteration: int = 1
     self_play_option: bool = False
     
@@ -87,7 +87,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "pop_ppo_9net"
+    model_name = "pop_ppo_3net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -104,14 +104,13 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     save_dir = f"checkpoints/pickup_rg/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
+    load_pretrained = False
     if load_pretrained:
-        pretrained_global_step = 358400000
-        learning_rate = 1.2e-4
+        pretrained_global_step = 51200000
+        learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_rg/pop_ppo_9net_invisible/grid5_img3_ni2_nw4_ms10/seed3/agent_{a}_step_358400000.pt"
-                    for a in range(num_networks)
+                    a: f"" for a in range(num_networks)
                     }
     visualize_loss = True
     save_frequency = int(2e5)
@@ -123,7 +122,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "pickup_rg"
     """the wandb's project name"""
@@ -185,7 +184,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=16, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=32, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}

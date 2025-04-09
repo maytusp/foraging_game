@@ -19,7 +19,7 @@ from keyboard_control import *
 
 
 # Environment Parameters
-NUM_ACTIONS = 5
+NUM_ACTIONS = 2
 
 AGENT_STRENGTH = 3
 AGENT_ENERGY = 20

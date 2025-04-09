@@ -56,7 +56,7 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    max_steps = 10
+    max_steps = 6
     n_words = 4
     """grid size"""
     mode = "train"
