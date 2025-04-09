@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e8)
+    total_timesteps: int = int(5e7)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -99,7 +99,7 @@ class Args:
                 0:f"", 
                 1:f""
                 }
-    save_frequency = int(2e5)
+    save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"

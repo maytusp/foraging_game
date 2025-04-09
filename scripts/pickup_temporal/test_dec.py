@@ -24,7 +24,7 @@ from models.pickup_models import PPOLSTMCommAgent
 class Args:
 
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    seed: int = 1
+    seed: int = 3
     torch_deterministic: bool = True
     cuda: bool = True
     wandb_project_name: str = "PPO Foraging Game"
@@ -56,7 +56,7 @@ class Args:
     mode = "train"
     agent_visible = False
     model_name = "pop_ppo_3net_invisible"
-    model_step = "1638400000"
+    model_step = "256000000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
     ckpt_path = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_temporal/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"

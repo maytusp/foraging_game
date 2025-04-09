@@ -63,7 +63,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 6
     reset_iteration: int = 1
     self_play_option: bool = False
     
@@ -87,7 +87,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "pop_ppo_3net"
+    model_name = f"pop_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
