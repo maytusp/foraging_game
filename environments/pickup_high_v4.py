@@ -1,4 +1,4 @@
-# 12 Mar 2025 Pickup high v3 for studying limited message length and n_word
+# 12 Mar 2025 Pickup high v4 for studying limited message length and n_word
 # Agents are spawn on the different sides with their seen-score items
 # This is for study experiment1: what is encoded in communication?
 # Visible vs Invisible Agents

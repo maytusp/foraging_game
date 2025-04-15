@@ -59,7 +59,7 @@ class Args:
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
-
+    num_networks = 2
     log_every = 32
 
     n_words = 16
@@ -92,7 +92,7 @@ class Args:
         global_step = 0
         learning_rate = 2e-4
     visualize_loss = True
-    ckpt_path = {}
+    ckpt_path = {a : f"checkpoints/pickup_mix/dec_ppo_invisible/grid6_img3_ni4_nw16_ms20/seed1/agent_{a}_step_972800000.pt" for a in range(num_networks)}
     save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     

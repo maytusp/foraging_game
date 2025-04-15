@@ -41,7 +41,7 @@ def compute_avg_sr_ls(sr_mat, ls_mat):
 
 
 
-saved_fig_dir = f"plots/population/ring/15net/"
+saved_fig_dir = f"plots/population/ring/vs_distance/15net/"
 os.makedirs(saved_fig_dir, exist_ok=True)
 model_name_list = []
 checkpoints_dict = {
@@ -52,24 +52,30 @@ checkpoints_dict = {
 total_sr = {}
 total_ls = {}
 
+sr_dict = {}
+ls_dict = {}
 for model_name in checkpoints_dict.keys():
     print(f"model {model_name}")
     total_sr[model_name] = []
     total_ls[model_name] = []
-    for seed in range(1,2):
+    for seed in range(1,4):
         ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
         combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
         
-        scores_path = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
+        scores_path = f"../../logs/ring_pop/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
         
         scores = np.load(scores_path)
         sr_list, ls_list, distance_list = compute_avg_sr_ls(scores['sr_mat'], scores['similarity_mat'])
         total_sr[model_name].append(sr_list)
         total_ls[model_name].append(ls_list)
     
+    sr_dict[model_name] = {}
+    sr_dict[model_name]['mean'] = np.mean(np.array(total_sr[model_name]), axis=0)
+    sr_dict[model_name]['std'] = np.std(np.array(total_sr[model_name]), axis=0)
 
-    total_sr[model_name] = np.mean(np.array(total_sr[model_name]), axis=0)
-    total_ls[model_name] = np.mean(np.array(total_ls[model_name]), axis=0)
+    ls_dict[model_name] = {}
+    ls_dict[model_name]['mean'] = np.mean(np.array(total_ls[model_name]), axis=0)
+    ls_dict[model_name]['std'] = np.std(np.array(total_ls[model_name]), axis=0)
 
 
 import matplotlib.pyplot as plt
@@ -83,25 +89,41 @@ plt.rcParams.update({'font.size': 18, 'axes.labelsize': 18, 'axes.titlesize': 20
 
 # Plot 1: Success Rate vs Distance
 plt.figure(figsize=(6, 5))
-sns.lineplot(x=distance_list, y=total_sr['ring_sp_ppo_15net_invisible'], marker="o", label='self-play')
-sns.lineplot(x=distance_list, y=total_sr['ring_ppo_15net_invisible'], marker="o", label='w/o self-play')
+sns.lineplot(x=distance_list, y=sr_dict['ring_sp_ppo_15net_invisible']['mean'], marker="o", label='self-play')
+plt.fill_between(distance_list, 
+                sr_dict['ring_sp_ppo_15net_invisible']['mean'] - sr_dict['ring_sp_ppo_15net_invisible']['std'], 
+                sr_dict['ring_sp_ppo_15net_invisible']['mean'] + sr_dict['ring_sp_ppo_15net_invisible']['std'], 
+                alpha=0.2)
+sns.lineplot(x=distance_list, y=sr_dict['ring_ppo_15net_invisible']['mean'], marker="o", label='w/o self-play')
+plt.fill_between(distance_list, 
+                sr_dict['ring_ppo_15net_invisible']['mean'] - sr_dict['ring_ppo_15net_invisible']['std'], 
+                sr_dict['ring_ppo_15net_invisible']['mean'] + sr_dict['ring_ppo_15net_invisible']['std'], 
+                alpha=0.2)
 plt.xlabel('Distance')
 plt.ylabel('Success Rate')
 plt.xticks(distance_list)
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(saved_fig_dir, "sr_vs_distance.png"))
+plt.savefig(os.path.join(saved_fig_dir, "sr_vs_distance.pdf"))
 plt.close()
 
 # Plot 2: Language Similarity vs Distance
 plt.figure(figsize=(6, 5))
-sns.lineplot(x=distance_list, y=total_ls['ring_sp_ppo_15net_invisible'], marker="o", label='self-play')
-sns.lineplot(x=distance_list, y=total_ls['ring_ppo_15net_invisible'], marker="o", label='w/o self-play')
+sns.lineplot(x=distance_list, y=ls_dict['ring_sp_ppo_15net_invisible']['mean'], marker="o", label='self-play')
+plt.fill_between(distance_list, 
+                ls_dict['ring_sp_ppo_15net_invisible']['mean'] - ls_dict['ring_sp_ppo_15net_invisible']['std'], 
+                ls_dict['ring_sp_ppo_15net_invisible']['mean'] + ls_dict['ring_sp_ppo_15net_invisible']['std'], 
+                alpha=0.2)
+sns.lineplot(x=distance_list, y=ls_dict['ring_ppo_15net_invisible']['mean'], marker="o", label='w/o self-play')
+plt.fill_between(distance_list, 
+                ls_dict['ring_ppo_15net_invisible']['mean'] - ls_dict['ring_ppo_15net_invisible']['std'], 
+                ls_dict['ring_ppo_15net_invisible']['mean'] + ls_dict['ring_ppo_15net_invisible']['std'], 
+                alpha=0.2)
 plt.xlabel('Distance')
 plt.ylabel('Language Similarity')
 plt.xticks(distance_list)
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(saved_fig_dir, "ls_vs_distance.png"))
+plt.savefig(os.path.join(saved_fig_dir, "ls_vs_distance.pdf"))
 plt.close()
 

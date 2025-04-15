@@ -58,7 +58,7 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = False
     model_name = "pop_ppo_3net_invisible"
     num_networks = 3
@@ -346,7 +346,7 @@ if __name__ == "__main__":
                         with open(os.path.join(args.saved_dir, "trajectory.pkl"), "wb") as f:
                             pickle.dump(log_data, f)
 
-                    with open(os.path.join(args.saved_dir, "score.txt"), "a") as log_file:
+                    with open(os.path.join(args.saved_dir, "score.txt"), "w") as log_file:
                         print(f"Success Rate: {collected_items / args.total_episodes}", file=log_file)
                         print(f"Average Reward {running_rewards / args.total_episodes}", file=log_file)
                         print(f"Average Length: {running_length / args.total_episodes}", file=log_file)

@@ -26,7 +26,7 @@ from models.pickup_models import PPOLSTMCommAgent
 class Args:
 
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    seed: int = 1
+    seed: int = 2
     torch_deterministic: bool = True
     cuda: bool = True
     wandb_project_name: str = "PPO Foraging Game"
@@ -46,7 +46,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     total_episodes: int = 1000
-    n_words = 32
+    n_words = 4
     """vocab size"""
     image_size = 3
     """number of observation grid"""
@@ -59,14 +59,14 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = False
     model_name = "dec_ppo_invisible"
     num_networks = 2
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    model_step = "281600000"
+    model_step = "307200000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     # ckpt_path = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
     # ckpt_path2 = f"checkpoints/pickup_high_v1/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"
@@ -331,7 +331,7 @@ if __name__ == "__main__":
 
                 if not(args.save_trajectory):
                     # Open the log file in append mode
-                    with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
+                    with open(os.path.join(args.saved_dir, "log.txt"), "w") as log_file:
                         
                         # Redirect the print statements to the log file
                         print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)
@@ -353,7 +353,7 @@ if __name__ == "__main__":
                 with open(os.path.join(args.saved_dir, "trajectory.pkl"), "wb") as f:
                     pickle.dump(log_data, f)
 
-            with open(os.path.join(args.saved_dir, "score.txt"), "a") as log_file:
+            with open(os.path.join(args.saved_dir, "score.txt"), "w") as log_file:
                 print(f"Success Rate: {collected_items / args.total_episodes}", file=log_file)
                 print(f"Average Reward {running_rewards / args.total_episodes}", file=log_file)
                 print(f"Average Length: {running_length / args.total_episodes}", file=log_file)

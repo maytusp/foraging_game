@@ -45,8 +45,8 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
-    n_words = 32
+    total_episodes: int = 5000
+    n_words = 4
     """vocab size"""
     image_size = 3
     """number of observation grid"""
@@ -66,7 +66,7 @@ class Args:
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    model_step = "281600000"
+    model_step = "38400000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     # ckpt_path = f"checkpoints/pickup_rg/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[0]}_step_{model_step}.pt"
     # ckpt_path2 = f"checkpoints/pickup_rg/{model_name}/{combination_name}/seed{seed}/agent_{selected_networks[1]}_step_{model_step}.pt"

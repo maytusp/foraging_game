@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -62,10 +62,10 @@ class Args:
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
-
+    num_networks = 2
     log_every = 32
 
-    n_words = 4
+    n_words = 16
     image_size = 3
     N_i = 4
     grid_size = 6
@@ -90,16 +90,15 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     save_dir = f"checkpoints/pickup_mix/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = False
+    load_pretrained = True
     if load_pretrained:
-        global_step = 384000000
+        global_step = 972800000
         learning_rate = 2e-4
     visualize_loss = True
     ckpt_path = {
-                0:f"", 
-                1:f""
+                a : f"checkpoints/pickup_mix/dec_ppo_invisible/grid6_img3_ni4_nw16_ms20/seed1/agent_{a}_step_972800000.pt" for a in range(num_networks)
                 }
-    save_frequency = int(2e5)
+    save_frequency = int(4e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
@@ -167,7 +166,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=32, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}
@@ -227,6 +226,7 @@ if __name__ == "__main__":
         print(f"start at global_step = {global_step}")
     else:
         global_step = 0
+    run_step = 0
     initial_lstm_state = {}
     # for visualization
     running_ep_r = 0.0
@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
         for step in range(0, args.num_steps):
             global_step += args.num_envs
-
+            run_step += args.num_envs
             action = {}
             s_message = {}
             action_logprob = {}
@@ -453,8 +453,8 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{i}/losses/action_clipfrac", np.mean(action_clipfracs), global_step)
                 writer.add_scalar(f"agent{i}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
                 writer.add_scalar(f"agent{i}/losses/explained_variance", explained_var, global_step)
-                writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-                print("SPS:", int(global_step / (time.time() - start_time)))
+                writer.add_scalar("charts/SPS", int(run_step / (time.time() - start_time)), global_step)
+                print("SPS:", int(run_step / (time.time() - start_time)))
     
     for i in range(num_agents):
         final_save_path = os.path.join(args.save_dir, f"final_model_agent_{i}.pt")

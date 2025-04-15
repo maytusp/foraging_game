@@ -20,7 +20,7 @@ from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
 
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.test_ring_15net_seed1
 
 @dataclass
 class Args:
@@ -58,9 +58,9 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = False
-    model_name = "ring_sp_ppo_15net_invisible"
+    model_name = "ring_ppo_15net_invisible"
     num_networks = 15
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
@@ -73,17 +73,15 @@ class Args:
 if __name__ == "__main__":
     args = tyro.cli(Args)
     
-    # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-    # for i in range(args.num_networks):
-    #     for j in range(i+1):
-    for i in range(0,1):
-        for j in range(args.num_networks-1,args.num_networks):
+
+    for i in range(args.num_networks):
+        for j in range(args.num_networks):
             # Update the network pair and dependent paths/parameters
             network_pairs = f"{i}-{j}"
             selected_networks = network_pairs.split("-")
             args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
             args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-            args.saved_dir = f"logs/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+            args.saved_dir = f"logs/ring_pop/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
             if args.ablate_message:
                 args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
             else:

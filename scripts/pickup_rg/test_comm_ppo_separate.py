@@ -46,7 +46,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     total_episodes: int = 5000
-    n_words = 16
+    n_words = 4
     """vocab size"""
     image_size = 3
     """number of observation grid"""
@@ -57,12 +57,12 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    max_steps=10
+    max_steps = 6 
     """grid size"""
     mode = "test"
     agent_visible = False
     model_name = "dec_ppo_invisible"
-    model_step = "307200000"
+    model_step = "38400000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_rg/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_rg/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
@@ -210,7 +210,7 @@ if __name__ == "__main__":
                     if args.ablate_type == "zero":
                         next_r_messages = torch.zeros_like(next_r_messages).to(device)
                     elif args.ablate_type == "noise":
-                        next_r_messages = torch.randint(0, 10, next_r_messages.shape).to(device)
+                        next_r_messages = torch.randint(0, 4, next_r_messages.shape).to(device)
                     else:
                         raise Exception("only zero and noise are allowed")
 

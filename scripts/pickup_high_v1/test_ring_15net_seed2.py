@@ -15,18 +15,18 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_temporal import *
+from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
 
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.test_ring_15net_seed2
 
 @dataclass
 class Args:
 
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    seed: int = 1
+    seed: int = 2
     torch_deterministic: bool = True
     cuda: bool = True
     wandb_project_name: str = "PPO Foraging Game"
@@ -37,7 +37,6 @@ class Args:
     save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -57,32 +56,32 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 5
-    freeze_dur = 6
-    max_steps=20
+    max_steps = 10
     """grid size"""
     mode = "test"
     agent_visible = False
-    model_name = "hybrid_ppo_invisible"
-    num_networks = 2
+    model_name = "ring_ppo_15net_invisible"
+    num_networks = 15
+    # network_pairs = "0-0" # population training evaluation
+    # selected_networks = network_pairs.split("-")
     
-    
-    model_step = "409600000"
-    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
+    model_step = "870400000"
+    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
     
-    # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
+
     for i in range(args.num_networks):
-        for j in range(i+1):
+        for j in range(args.num_networks):
             # Update the network pair and dependent paths/parameters
             network_pairs = f"{i}-{j}"
             selected_networks = network_pairs.split("-")
-            args.ckpt_path = f"checkpoints/pickup_temporal/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
-            args.ckpt_path2 = f"checkpoints/pickup_temporal/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-            args.saved_dir = f"logs/pickup_temporal/exp2/{args.model_name}/pair_{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+            args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
+            args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
+            args.saved_dir = f"logs/ring_pop/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
             if args.ablate_message:
                 args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
             else:
@@ -110,9 +109,7 @@ if __name__ == "__main__":
                                 grid_size=args.grid_size,
                                 image_size=args.image_size,
                                 max_steps=args.max_steps,
-                                mode=args.mode,
-                                freeze_dur=args.freeze_dur)
-    
+                                mode=args.mode)
 
             num_channels = env.num_channels
             num_agents = len(env.possible_agents)

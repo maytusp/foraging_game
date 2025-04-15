@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(5e7)
+    total_timesteps: int = int(2e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -64,7 +64,7 @@ class Args:
     target_kl: float = None
 
     log_every = 32
-
+    num_networks = 2
     n_words = 4
     image_size = 3
     N_i = 2
@@ -90,14 +90,13 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     save_dir = f"checkpoints/pickup_rg/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = False
+    load_pretrained = True
     if load_pretrained:
-        global_step = 384000000
+        global_step = 38400000
         learning_rate = 2e-4
     visualize_loss = True
     ckpt_path = {
-                0:f"", 
-                1:f""
+                a :f"checkpoints/pickup_rg/dec_ppo_invisible/grid5_img3_ni2_nw4_ms6/seed1/agent_{a}_step_38400000.pt" for a in range(num_networks)
                 }
     save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -227,6 +226,7 @@ if __name__ == "__main__":
         print(f"start at global_step = {global_step}")
     else:
         global_step = 0
+    run_step = 0 # for SPS, this one records only this run not pretraining runs
     initial_lstm_state = {}
     # for visualization
     running_ep_r = 0.0
@@ -243,6 +243,7 @@ if __name__ == "__main__":
 
         for step in range(0, args.num_steps):
             global_step += args.num_envs
+            run_step += args.num_envs
 
             action = {}
             s_message = {}
@@ -452,7 +453,7 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{i}/losses/action_clipfrac", np.mean(action_clipfracs), global_step)
                 writer.add_scalar(f"agent{i}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
                 writer.add_scalar(f"agent{i}/losses/explained_variance", explained_var, global_step)
-                writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+                writer.add_scalar("charts/SPS", int(run_step / (time.time() - start_time)), global_step)
     
     for i in range(num_agents):
         final_save_path = os.path.join(args.save_dir, f"final_model_agent_{i}.pt")

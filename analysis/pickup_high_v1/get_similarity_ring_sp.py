@@ -128,21 +128,23 @@ if __name__ == "__main__":
 }
 
     for num_networks in [15]: # [3,6,9,12,15]:
-        for seed in range(1,2):
+        avg_similarity_mat = np.zeros((num_networks,num_networks))
+        avg_sr_mat = np.zeros((num_networks,num_networks))
+        for seed in range(1,4):
             
             model_name = f"ring_sp_ppo_{num_networks}net_invisible"
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
 
             print(f"{model_name}/{combination_name}")
-            saved_fig_dir = f"figs/population"
-            saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
-            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
-            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
+            saved_fig_dir = f"plots/population/ring/sr_lang_sim"
+            saved_score_dir = f"../../logs/ring_pop/exp2/{model_name}/{combination_name}_seed{seed}"
+            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_similarity.png")
+            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_sr.png")
             os.makedirs(saved_fig_dir, exist_ok=True)
             os.makedirs(saved_score_dir, exist_ok=True)
-            mode = "train"
-            network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)] + [f"0-{num_networks-1}"]
+            mode = "test"
+            network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
             log_file_path = {}
             sr_dict = {}
             sr_mat = np.zeros((num_networks, num_networks))
@@ -157,8 +159,8 @@ if __name__ == "__main__":
                 row, col = pair.split("-")
                 row, col = int(row), int(col)
                 print(f"loading network pair {pair}")
-                log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
-                sr_dict[pair] = load_score(f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/score.txt")
+                log_file_path[pair] =  f"../../logs/ring_pop/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+                sr_dict[pair] = load_score(f"../../logs/ring_pop/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/score.txt")
                 sr_mat[row, col] = sr_dict[pair]["Success Rate"]
                 if row == col:
                     ic_numerator.append(sr_dict[pair]["Success Rate"])
@@ -175,17 +177,28 @@ if __name__ == "__main__":
             similarity_mat, avg_sim = get_similarity(message_data, num_networks)
             print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
             print(f"Interchangeability: {ic}")
-            plot_heatmap(similarity_mat, saved_fig_path_langsim)
-            plot_heatmap(sr_mat, saved_fig_path_sr)
+
             
             avg_topsim = get_topsim(message_data, attribute_data, num_networks)
             print(f"avg topsim = {avg_topsim}")
 
             
             # Save the variables
-            np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
-                                                                    avg_sim=avg_sim, 
-                                                                    avg_topsim=avg_topsim, 
-                                                                    sr_mat=sr_mat,
-                                                                    ic=ic)
+            np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), 
+                                    similarity_mat=similarity_mat, 
+                                    avg_sim=avg_sim, 
+                                    avg_topsim=avg_topsim, 
+                                    sr_mat=sr_mat,
+                                    ic=ic)
 
+
+            avg_similarity_mat += similarity_mat
+            avg_sr_mat += sr_mat
+
+        avg_similarity_mat /= 3 # 3 seeds
+        avg_sr_mat /= 3 # 3 seeds
+        np.savez(os.path.join(saved_fig_dir, "avg_sim_sr_mat.npz"), 
+                                            avg_similarity_mat=avg_similarity_mat, 
+                                            avg_sr_mat=avg_sr_mat)
+        plot_heatmap(avg_similarity_mat, saved_fig_path_langsim)
+        plot_heatmap(avg_sr_mat, saved_fig_path_sr)

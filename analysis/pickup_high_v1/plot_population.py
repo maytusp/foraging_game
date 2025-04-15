@@ -64,7 +64,7 @@ for num_networks in num_networks_list:
         ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
         combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
         
-        scores_path = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
+        scores_path = f"../../logs/vary_n_pop/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
         
         scores = np.load(scores_path)
         avg_sr = compute_avg_sr(scores['sr_mat'])
@@ -100,7 +100,7 @@ plt.xlabel('Population Size')
 plt.ylabel('Language Similarity')
 plt.xticks(num_networks_list)
 plt.tight_layout()
-plt.savefig(os.path.join(saved_fig_dir, "language_similarity.png"))
+plt.savefig(os.path.join(saved_fig_dir, "ls_vs_pop.pdf"))
 plt.close()
 
 # Plot 2: Topographic Similarity
@@ -111,7 +111,7 @@ plt.xlabel('Population Size')
 plt.ylabel('Topographic Similarity')
 plt.xticks(num_networks_list)
 plt.tight_layout()
-plt.savefig(os.path.join(saved_fig_dir, "topographic_similarity.png"))
+plt.savefig(os.path.join(saved_fig_dir, "topsim_vs_pop.pdf"))
 plt.close()
 
 # Plot 3: Interchangeability
@@ -122,7 +122,19 @@ plt.xlabel('Population Size')
 plt.ylabel('Interchangeability')
 plt.xticks(num_networks_list)
 plt.tight_layout()
-plt.savefig(os.path.join(saved_fig_dir, "interchangeability.png"))
+plt.savefig(os.path.join(saved_fig_dir, "ic_vs_pop.pdf"))
+plt.close()
+
+
+# Plot 4: SR
+plt.figure(figsize=(6, 5))
+sns.lineplot(x=num_networks_list, y=mean_sr, marker="o", color='m', linewidth=2.5, markersize=10)
+plt.fill_between(num_networks_list, np.array(mean_sr) - np.array(std_sr), np.array(mean_sr) + np.array(std_sr), alpha=0.2, color='m')
+plt.xlabel('Population Size')
+plt.ylabel('Success Rate')
+plt.xticks(num_networks_list)
+plt.tight_layout()
+plt.savefig(os.path.join(saved_fig_dir, "sr_vs_pop.pdf"))
 plt.close()
 
 # # Plot Success Rate

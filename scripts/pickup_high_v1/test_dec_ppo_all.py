@@ -58,7 +58,7 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = False
     model_name = "dec_ppo_invisible"
     num_networks = 2
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
     for seed in [1,2,3]:
         for i in range(args.num_networks):
-            for j in range(i+1):
+            for j in range(args.num_networks):
                 args.seed = seed
                 args.n_words = 4
                 args.combination_name = f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}_nw{args.n_words}_ms{args.max_steps}"
@@ -323,7 +323,7 @@ if __name__ == "__main__":
 
                     if not(args.save_trajectory):
                         # Open the log file in append mode
-                        with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
+                        with open(os.path.join(args.saved_dir, "log.txt"), "w") as log_file:
                             
                             # Redirect the print statements to the log file
                             print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)

@@ -59,7 +59,7 @@ class Args:
     max_steps = 10
     n_words = 4
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = False
     model_name = "hybrid_ppo_invisible"
     num_networks = 2

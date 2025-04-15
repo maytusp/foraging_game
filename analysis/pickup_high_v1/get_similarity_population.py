@@ -125,7 +125,7 @@ if __name__ == "__main__":
                         "pop_ppo_15net_invisible": {'seed1': 947200000, 'seed2': 819200000, 'seed3':819200000},
                         }
 
-    for num_networks in [2]: #[2, 3,6,9,12,15]
+    for num_networks in [3,6,9,12,15]: #[2, 3,6,9,12,15]
         for seed in range(1,4):
             if num_networks >= 3:
                 model_name = f"pop_ppo_{num_networks}net_invisible"
@@ -136,12 +136,12 @@ if __name__ == "__main__":
 
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"figs/population"
-            saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
+            saved_score_dir = f"../../logs/vary_n_pop/exp2/{model_name}/{combination_name}_seed{seed}"
             saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
             saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
             os.makedirs(saved_fig_dir, exist_ok=True)
             os.makedirs(saved_score_dir, exist_ok=True)
-            mode = "train"
+            mode = "test"
             network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
             log_file_path = {}
             sr_dict = {}
@@ -157,8 +157,8 @@ if __name__ == "__main__":
                 row, col = pair.split("-")
                 row, col = int(row), int(col)
                 print(f"loading network pair {pair}")
-                log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
-                sr_dict[pair] = load_score(f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/score.txt")
+                log_file_path[pair] =  f"../../logs/vary_n_pop/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+                sr_dict[pair] = load_score(f"../../logs/vary_n_pop/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/score.txt")
                 sr_mat[row, col] = sr_dict[pair]["Success Rate"]
                 if row == col:
                     ic_numerator.append(sr_dict[pair]["Success Rate"])
