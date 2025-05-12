@@ -101,12 +101,22 @@ def get_similarity(message_data, num_networks):
     return similarity_mat , avg_sim
 
 
-def plot_heatmap(similarity_mat, saved_fig_path):
+def plot_heatmap(similarity_mat, saved_fig_path, cbar, vmin, vmax):
     # mask = np.zeros_like(similarity_mat)
     # mask[np.triu_indices_from(mask)] = True
     mask = np.triu(np.ones_like(similarity_mat, dtype=bool), k=1)  # Mask only upper triangle (excluding diagonal)
     with sns.axes_style("white"):
-        ax = sns.heatmap(similarity_mat, mask=mask, square=True,  cmap="YlGnBu")
+        ax = sns.heatmap(
+            similarity_mat,
+            mask=mask,
+            square=True,
+            cmap="YlGnBu",
+            vmin=vmin,       # Set your desired minimum value
+            vmax=vmax,       # Set your desired maximum value
+            cbar=cbar,     # Show the color bar
+            xticklabels=np.arange(1, similarity_mat.shape[1] + 1),
+            yticklabels=np.arange(1, similarity_mat.shape[0] + 1)
+        )
         plt.savefig(saved_fig_path)
         plt.close()
 
@@ -123,24 +133,26 @@ def load_score(filename):
 
 if __name__ == "__main__":
     checkpoints_dict = {
-"ring_sp_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-"ring_sp_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
+# "ring_sp_ppo_9net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
+"ring_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
+# "ring_sp_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
 }
-
+    compute_topsim = False
+    cbar = False
     for num_networks in [15]: # [3,6,9,12,15]:
         avg_similarity_mat = np.zeros((num_networks,num_networks))
         avg_sr_mat = np.zeros((num_networks,num_networks))
         for seed in range(1,4):
             
-            model_name = f"ring_sp_ppo_{num_networks}net_invisible"
+            model_name = f"ring_ppo_{num_networks}net_invisible"
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
 
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"plots/population/ring/sr_lang_sim"
             saved_score_dir = f"../../logs/ring_pop/exp2/{model_name}/{combination_name}_seed{seed}"
-            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_similarity.png")
-            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_sr.png")
+            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_similarity.pdf")
+            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_sr.pdf")
             os.makedirs(saved_fig_dir, exist_ok=True)
             os.makedirs(saved_score_dir, exist_ok=True)
             mode = "test"
@@ -178,18 +190,18 @@ if __name__ == "__main__":
             print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
             print(f"Interchangeability: {ic}")
 
-            
-            avg_topsim = get_topsim(message_data, attribute_data, num_networks)
-            print(f"avg topsim = {avg_topsim}")
+            if compute_topsim:
+                avg_topsim = get_topsim(message_data, attribute_data, num_networks)
+                print(f"avg topsim = {avg_topsim}")
 
-            
-            # Save the variables
-            np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), 
-                                    similarity_mat=similarity_mat, 
-                                    avg_sim=avg_sim, 
-                                    avg_topsim=avg_topsim, 
-                                    sr_mat=sr_mat,
-                                    ic=ic)
+                
+                # Save the variables
+                np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), 
+                                        similarity_mat=similarity_mat, 
+                                        avg_sim=avg_sim, 
+                                        avg_topsim=avg_topsim, 
+                                        sr_mat=sr_mat,
+                                        ic=ic)
 
 
             avg_similarity_mat += similarity_mat
@@ -200,5 +212,5 @@ if __name__ == "__main__":
         np.savez(os.path.join(saved_fig_dir, "avg_sim_sr_mat.npz"), 
                                             avg_similarity_mat=avg_similarity_mat, 
                                             avg_sr_mat=avg_sr_mat)
-        plot_heatmap(avg_similarity_mat, saved_fig_path_langsim)
-        plot_heatmap(avg_sr_mat, saved_fig_path_sr)
+        plot_heatmap(avg_similarity_mat, saved_fig_path_langsim, cbar, vmin=0.2, vmax=0.6)
+        plot_heatmap(avg_sr_mat, saved_fig_path_sr, cbar, vmin=0.3, vmax=1.0)

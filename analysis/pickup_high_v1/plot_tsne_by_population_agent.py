@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
+import seaborn as sns
 import os
 # Load the .pkl file
 def load_trajectory(file_path):
@@ -67,9 +68,17 @@ def plot_tsne_by_agent(tsne_data, num_networks, saved_fig_path):
 
     # Define colors and markers for each class
     colors = ["red", "blue", "green"]
-    labels = ["Agent 0", "Agent 1", "Agent 2"]
+    labels = ["Agent 1", "Agent 2", "Agent 3"]
+    plt.rcParams.update({
+        'font.size': 24,
+        'axes.labelsize': 24,
+        'axes.titlesize': 24,
+        'xtick.labelsize': 24,
+        'ytick.labelsize': 24,
+        'legend.fontsize': 24
+    })
 
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(10, 10))
 
     # Plot each class separately
     for i, agent_id in enumerate(sender_list):
@@ -78,33 +87,38 @@ def plot_tsne_by_agent(tsne_data, num_networks, saved_fig_path):
                     color=colors[i], label=labels[i], alpha=0.7)
 
     # Add legend
+    # Set font sizes before plotting
     plt.legend(title="Sent by Agent")
     plt.title("t-SNE of Message Embeddings by Agents")
     plt.xlabel("t-SNE Dimension 1")
     plt.ylabel("t-SNE Dimension 2")
     plt.grid(True)
     plt.savefig(saved_fig_path)
-    plt.show()
     
 
 if __name__ == "__main__":
-    # Path to the trajectory .pkl file
-    model_name = "dec_ppo_invisible"
-    combination_name = "grid5_img3_ni2_nw16_ms10_307200000"
-    seed = 1
-    mode = "train"
+
+    
     num_networks = 2
+    # # Path to the trajectory .pkl file
+    model_name = "hybrid_ppo_invisible"
+    combination_name = "grid5_img3_ni2_nw4_ms10_307200000"
+    # model_name = f"pop_ppo_{num_networks}net_invisible"
+    # combination_name = "grid5_img3_ni2_nw4_ms10_332800000"
+    seed = 1
+    mode = "test"
+
     network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
     log_file_path = {}
     receiver = "agent0"
     tsne_data = {}
-    saved_fig_dir = f"figs"
-    saved_fig_path = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_tsne.png")
+    saved_fig_dir = f"plots/by_agent"
+    saved_fig_path = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_tsne.pdf")
     os.makedirs(saved_fig_dir, exist_ok=True)
     for pair in network_pairs:
         if receiver[-1] in pair[-1]:
             print(f"loading network pair {pair}")
-            log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+            log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
         
             
             # Load log data

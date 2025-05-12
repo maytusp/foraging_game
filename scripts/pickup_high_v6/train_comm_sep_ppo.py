@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -65,18 +65,23 @@ class Args:
 
     log_every = 32
 
-    n_words = 16
+    n_words = 4
     image_size = 5
     N_i = 2
     grid_size = 5
-    max_steps=15
+    max_steps = 10
+    num_possible_score = 10
     fully_visible_score = False
-    agent_visible = False
+    agent_visible = True
     mode = "train"
     model_name = "dec_ppo"
+    time_pressure = True
     
     if not(agent_visible):
         model_name+= "_invisible"
+
+    if time_pressure:
+        model_name+= "_time_pressure"
     
 
     """train or test (different attribute combinations)"""
@@ -87,7 +92,7 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_ps{num_possible_score}"
     save_dir = f"checkpoints/pickup_high_v6/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
@@ -136,7 +141,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/{run_name}")
+    writer = SummaryWriter(f"runs/pickup_high_v6/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -158,7 +163,9 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode="train")
+                        mode="train",
+                        num_possible_score=args.num_possible_score,
+                        time_pressure=args.time_pressure)
                         
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -167,7 +174,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=0, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=16, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}

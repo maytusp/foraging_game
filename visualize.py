@@ -1,4 +1,3 @@
-# Edit: 20Dec2024
 from constants import *
 from keyboard_control import *
 # from environments.environment_single import *
@@ -61,6 +60,12 @@ def visualize_environment(environment, step):
             # Display "pick up" message above the food
             pickup_text = font.render("Pick Up", True, (0, 255, 0))  # Green text
             screen.blit(pickup_text, (x, y+20))  # Display text slightly above the food
+    # Draw wall
+    for wall in environment.wall_list:
+        x, y = wall.position[1] * cell_size, wall.position[0] * cell_size
+           # Draw the rectangle
+        pygame.draw.rect(screen, (255, 0, 0), (x, y, cell_size, cell_size))
+        # screen.blit(, (x, y))
 
     pygame.display.flip()
 
@@ -88,7 +93,7 @@ if __name__ == "__main__":
     from environments.pickup_high_v1 import *
     # from environments.pickup_high_v1 import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment(image_size=3, grid_size=5, N_i=2, agent_visible=True)
+    env = Environment(image_size=3, grid_size=5, N_i=2, agent_visible=True, num_walls=3)
     clock = pygame.time.Clock()
     for ep in range(NUM_EPISODES):
         observations = env.reset()
@@ -117,8 +122,8 @@ if __name__ == "__main__":
             observations, rewards, dones, _, _ = env.step(agent_actions, int_action=True)
             # print("reward", rewards)
             # print(f"agent0: \n {nonzero_sum_channels(observations[0]['image'])}")
-            print(f"Agent0: \n {observations[0]['image'][1]}")
-            print(f"Agent1: \n {observations[1]['image'][1]}")
+            print(f"Agent0: \n {observations[0]['image'][0]}")
+            print(f"Agent1: \n {observations[1]['image'][0]}")
             # print(f"score: {observations[1]['image']}")
             # print(f"Can communicate:  {observations[0]['is_m_sent']}")
             # print(f"agent1: \n {nonzero_sum_channels(observations[1]['image'])}")

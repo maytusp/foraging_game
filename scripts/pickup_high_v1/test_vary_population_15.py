@@ -63,7 +63,7 @@ class Args:
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    num_nets_to_model_step = {3: 204800000, 6: 332800000, 9:486400000, 12: 768000000, 15: 819200000}
+    num_nets_to_model_step = {3: 204800000, 6: 460800000, 9:512000000, 12: 768000000, 15: 819200000}
     
 
 if __name__ == "__main__":
@@ -73,8 +73,8 @@ if __name__ == "__main__":
     for num_networks in [15]:
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
-        args.model_name = f"pop_ppo_{num_networks}net_invisible"
-        for seed in [2,3]:
+        args.model_name = f"pop_sp_ppo_{num_networks}net_invisible"
+        for seed in [1,2,3]:
             for i in range(args.num_networks):
                 for j in range(i+1):
                     args.seed = seed

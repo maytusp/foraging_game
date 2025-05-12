@@ -36,6 +36,7 @@ class Environment(ParallelEnv):
                                                                                                         image_size=5,
                                                                                                         max_steps=10,
                                                                                                         mode="train",
+                                                                                                        num_possible_score=50,
                                                                                                         ):
         np.random.seed(seed)
         self.mode = mode
@@ -48,6 +49,7 @@ class Environment(ParallelEnv):
         self.N_val = 255 # number of possible values, 255 is like standard RGB image
         self.N_att = 1 # number of attributes
         self.N_i = N_i # number of food items
+        self.num_possible_score = num_possible_score
         self.num_channels = 1 + self.N_att
         self.identical_item_obs = identical_item_obs
         self.n_words = n_words
@@ -71,15 +73,27 @@ class Environment(ParallelEnv):
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
         if mode == "train":
-            self.score_unit = 5
-            self.start_steps = 0
-            self.last_steps = 50
-            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
+            if num_possible_score == 50:
+                self.score_unit = 5
+                self.start_steps = 0
+                self.last_steps = 50
+                self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
+            elif num_possible_score == 10:
+                self.score_unit = 25
+                self.start_steps = 0
+                self.last_steps = 10
+                self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
         elif mode == "test":
-            self.score_unit = 2
-            self.start_steps = 0
-            self.last_steps = 125
-            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
+            if num_possible_score == 50:
+                self.score_unit = 2
+                self.start_steps = 0
+                self.last_steps = 125
+                self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
+            elif num_possible_score == 10:
+                self.score_unit = 22
+                self.start_steps = 0
+                self.last_steps = 11
+                self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 25 != 0]
 
         self.max_score = self.N_val
         self.food_ener_fully_visible = food_ener_fully_visible

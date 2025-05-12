@@ -108,23 +108,23 @@ if __name__ == "__main__":
     combination_name = "grid8_img3_ni2_nw4_ms40_51200000"
     seed = 1
     mode = "test"
-    seen_log_file_path = f"../../logs/pickup_temporal/{model_name}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+    log_file_path = f"../../logs/pickup_temporal/{model_name}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
     agent_id = 0
     label_encoder = sklearn.preprocessing.LabelEncoder()
 
     # Load log data
-    seen_data = load_trajectory(seen_log_file_path)
-    messages, attributes_dict = extract_message(seen_data)
-    seen_label_dict = extract_label(attributes_dict, agent_id)
+    data = load_trajectory(log_file_path)
+    messages, attributes_dict = extract_message(data)
+    label_dict = extract_label(attributes_dict, agent_id)
 
     for k in label_list:
         groundtruth_name = k
-        seen_message_arr = np.array(messages[agent_id])
-        seen_label_arr = np.array(seen_label_dict[groundtruth_name])
+        message_arr = np.array(messages[agent_id])
+        label_arr = np.array(label_dict[groundtruth_name])
 
         # Split data into training and testing sets
-        X_train, X_test_seen, y_train, y_test_seen = train_test_split(
-            seen_message_arr, seen_label_arr, test_size=0.4, random_state=1
+        X_train, X_test, y_train, y_test = train_test_split(
+            message_arr, label_arr, test_size=0.4, random_state=1
         )
         
         clf = LogisticRegression(multi_class="multinomial", penalty="l2", C=1e-3,
@@ -132,13 +132,12 @@ if __name__ == "__main__":
         clf.fit(X_train, y_train)
 
         # Evaluate on seen data
-        y_pred_seen = clf.predict(X_test_seen)
-        accuracy_seen = accuracy_score(y_test_seen, y_pred_seen)
-        report_seen = classification_report(y_test_seen, y_pred_seen, output_dict=True)
+        y_pred = clf.predict(X_test)
+        pred_acc = accuracy_score(y_test, y_pred)
+        report = classification_report(y_test, y_pred, output_dict=True)
         
         print(f"Seen Combinations {groundtruth_name}")
-        print(f"Classification Accuracy: {accuracy_seen:.2f}")
-        # print(pd.DataFrame(report_seen).transpose())
-        # Save seen classification report as CSV
-        seen_report_path = f"reports/see_target{groundtruth_name}_seen.csv"
-        save_classification_report_csv(report_seen, accuracy_seen, seen_report_path)
+        print(f"Classification Accuracy: {pred_acc:.2f}")
+
+        report_path = f"reports/see_target{groundtruth_name}.csv"
+        save_classification_report_csv(report, pred_acc, report_path)

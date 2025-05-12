@@ -16,7 +16,7 @@ def load_trajectory(file_path):
         
 # Extract and prepare data for t-SNE
 def prepare_tsne_data(log_data):
-    max_message_length = 20
+    max_message_length = 5
     count_uselsss =  0
     message_emb_dict = {"agent0": [], "agent1":[]}
     message_token_dict = {"agent0": [], "agent1":[]}
@@ -35,8 +35,7 @@ def prepare_tsne_data(log_data):
         food_loc = log_food_dict["location"] # list
         food_time = log_food_dict["spawn_time"] # list
         message_indices = get_message_indices(data["log_locs"][:, 0], data["log_locs"][:, 1], episode_length)
-        # print(f"success={success} with inds {message_indices}")
-        # print(log_r_message_tokens)
+
         for agent_id in range(2):
             receiver_id =  {0:1, 1:0}[agent_id]
             agent_loc = data["log_locs"][:, agent_id] #(num_steps, 2)
@@ -53,9 +52,8 @@ def prepare_tsne_data(log_data):
             curr_message_length = len(message_indices)
             if curr_message_length <= max_message_length:
                 padded_message_embs[:curr_message_length] = message_embs[message_indices]
-                padded_message_tokens[:curr_message_length] = np.expand_dims(message_tokens[message_indices], axis=1)
                 padded_message_embs = padded_message_embs.flatten()
-                padded_message_tokens = padded_message_tokens.flatten()
+            
             
                 # print(food_time[food_id])
                 message_emb_dict[f"agent{agent_id}"].append(message_embs.flatten())  # Collect all time steps for the agent
@@ -73,18 +71,26 @@ def prepare_tsne_data(log_data):
 def plot_tsne(tsne_results, scores, plot_agent="agent0"):
     scores = scores[plot_agent]
     print(tsne_data.shape)
-    
+
+    plt.rcParams.update({
+        'font.size': 24,
+        'axes.labelsize': 24,
+        'axes.titlesize': 24,
+        'xtick.labelsize': 24,
+        'ytick.labelsize': 24,
+        'legend.fontsize': 24
+    })
 
     # Scatter plot with grouping by score
     plt.figure(figsize=(10, 8))
     sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=scores, palette='tab10', s=50, alpha=0.7)
     plt.legend(title="item's spawned time")
-    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
-    plt.xlabel("t-SNE Dimension 1")
-    plt.ylabel("t-SNE Dimension 2")
+    plt.title(f"t-SNE of message embeddings")
+    plt.xlabel("Dim.1")
+    plt.ylabel("Dim.2")
     plt.grid(True)
     
-    plt.savefig("plot_by_time")
+    plt.savefig("plots/tsne_time.pdf")
     plt.show()
 
 
@@ -93,16 +99,24 @@ def plot_tsne_loc(tsne_results, item_locs, plot_agent="agent0"):
     item_locs = np.int32(np.array(item_locs[plot_agent]))
 
     
-    
+
+    plt.rcParams.update({
+        'font.size': 24,
+        'axes.labelsize': 24,
+        'axes.titlesize': 24,
+        'xtick.labelsize': 24,
+        'ytick.labelsize': 24,
+        'legend.fontsize': 24
+    })
     # Scatter plot with grouping by score
     plt.figure(figsize=(10, 8))
     sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=item_locs[:, 0], palette='tab10', s=50, alpha=0.7)
-    plt.legend(title="item's position y")
-    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
-    plt.xlabel("t-SNE Dimension 1")
-    plt.ylabel("t-SNE Dimension 2")
+    plt.legend(title="vertical position")
+    plt.title(f"t-SNE of message embeddings")
+    plt.xlabel("Dim. 1")
+    plt.ylabel("Dim. 2")
     plt.grid(True)
-    plt.savefig("plot_by_y")
+    plt.savefig("plots/pickup_time_tsne_vertical.pdf")
     # plt.show()
 
     
@@ -110,56 +124,23 @@ def plot_tsne_loc(tsne_results, item_locs, plot_agent="agent0"):
     plt.figure(figsize=(10, 8))
     
     sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=item_locs[:, 1], palette='tab10', s=50, alpha=0.7)
-    plt.legend(title="item's position x")
-    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
-    plt.xlabel("t-SNE Dimension 1")
-    plt.ylabel("t-SNE Dimension 2")
+    plt.legend(title="horizontal position")
+    plt.title(f"t-SNE of message embeddings")
+    plt.xlabel("Dim.1")
+    plt.ylabel("Dim.2")
     plt.grid(True)
-    plt.savefig("plot_by_x")
+    plt.savefig("plots/pickup_time_tsne_horizontal.pdf")
     plt.show()
 
-
-# Plot t-SNE
-def plot_tsne_loc_see_target(tsne_results, item_locs, see_target, plot_agent="agent0"):
-    item_locs = np.int32(np.array(item_locs[plot_agent]))
-    see_target = np.int32(np.array(see_target[plot_agent]))  # Ensure see_target is an array
-    
-    # Encode each data point as a binary string "VHST" (V=vertical, H=horizontal, S=see_target)
-    group_v_labels = [f"v{v}t{s}" for v, s in zip(item_locs[:, 0], see_target)]
-    group_h_labels = [f"h{h}t{s}" for h, s in zip(item_locs[:, 1], see_target)]
-    
-    
-    
-    # Scatter plot with grouping by score
-    plt.figure(figsize=(10, 8))
-    sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=group_v_labels, palette='tab10', s=50, alpha=0.7)
-    plt.legend(title="item's vertical position")
-    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
-    plt.xlabel("t-SNE Dimension 1")
-    plt.ylabel("t-SNE Dimension 2")
-    plt.grid(True)
-    # plt.show()
-
-    
-    # Scatter plot with grouping by score
-    plt.figure(figsize=(10, 8))
-
-    sns.scatterplot(x=tsne_results[:, 0], y=tsne_results[:, 1], hue=group_h_labels, palette='tab10', s=50, alpha=0.7)
-    plt.legend(title="item's horizontal position")
-    plt.title(f"t-SNE of message embeddings sent by {plot_agent}")
-    plt.xlabel("t-SNE Dimension 1")
-    plt.ylabel("t-SNE Dimension 2")
-    plt.grid(True)
-    plt.show()
 
 if __name__ == "__main__":
     # Path to the trajectory .pkl file
-    model_name = "dec_ppo_invisible"
-    combination_name = "grid8_img3_ni2_nw4_ms40_51200000"
+    model_name = "pop_ppo_3net_invisible"
+    combination_name = "grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000"
     seed = 1
-    mode = "test"
-    log_file_path =  f"../../logs/pickup_temporal/{model_name}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
-    plot_agent = "agent1"
+    mode = "train"
+    log_file_path =  f"../../logs/linear_decode/pickup_temporal/{model_name}/0-1/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+    plot_agent = "agent0"
     if os.path.exists(log_file_path):
         # Load log data
         log_data = load_trajectory(log_file_path)

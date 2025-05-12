@@ -59,7 +59,7 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = False
     model_name = "pop_ppo_3net_invisible"
     num_networks = 3
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     selected_networks = network_pairs.split("-")
     args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
     args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-    args.saved_dir = f"logs/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+    args.saved_dir = f"logs/visualize/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
     args.video_save_dir = os.path.join(args.saved_dir, "vids")
     if args.ablate_message:
         args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
@@ -212,6 +212,7 @@ if __name__ == "__main__":
             energy_obs["agent1"] = energy_obs["agent1"].union(set(next_obs_arr[1,1,:,:].flatten()))
 
             if args.visualize and not(args.save_trajectory):
+                
                 single_env = envs.vec_envs[0].unwrapped.par_env
                 frame = visualize_environment(single_env, ep_step)
                 frames.append(frame.transpose((1, 0, 2)))

@@ -36,8 +36,15 @@ class Environment(ParallelEnv):
                                                                                                         image_size=5,
                                                                                                         max_steps=10,
                                                                                                         mode="train",
+                                                                                                        time_pressure=True,
+                                                                                                        ablate_message=False,
+                                                                                                        test_moderate_score=False,
+                                                                                                        num_walls=0,
                                                                                                         ):
         np.random.seed(seed)
+        self.time_pressure = time_pressure
+        self.ablate_message = ablate_message
+        self.test_moderate_score = test_moderate_score
         self.mode = mode
         self.use_message = use_message
         self.agent_visible = agent_visible
@@ -51,6 +58,7 @@ class Environment(ParallelEnv):
         self.num_channels = 1 + self.N_att
         self.identical_item_obs = identical_item_obs
         self.n_words = n_words
+        self.num_walls = num_walls
         self.torch_order = torch_order
         self.truncated = {i:truncated for i in range(num_agents)}
         self.infos = {}
@@ -76,10 +84,16 @@ class Environment(ParallelEnv):
             self.last_steps = 50
             self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
         elif mode == "test":
-            self.score_unit = 2
-            self.start_steps = 0
-            self.last_steps = 125
-            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
+            if test_moderate_score:
+                self.score_unit = 2
+                self.start_steps = 100
+                self.last_steps = 120
+                self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
+            else:
+                self.score_unit = 2
+                self.start_steps = 0
+                self.last_steps = 125
+                self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
 
         self.max_score = self.N_val
         self.food_ener_fully_visible = food_ener_fully_visible
@@ -95,6 +109,7 @@ class Environment(ParallelEnv):
                                 }
         self.agent_spawn_range = {0:((0, 0), (1, self.grid_size-1)), 1:((self.grid_size-2, 0), (self.grid_size-1, self.grid_size-1))}
         self.food_spawn_range = {0:((0, 0), (0, self.grid_size-1)), 1:((self.grid_size-1, 0), (self.grid_size-1, self.grid_size-1))} # TODO add condition for 4 and 6 items
+        self.wall_spawn_range = ((self.grid_size // 2, 0), (self.grid_size // 2, self.grid_size-1))
         self.reset()
         
     
@@ -110,7 +125,7 @@ class Environment(ParallelEnv):
         self.reg_food_spawn_range = {}
         self.reg_agent_spawn_range = {}
         #  position, food_type, id)
-
+        
         self.selected_score = np.random.choice(self.score_list, size=self.N_i, replace=False)
         self.target_food_id = np.argmax(self.selected_score)
         self.score_visible_to_agent = np.random.choice([0]* (self.N_i//2) + [1]*(self.N_i//2), size=self.N_i, replace=False)
@@ -134,6 +149,13 @@ class Environment(ParallelEnv):
         
         for agent in self.agent_maps:
             self.grid[agent.position[0], agent.position[1]] = agent
+
+        # generate walls
+        self.wall_list = []
+        for wall_id in range(self.num_walls):
+            wall_pos = self.random_wall_position()
+            self.wall_list.append(Wall(wall_id, wall_pos))
+            self.grid[wall_pos[0], wall_pos[1]] = self.wall_list[wall_id]
 
         self.collected_foods = []
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
@@ -180,7 +202,8 @@ class Environment(ParallelEnv):
         for food in self.foods:
             if not(food.done):
                 self.grid[food.position[0], food.position[1]] = food
-                
+        for wall in self.wall_list:
+            self.grid[wall.position[0], wall.position[1]] = wall
     def update_food(self):
         '''
         All agents have to pick up food at the same time step.
@@ -204,6 +227,15 @@ class Environment(ParallelEnv):
             pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
             if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3):
                 self.prev_pos_list.append(pos)
+                return pos
+
+    def random_wall_position(self):
+        min_xy, max_xy = self.wall_spawn_range[0], self.wall_spawn_range[1]
+        min_x, min_y = min_xy[0], min_xy[1]
+        max_x, max_y = max_xy[0], max_xy[1]
+        while True:
+            pos = (random.randint(min_x, max_x), random.randint(min_y, max_y))
+            if self.grid[pos[0], pos[1]] is None:
                 return pos
 
     def random_agent_position(self, agent_id):
@@ -273,7 +305,12 @@ class Environment(ParallelEnv):
                 agent_obs[i]['location'] = agent.position
                 agent_obs[i]['energy'] = np.array([agent.energy])
                 if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
-                    agent_obs[i]['message'] = self.sent_message[i]
+                    if self.ablate_message:
+                        agent_obs[i]['message'] = np.array([0])
+                    else:
+                        agent_obs[i]['message'] = self.sent_message[i]
+                    
+
             # print("agent_obs", agent_obs)
             return agent_obs
 
@@ -412,7 +449,8 @@ class Environment(ParallelEnv):
             for agent in self.agent_maps:
                 if self.collected_foods[0] == self.target_food_id:
                     self.rewards[agent.id] += 1
-                    self.rewards[agent.id] += ((self.max_steps - self.curr_steps) / self.max_steps) # get more reward if use fewer steps
+                    if self.time_pressure:
+                        self.rewards[agent.id] += ((self.max_steps - self.curr_steps) / self.max_steps) # get more reward if use fewer steps
                     success = 1
                 else:
                     self.rewards[agent.id] -= 1
@@ -501,6 +539,8 @@ class EnvAgent:
                         else:
                             obs_occupancy = agent_occupancy
                         row.append(obs_occupancy)
+                    elif isinstance(obj, Wall):
+                        row.append(wall_occupancy)
                     else:
                         row.append([0])  # Empty grid
                 else:
@@ -581,6 +621,11 @@ class EnvAgent:
 #         # Combine occupancy and attribute data
 #         obs_out = np.concatenate((occupancy_data, food_attribute_data), axis=2)
 #         return obs_out
+
+class Wall:
+     def __init__(self, id, position):
+        self.id = id
+        self.position = position
 
 
 class Food:

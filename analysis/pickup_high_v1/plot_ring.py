@@ -84,17 +84,17 @@ import os
 
 # Set seaborn style and global font settings
 sns.set(style="whitegrid")
-plt.rcParams.update({'font.size': 18, 'axes.labelsize': 18, 'axes.titlesize': 20, 
-                     'xtick.labelsize': 16, 'ytick.labelsize': 16, 'legend.fontsize': 14})
+plt.rcParams.update({'font.size': 18, 'axes.labelsize': 20, 'axes.titlesize': 20, 
+                    'xtick.labelsize': 20, 'ytick.labelsize': 20, 'legend.fontsize': 20})
 
 # Plot 1: Success Rate vs Distance
 plt.figure(figsize=(6, 5))
-sns.lineplot(x=distance_list, y=sr_dict['ring_sp_ppo_15net_invisible']['mean'], marker="o", label='self-play')
+sns.lineplot(x=distance_list, y=sr_dict['ring_sp_ppo_15net_invisible']['mean'], marker="o", label='XP+SP')
 plt.fill_between(distance_list, 
                 sr_dict['ring_sp_ppo_15net_invisible']['mean'] - sr_dict['ring_sp_ppo_15net_invisible']['std'], 
                 sr_dict['ring_sp_ppo_15net_invisible']['mean'] + sr_dict['ring_sp_ppo_15net_invisible']['std'], 
                 alpha=0.2)
-sns.lineplot(x=distance_list, y=sr_dict['ring_ppo_15net_invisible']['mean'], marker="o", label='w/o self-play')
+sns.lineplot(x=distance_list, y=sr_dict['ring_ppo_15net_invisible']['mean'], marker="o", label='XP')
 plt.fill_between(distance_list, 
                 sr_dict['ring_ppo_15net_invisible']['mean'] - sr_dict['ring_ppo_15net_invisible']['std'], 
                 sr_dict['ring_ppo_15net_invisible']['mean'] + sr_dict['ring_ppo_15net_invisible']['std'], 
@@ -109,12 +109,12 @@ plt.close()
 
 # Plot 2: Language Similarity vs Distance
 plt.figure(figsize=(6, 5))
-sns.lineplot(x=distance_list, y=ls_dict['ring_sp_ppo_15net_invisible']['mean'], marker="o", label='self-play')
+sns.lineplot(x=distance_list, y=ls_dict['ring_sp_ppo_15net_invisible']['mean'], marker="o", label='XP+SP')
 plt.fill_between(distance_list, 
                 ls_dict['ring_sp_ppo_15net_invisible']['mean'] - ls_dict['ring_sp_ppo_15net_invisible']['std'], 
                 ls_dict['ring_sp_ppo_15net_invisible']['mean'] + ls_dict['ring_sp_ppo_15net_invisible']['std'], 
                 alpha=0.2)
-sns.lineplot(x=distance_list, y=ls_dict['ring_ppo_15net_invisible']['mean'], marker="o", label='w/o self-play')
+sns.lineplot(x=distance_list, y=ls_dict['ring_ppo_15net_invisible']['mean'], marker="o", label='XP')
 plt.fill_between(distance_list, 
                 ls_dict['ring_ppo_15net_invisible']['mean'] - ls_dict['ring_ppo_15net_invisible']['std'], 
                 ls_dict['ring_ppo_15net_invisible']['mean'] + ls_dict['ring_ppo_15net_invisible']['std'], 
