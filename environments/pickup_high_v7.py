@@ -1,10 +1,7 @@
-# 28 Feb 2025 Pickup high v1 Stable version
-# Agents are spawn on the different sides with their seen-score items
-# This is for study experiment1: what is encoded in communication?
-# Visible vs Invisible Agents
-# Different Receptive Fields
-# Different Environment Size
-# Different Number of Items
+# 26 July 2025 Pickup high v7
+# This is almost the same as pickup_high_v1 (we can merge them later). 
+# The goal of this code is to test agents generalization capability across unseen positions
+# Agents are trained in even positions x_train_list = [0,2,...] and y_train_list = [0,2,...]
 import pygame
 import numpy as np
 import random
@@ -80,12 +77,22 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
+        even_position_list = [(x, y) for x in range(self.grid_size) 
+                                    for y in range(self.grid_size) 
+                                    if x % 2 == 0 and y % 2 == 0]
+        odd_position_list =  [(x, y) for x in range(self.grid_size) 
+                                for y in range(self.grid_size) 
+                                if x % 2 == 1 and y % 2 == 1]     
         if mode == "train":
             self.score_unit = 5
             self.start_steps = 0
             self.last_steps = 50
             self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
+            self.agent_position_list = odd_position_list
+            self.food_position_list = even_position_list
         elif mode == "test":
+            self.agent_position_list = even_position_list
+            self.food_position_list = odd_position_list
             if test_moderate_score:
                 self.score_unit = 2
                 self.start_steps = 100
@@ -109,22 +116,11 @@ class Environment(ParallelEnv):
                                     5: "pig",
                                     6: "cattle",
                                 }
-        self.agent_spawn_range = {0:((0, 0), (1, self.grid_size-1)), 1:((self.grid_size-2, 0), (self.grid_size-1, self.grid_size-1))}
-        if self.use_unseen_loc:
-            '''
-            Test if agents can generalise to food items in unseen positions (middle of the map)
-            '''
-            self.food_spawn_range = {0:((1, 0), (self.grid_size//2, self.grid_size-1)), 1:((self.grid_size//2, 0), (self.grid_size-2, self.grid_size-1))} # TODO add condition for 4 and 6 items
-        else:
-            '''
-            position format (vertical, horizontal) = (y, x) 
-            '''
-            self.food_spawn_range = {0:((0, 0), (0, self.grid_size-1)), 1:((self.grid_size-1, 0), (self.grid_size-1, self.grid_size-1))} # TODO add condition for 4 and 6 items
-            self.wall_spawn_range = ((self.grid_size // 2, 0), (self.grid_size // 2, self.grid_size-1))
         self.reset()
         
-    
     def reset(self, seed=42, options=None):
+        self.agent_positions = random.sample(self.agent_position_list, 2) # 2 agents
+        self.food_positions = random.sample(self.food_position_list, self.N_i) # N_i foods
         self.curr_steps = 0
         self.episode_lengths = {i:0 for i in range(len(self.possible_agents))}
         self.cumulative_rewards = {i:0 for i in range(len(self.possible_agents))}
@@ -141,7 +137,7 @@ class Environment(ParallelEnv):
         self.target_food_id = np.argmax(self.selected_score)
         self.score_visible_to_agent = np.random.choice([0]* (self.N_i//2) + [1]*(self.N_i//2), size=self.N_i, replace=False)
 
-        self.foods = [Food(position=self.random_food_position(food_id), 
+        self.foods = [Food(position=self.food_positions[food_id], 
                             food_type = food_id+1,
                             id=food_id,
                             energy_score=self.selected_score[food_id],
@@ -152,7 +148,7 @@ class Environment(ParallelEnv):
             self.grid[food.position[0], food.position[1]] = food
 
         self.agents = self.possible_agents[:]
-        self.agent_maps = [EnvAgent(i, self.random_agent_position(agent_id=i), 
+        self.agent_maps = [EnvAgent(i, self.agent_positions[i], 
                             AGENT_STRENGTH, AGENT_ENERGY, 
                             self.grid_size, self.agent_visible,
                             self.food_ener_fully_visible) for i in range(len(self.possible_agents))]
@@ -249,42 +245,6 @@ class Environment(ParallelEnv):
             if self.grid[pos[0], pos[1]] is None:
                 return pos
 
-    def random_agent_position(self, agent_id):
-        # Select spawn range / side (left or right) # Inefficient, back to this later
-        selected_side = self.reg_agent_spawn_range[agent_id]
-        seen_food_id =  np.where(self.score_visible_to_agent == agent_id)[0][0]
-        food_pos =  self.foods[seen_food_id].position
-        min_xy, max_xy = self.agent_spawn_range[selected_side]
-        min_x, min_y = min_xy[0], min_xy[1]
-        max_x, max_y = max_xy[0], max_xy[1]
-        while True:
-            pos = (random.randint(min_x, max_x), random.randint(min_y, max_y))
-            if self.grid[pos[0], pos[1]] is None and self.manhattan_dist(pos, food_pos) < 2:
-                return pos
-
-    def random_food_position(self, food_id):
-        # Select spawn range / side (left or right) # Inefficient, back to this later
-        if food_id > 0:
-            prev_selected_side = self.reg_food_spawn_range[0]
-            selected_side = {0:1, 1:0}[prev_selected_side]
-        else:
-            selected_side = np.random.binomial(1, 0.5, 1)[0]
-            
-        min_xy, max_xy = self.food_spawn_range[selected_side]
-        min_x, min_y = min_xy[0], min_xy[1]
-        max_x, max_y = max_xy[0], max_xy[1]
-        self.reg_food_spawn_range[food_id] = selected_side
-
-        # Register agent's side based on the foods it sees
-        agent_id = self.score_visible_to_agent[food_id]
-        if agent_id not in self.reg_agent_spawn_range:
-            self.reg_agent_spawn_range[agent_id] = selected_side
-            
-        while True:
-            pos = (random.randint(min_x, max_x), random.randint(min_y, max_y))
-            if self.grid[pos[0], pos[1]] is None and self.min_dist(pos,3):
-                self.prev_pos_list.append(pos)
-                return pos
 
     def l2_dist(self, pos1, pos2):
         pos1 = np.array([pos1[0], pos1[1]])
