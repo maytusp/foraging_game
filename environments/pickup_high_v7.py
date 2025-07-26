@@ -77,22 +77,21 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
-        even_position_list = [(x, y) for x in range(self.grid_size) 
-                                    for y in range(self.grid_size) 
+        self.all_position_list =  [(x, y) for x in range(grid_size) 
+                            for y in range(grid_size)]
+        self.train_position_list = [(x, y) for x in range(grid_size) 
+                                    for y in range(grid_size) 
                                     if x % 2 == 0 and y % 2 == 0]
-        odd_position_list =  [(x, y) for x in range(self.grid_size) 
-                                for y in range(self.grid_size) 
-                                if x % 2 == 1 and y % 2 == 1]     
+        self.test_position_list = [pos for pos in self.all_position_list if pos not in self.train_position_list]
+
         if mode == "train":
             self.score_unit = 5
             self.start_steps = 0
             self.last_steps = 50
             self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
-            self.agent_position_list = odd_position_list
-            self.food_position_list = even_position_list
+            self.food_position_list = self.train_position_list
         elif mode == "test":
-            self.agent_position_list = even_position_list
-            self.food_position_list = odd_position_list
+            self.food_position_list = self.test_position_list # TODO food item cannot be adjacent
             if test_moderate_score:
                 self.score_unit = 2
                 self.start_steps = 100
@@ -119,8 +118,9 @@ class Environment(ParallelEnv):
         self.reset()
         
     def reset(self, seed=42, options=None):
-        self.agent_positions = random.sample(self.agent_position_list, 2) # 2 agents
         self.food_positions = random.sample(self.food_position_list, self.N_i) # N_i foods
+        self.agent_position_list = [pos for pos in self.all_position_list if pos not in self.food_positions]
+        self.agent_positions = random.sample(self.agent_position_list, 2) # 2 agents
         self.curr_steps = 0
         self.episode_lengths = {i:0 for i in range(len(self.possible_agents))}
         self.cumulative_rewards = {i:0 for i in range(len(self.possible_agents))}

@@ -114,7 +114,7 @@ class Environment(ParallelEnv):
             '''
             Test if agents can generalise to food items in unseen positions (middle of the map)
             '''
-            self.food_spawn_range = {0:((1, 0), (self.grid_size//2, self.grid_size-1)), 1:((self.grid_size//2, 0), (self.grid_size-2, self.grid_size-1))} # TODO add condition for 4 and 6 items
+            self.food_spawn_range = {0:((1, 0), (1, self.grid_size-1)), 1:((self.grid_size-2, 0), (self.grid_size-2, self.grid_size-1))} # TODO add condition for 4 and 6 items
         else:
             '''
             position format (vertical, horizontal) = (y, x) 
