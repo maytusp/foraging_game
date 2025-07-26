@@ -74,6 +74,7 @@ if __name__ == "__main__":
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
     for seed in range(1,4):
         args.seed = seed
+        args.test_max_steps = 40
         for i in range(args.num_networks):
             for j in range(args.num_networks):
                 # Update the network pair and dependent paths/parameters
@@ -81,7 +82,7 @@ if __name__ == "__main__":
                 selected_networks = network_pairs.split("-")
                 args.ckpt_path = f"checkpoints/pickup_temporal/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
                 args.ckpt_path2 = f"checkpoints/pickup_temporal/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-                args.saved_dir = f"logs/pickup_temporal/exp2/{args.model_name}/pair_{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+                args.saved_dir = f"logs/pickup_temporal/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                 if args.ablate_message:
                     args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
                 else:
@@ -108,7 +109,7 @@ if __name__ == "__main__":
                                     N_i = args.N_i,
                                     grid_size=args.grid_size,
                                     image_size=args.image_size,
-                                    max_steps=args.max_steps,
+                                    max_steps=args.test_max_steps,
                                     mode=args.mode,
                                     freeze_dur=args.freeze_dur)
 

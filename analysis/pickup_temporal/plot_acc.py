@@ -35,7 +35,7 @@ chance_levels = {
 # Display-friendly names
 variable_display_names = {
     'score': 'Score',
-    'spawn time': 'Spawn Time',
+    'spawn time': 'Time',
     'horizontal position': 'H-Pos',
     'vertical position': 'V-Pos'
 }
@@ -43,7 +43,7 @@ variable_display_names = {
 # Create records
 records = []
 for task_type in ['pickup_high', 'pickup_temporal']:
-    for input_type, label in [('emb', 'Word Embedding'), ('token', 'Vocabulary Index')]:
+    for input_type, label in [('emb', 'Msg Embedding'), ('token', ' Integer Msg')]:
         acc_dict = globals()[f'{task_type}_avg_accuracy_dict_{input_type}']
         for var, accs in acc_dict.items():
             records.append({
@@ -71,15 +71,16 @@ color_palette = original_palette[2:] + original_palette[:2] # Green
 for i, task in enumerate(task_order):
     # ax = axes[i]
     # Create FacetGrid-style subplots
-    plt.rcParams.update({
-        'font.size': 20,
-        'axes.labelsize': 20,
-        'axes.titlesize': 20,
-        'xtick.labelsize': 20,
-        'ytick.labelsize': 20,
-        'legend.fontsize': 20
-    })
+
     plt.figure(figsize=(6, 6))
+    plt.rcParams.update({
+        'font.size': 24,
+        'axes.labelsize': 24,
+        'axes.titlesize': 24,
+        'xtick.labelsize': 24,
+        'ytick.labelsize': 24,
+        'legend.fontsize': 24
+    })
     subdf = df[df['Task'] == task].copy()
     subdf['X'] = subdf['Variable']
     # Draw barplot without error bars
@@ -118,6 +119,7 @@ for i, task in enumerate(task_order):
 
     ax.set_title("")
     ax.set_xlabel('')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=15)
     ax.set_ylim(0, 1)
     ax.set_ylabel('Accuracy')
     if i == 0:
@@ -138,5 +140,5 @@ for i, task in enumerate(task_order):
     # plt.suptitle('Decoding Accuracy per Task and Variable', y=1.05)
     plt.tight_layout()
     os.makedirs("plots/decoding", exist_ok=True)
-    plt.savefig(f"plots/decoding/acc_{task}.pdf")
+    plt.savefig(f"plots/decoding/acc_{task}.png")
     plt.close()

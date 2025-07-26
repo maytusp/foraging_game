@@ -20,7 +20,7 @@ import supersuit as ss
 from environments.pickup_temporal import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_temporal.train_3net_seed1_just_visualize
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_temporal.train_ablate_3net_inv_seed1
 @dataclass
 class Args:
     seed: int = 1
@@ -34,7 +34,7 @@ class Args:
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 32
+    num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = False
     """Toggle learning rate annealing for policy and value networks"""
@@ -82,16 +82,18 @@ class Args:
     image_size = 3
     N_i = 2
     grid_size = 5
-    max_steps = 20
+    max_steps = 40
     freeze_dur = 6
     fully_visible_score = False
     agent_visible = False
+    ablate_message = True
     mode = "train"
     model_name = f"pop_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
-    
+    if ablate_message:
+        model_name += "_ablate_message"
 
     """train or test (different attribute combinations)"""
     # to be filled in runtime
@@ -102,16 +104,16 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
-    save_dir = f"checkpoints/pickup_temporal_not_used_just_for_visualize_learning/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
 
     if load_pretrained:
-        pretrained_global_step = 665600000
+        pretrained_global_step = 819200000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6/seed1/agent_{a}_step_665600000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6/seed1/agent_{a}_step_819200000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
 
@@ -178,7 +180,8 @@ if __name__ == "__main__":
                         image_size=args.image_size,
                         max_steps=args.max_steps,
                         mode="train",
-                        freeze_dur=args.freeze_dur)
+                        freeze_dur=args.freeze_dur,
+                        ablate_message=args.ablate_message)
     
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -187,7 +190,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=32, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}

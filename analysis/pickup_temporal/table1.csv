@@ -1,0 +1,2 @@
+Model,Self SR (mean ± std),Cross SR (mean ± std),IC (mean ± std),LS (mean ± std)
+pop_ppo_3net_invisible,0.962 ± 0.006,0.975 ± 0.003,0.987 ± 0.006,0.345 ± 0.011

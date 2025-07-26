@@ -35,10 +35,13 @@ class Environment(ParallelEnv):
                                                                                                         mode="train",
                                                                                                         comm_range=1,
                                                                                                         freeze_dur=6,
+                                                                                                        ablate_message=False,
+                                                                                                        num_walls=0,
                                                                                                         ):
         np.random.seed(seed)
         self.mode = mode
         self.use_message = use_message
+        self.ablate_message = ablate_message
         self.agent_visible = agent_visible
         self.message_length = message_length
         self.possible_agents = [i for i in range(num_agents)]
@@ -52,6 +55,7 @@ class Environment(ParallelEnv):
         self.num_channels = 1
         self.identical_item_obs = identical_item_obs
         self.n_words = n_words
+        self.num_walls = num_walls
         self.torch_order = torch_order
         self.truncated = {i:truncated for i in range(num_agents)}
         self.infos = {}
@@ -88,6 +92,7 @@ class Environment(ParallelEnv):
             self.agent_spawn_range = {0:((0, 2), (0, self.grid_size-3)), 1:((self.grid_size-1, 2), (self.grid_size-1, self.grid_size-3))}
         else:
             self.agent_spawn_range = {0:((0, 1), (0, self.grid_size-2)), 1:((self.grid_size-1, 1), (self.grid_size-1, self.grid_size-2))}
+        self.wall_spawn_range = ((self.grid_size // 2, 0), (self.grid_size // 2, self.grid_size-1))        
         self.reset()
         
     
@@ -136,6 +141,13 @@ class Environment(ParallelEnv):
         for food in self.foods:
             self.grid[food.position[0], food.position[1]] = food
 
+
+        # generate walls
+        self.wall_list = []
+        for wall_id in range(self.num_walls):
+            wall_pos = self.random_wall_position()
+            self.wall_list.append(Wall(wall_id, wall_pos))
+            self.grid[wall_pos[0], wall_pos[1]] = self.wall_list[wall_id]
 
         self.collected_foods = []
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
@@ -189,7 +201,9 @@ class Environment(ParallelEnv):
         for food in self.foods:
             if not(food.done):
                 self.grid[food.position[0], food.position[1]] = food
-                
+        for wall in self.wall_list:
+            self.grid[wall.position[0], wall.position[1]] = wall               
+             
     def update_food(self):
         '''
         All agents have to pick up food at the same time step.
@@ -259,6 +273,14 @@ class Environment(ParallelEnv):
             if self.grid[pos[0], pos[1]] is None and self.min_dist(pos, self.prev_food_pos, 2):
                 self.prev_food_pos.append(pos)
                 return pos
+    def random_wall_position(self):
+        min_xy, max_xy = self.wall_spawn_range[0], self.wall_spawn_range[1]
+        min_x, min_y = min_xy[0], min_xy[1]
+        max_x, max_y = max_xy[0], max_xy[1]
+        while True:
+            pos = (random.randint(min_x, max_x), random.randint(min_y, max_y))
+            if self.grid[pos[0], pos[1]] is None:
+                return pos
 
     def l2_dist(self, pos1, pos2):
         pos1 = np.array([pos1[0], pos1[1]])
@@ -291,7 +313,10 @@ class Environment(ParallelEnv):
                 agent_obs[i]['energy'] = np.array([agent.energy])
                 if self.use_message:
                     if self.check_comm_range():
-                        agent_obs[i]['message'] = self.sent_message[i]
+                        if self.ablate_message:
+                            agent_obs[i]['message'] = np.array([0])
+                        else:
+                            agent_obs[i]['message'] = self.sent_message[i]
                     else:
                         agent_obs[i]['message'] = np.array([0])
                         # print(f"agent_obs[i]['message'] {agent_obs[i]['message'].shape}")
@@ -526,6 +551,8 @@ class EnvAgent:
                         else:
                             obs_occupancy = agent_occupancy
                         row.append(obs_occupancy)
+                    elif isinstance(obj, Wall):
+                        row.append(wall_occupancy)
                     else:
                         row.append([0])  # Empty grid
                 else:
@@ -556,6 +583,10 @@ class Food:
         self.reduced_strength = 0
         self.visible = False # item's visibility changes at the observed time
         
+class Wall:
+     def __init__(self, id, position):
+        self.id = id
+        self.position = position
 
 if __name__ == "__main__":
     env = Environment()

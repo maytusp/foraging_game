@@ -105,7 +105,7 @@ if __name__ == "__main__":
     seed = 1
     decoding_mode = "token_decoding" # ["embedding_decoding", "token_decoding"]
 
-    seen_log_file_path = f"../../logs/pickup_rg/{model_name}/{combination_name}/seed{seed}/mode_train/normal/trajectory.pkl"
+    seen_log_file_path = f"../../logs/pickup_rg/{model_name}/{combination_name}/seed{seed}/mode_test/normal/trajectory.pkl"
     unseen_log_file_path = f"../../logs/pickup_rg/{model_name}/{combination_name}/seed{seed}/mode_test/normal/trajectory.pkl"
     
     label_encoder = sklearn.preprocessing.LabelEncoder()

@@ -26,7 +26,7 @@ model_name_map = {
 }
 mode = "test"
 num_networks = 3
-test_conditions = ["normal", "hard"] 
+test_conditions = ["hard"] 
 metrics = ["sr", "length"]
 model_score_dict = {test_cond:{"sr":{}, "length":{}} for test_cond in test_conditions}
 saved_fig_dir = f"plots/message_ablation/"
@@ -99,7 +99,7 @@ for metric_name in ["Success Rate", "Avg. Episode Length"]:
         'axes.titlesize': 18,
         'xtick.labelsize': 20,
         'ytick.labelsize': 20,
-        'legend.fontsize': 14
+        'legend.fontsize': 18
     })
     plt.figure(figsize=(5, 5))
 
@@ -107,8 +107,8 @@ for metric_name in ["Success Rate", "Avg. Episode Length"]:
 
     ax = sns.barplot(
         data=data,
-        x="Model", y="Mean", hue="Condition",
-        palette="Paired", ci=None,
+        x="Model", y="Mean",
+        color="steelblue",  ci=None,
         errorbar=None
     )
 
@@ -135,12 +135,17 @@ for metric_name in ["Success Rate", "Avg. Episode Length"]:
     ax.set_ylabel(metric_name)
     ax.set_xlabel("")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=15)
+    
     if "Success Rate" in metric_name:
-        ax.legend_.remove()
-    else:
+        # Draw chance level
+        chance = 0.5
+        plt.axhline(chance, color='red', linestyle='--', label='Chance')
+        ax.legend(loc='upper right')
+    # else:
+    #     ax.legend_.remove()
 
-        if ax.get_legend() is not None:
-            ax.legend(loc="lower right", title="Eval. Cond.")
+    #     if ax.get_legend() is not None:
+    #         ax.legend(loc="lower right", title="Eval. Cond.")
 
     plt.tight_layout()
     save_path = os.path.join(saved_fig_dir, f"message_ablation_{metric_to_filename[metric_name]}.pdf")

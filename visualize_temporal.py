@@ -63,7 +63,12 @@ def visualize_environment(environment, step):
                 # Display "pick up" message above the food
                 pickup_text = font.render("Pick Up", True, (0, 255, 0))  # Green text
                 screen.blit(pickup_text, (x, y+20))  # Display text slightly above the food
-
+    # Draw wall
+    for wall in environment.wall_list:
+        x, y = wall.position[1] * cell_size, wall.position[0] * cell_size
+           # Draw the rectangle
+        pygame.draw.rect(screen, (255, 0, 0), (x, y, cell_size, cell_size))
+        # screen.blit(, (x, y))
     pygame.display.flip()
 
     frame = pygame.surfarray.array3d(screen)
@@ -87,10 +92,10 @@ if __name__ == "__main__":
     NUM_EPISODES = 20
     HUMAN_PLAY = True
     VISUALIZE = True
-    from environments.pickup_mix import *
+    from environments.pickup_temporal import *
     # from environments.pickup_high_v1 import *
     # env = Environment(agent_visible=False, partner_food_visible=False)
-    env = Environment(image_size=3, grid_size=6, N_i=4, agent_visible=True, use_message=True)
+    env = Environment(image_size=3, grid_size=5, N_i=2, agent_visible=True, use_message=True, num_walls=3)
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
     envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
     clock = pygame.time.Clock()
@@ -125,8 +130,8 @@ if __name__ == "__main__":
             observations, rewards, dones, _, infos = envs.step({"action": agent_actions, "message": agent_messages})
             # print("reward", rewards)
             # print(f"agent0: \n {nonzero_sum_channels(observations[0]['image'])}")
-            print(f"Agent0 obs: \n {observations['image'][0][1]}")
-            print(f"Agent1 obs: \n {observations['image'][1][1]}")
+            print(f"Agent0 obs: \n {observations['image'][0][0]}")
+            print(f"Agent1 obs: \n {observations['image'][1][0]}")
             print(f"Agent0 M: \n {observations['message']}")
             # print(f"Agent1 M: \n {observations['message']}")
             

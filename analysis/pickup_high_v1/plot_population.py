@@ -49,7 +49,7 @@ checkpoints_dict_sp = {
 
 
 # Output directory
-saved_fig_dir = f"plots/population/fc/"
+saved_fig_dir = f"plots/population/fc/msg_len_10"
 os.makedirs(saved_fig_dir, exist_ok=True)
 
 num_networks_list = [2, 3, 6, 9, 12, 15]
@@ -73,7 +73,7 @@ def gather_stats(checkpoints_dict, label):
 
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
-            scores_path = f"../../logs/vary_n_pop/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
+            scores_path = f"../../logs/vary_n_pop/msg_len_10/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
 
             scores = np.load(scores_path)
             avg_sr = compute_avg_sr(scores['sr_mat'])
@@ -129,10 +129,10 @@ print("SP's corr(topsim, size)", corr_sp)
 print("Base's corr(topsim, size)",corr_base)
 
 # Plot all metrics
-plot_metric(base_stats[0], base_stats[1], sp_stats[0], sp_stats[1], 'Language Similarity', 'ls_vs_pop.pdf')
-plot_metric(base_stats[2], base_stats[3], sp_stats[2], sp_stats[3], 'Topographic Similarity', 'topsim_vs_pop.pdf')
-plot_metric(base_stats[4], base_stats[5], sp_stats[4], sp_stats[5], 'Interchangeability', 'ic_vs_pop.pdf')
-plot_metric(base_stats[6], base_stats[7], sp_stats[6], sp_stats[7], 'Success Rate', 'sr_vs_pop.pdf')
+plot_metric(base_stats[0], base_stats[1], sp_stats[0], sp_stats[1], 'Language Similarity', 'ls_vs_pop.png')
+plot_metric(base_stats[2], base_stats[3], sp_stats[2], sp_stats[3], 'Topographic Similarity', 'topsim_vs_pop.png')
+plot_metric(base_stats[4], base_stats[5], sp_stats[4], sp_stats[5], 'Interchangeability', 'ic_vs_pop.png')
+plot_metric(base_stats[6], base_stats[7], sp_stats[6], sp_stats[7], 'Success Rate', 'sr_vs_pop.png')
 
 
 
@@ -199,7 +199,7 @@ plot_metric(base_stats[6], base_stats[7], sp_stats[6], sp_stats[7], 'Success Rat
 # plt.ylabel('Language Similarity')
 # plt.xticks(num_networks_list)
 # plt.tight_layout()
-# plt.savefig(os.path.join(saved_fig_dir, "ls_vs_pop.pdf"))
+# plt.savefig(os.path.join(saved_fig_dir, "ls_vs_pop.png"))
 # plt.close()
 
 # # Plot 2: Topographic Similarity
@@ -210,7 +210,7 @@ plot_metric(base_stats[6], base_stats[7], sp_stats[6], sp_stats[7], 'Success Rat
 # plt.ylabel('Topographic Similarity')
 # plt.xticks(num_networks_list)
 # plt.tight_layout()
-# plt.savefig(os.path.join(saved_fig_dir, "topsim_vs_pop.pdf"))
+# plt.savefig(os.path.join(saved_fig_dir, "topsim_vs_pop.png"))
 # plt.close()
 
 # # Plot 3: Interchangeability
@@ -221,7 +221,7 @@ plot_metric(base_stats[6], base_stats[7], sp_stats[6], sp_stats[7], 'Success Rat
 # plt.ylabel('Interchangeability')
 # plt.xticks(num_networks_list)
 # plt.tight_layout()
-# plt.savefig(os.path.join(saved_fig_dir, "ic_vs_pop.pdf"))
+# plt.savefig(os.path.join(saved_fig_dir, "ic_vs_pop.png"))
 # plt.close()
 
 
@@ -233,7 +233,7 @@ plot_metric(base_stats[6], base_stats[7], sp_stats[6], sp_stats[7], 'Success Rat
 # plt.ylabel('Success Rate')
 # plt.xticks(num_networks_list)
 # plt.tight_layout()
-# plt.savefig(os.path.join(saved_fig_dir, "sr_vs_pop.pdf"))
+# plt.savefig(os.path.join(saved_fig_dir, "sr_vs_pop.png"))
 # plt.close()
 
 # # # Plot Success Rate
