@@ -77,9 +77,9 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         self.reward_scale = 1 # normalize reward
-        self.all_position_list =  [(x, y) for x in range(grid_size) 
+        self.all_position_list =  [[x, y] for x in range(grid_size) 
                             for y in range(grid_size)]
-        self.train_position_list = [(x, y) for x in range(grid_size) 
+        self.train_position_list = [[x, y] for x in range(grid_size) 
                                     for y in range(grid_size) 
                                     if x % 2 == 0 and y % 2 == 0]
         self.test_position_list = [pos for pos in self.all_position_list if pos not in self.train_position_list]
@@ -118,7 +118,10 @@ class Environment(ParallelEnv):
         self.reset()
         
     def reset(self, seed=42, options=None):
-        self.food_positions = random.sample(self.food_position_list, self.N_i) # N_i foods
+        if self.mode == "train":
+            self.food_positions = random.sample(self.food_position_list, self.N_i) # N_i foods
+        else:
+            self.food_positions = self.random_test_food_position() # N_i foods
         self.agent_position_list = [pos for pos in self.all_position_list if pos not in self.food_positions]
         self.agent_positions = random.sample(self.agent_position_list, 2) # 2 agents
         self.curr_steps = 0
@@ -245,6 +248,15 @@ class Environment(ParallelEnv):
             if self.grid[pos[0], pos[1]] is None:
                 return pos
 
+    def random_test_food_position(self):
+        # self.food_position_list, self.N_i
+        while True:
+            pos_list = random.sample(self.food_position_list, self.N_i)
+            item0_pos = np.array(pos_list[0])
+            item1_pos = np.array(pos_list[1])
+            pos_diff_vec = item0_pos - item1_pos
+            if np.linalg.norm(pos_diff_vec) > 1.5: 
+                return pos_list
 
     def l2_dist(self, pos1, pos2):
         pos1 = np.array([pos1[0], pos1[1]])
