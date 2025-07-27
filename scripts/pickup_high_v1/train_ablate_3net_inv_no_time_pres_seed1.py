@@ -182,7 +182,8 @@ if __name__ == "__main__":
                         image_size=args.image_size,
                         max_steps=args.max_steps,
                         mode="train",
-                        ablate_message=args.ablate_message)
+                        ablate_message=args.ablate_message,
+                        time_pressure=args.time_pressure)
     
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
