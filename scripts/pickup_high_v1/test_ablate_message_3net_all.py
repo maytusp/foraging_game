@@ -33,7 +33,7 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = False
+    visualize = True
     save_trajectory = False
     ablate_type = "zero" # zero, noise
     fully_visible_score = False
@@ -62,10 +62,10 @@ class Args:
     # selected_networks = network_pairs.split("-")
     
     model2step = {
-                "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10" : 332800000,
+                # "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10" : 332800000,
                 "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms10":358400000,
-                "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms10":358400000,
-                "pop_ppo_3net_ablate_message/grid5_img5_ni2_nw4_ms10":358400000,
+                # "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms10":358400000,
+                # "pop_ppo_3net_ablate_message/grid5_img5_ni2_nw4_ms10":358400000,
                 }
     
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                         args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
                         args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
                         args.saved_dir = f"logs/ablate_message_during_train/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
-
+                        args.video_save_dir = args.saved_dir + "/videos/"
                         if args.test_moderate_score:
                             args.saved_dir = os.path.join(args.saved_dir, "hard")
                         else:
@@ -310,6 +310,7 @@ if __name__ == "__main__":
                                 ep_step+=1
                             ep_length = infos[0]['episode']['l']
                             returns += infos[0]['episode']['r'] # torch.sum(reward).cpu()
+                            log_bump = infos[0]['episode']['total_bump'] # count number of bumps in the episode
                             collected_items += infos[0]['episode']['success']
                             running_length += ep_length
                             if infos[0]['episode']['success']:
@@ -343,7 +344,9 @@ if __name__ == "__main__":
                                     "log_actions": log_actions,
                                     "log_s_messages": log_s_messages,
                                     "log_rewards": log_rewards,
-                                    "who_see_target": log_who_see_target
+                                    "who_see_target": log_who_see_target,
+                                    "log_bump" : log_bump,
+                                    "log_success" : infos[0]['episode']['success'],
                                 }
 
                             if not(args.save_trajectory):

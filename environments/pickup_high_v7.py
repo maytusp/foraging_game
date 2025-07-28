@@ -255,7 +255,7 @@ class Environment(ParallelEnv):
             item0_pos = np.array(pos_list[0])
             item1_pos = np.array(pos_list[1])
             pos_diff_vec = item0_pos - item1_pos
-            if np.linalg.norm(pos_diff_vec) > 1.5: 
+            if abs(pos_diff_vec[0]) > 1 or abs(pos_diff_vec[1]) > 1: # make sure foods are far away enough
                 return pos_list
 
     def l2_dist(self, pos1, pos2):

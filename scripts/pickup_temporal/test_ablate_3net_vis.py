@@ -20,8 +20,6 @@ from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
 
-
-
 @dataclass
 class Args:
 
@@ -34,7 +32,7 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = False
+    ablate_message = True
     ablate_type = "zero" # zero, noise
     fully_visible_score = False
     identical_item_obs = False
@@ -54,15 +52,15 @@ class Args:
     """number of values"""
     N_i = 2
     """number of items"""
-    grid_size = 8
+    grid_size = 5
     freeze_dur = 6
     max_steps = 40
     """grid size"""
     mode = "train"
-    agent_visible = False
-    model_name = "pop_ppo_3net_invisible"
+    agent_visible = True
+    model_name = "pop_ppo_3net_ablate_message"
     num_networks = 3
-    model_step = "1792000000"
+    model_step = "524800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
 
 

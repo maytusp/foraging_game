@@ -39,12 +39,14 @@ class Environment(ParallelEnv):
                                                                                                         use_unseen_loc=False, 
                                                                                                         time_pressure=True,
                                                                                                         ablate_message=False,
+                                                                                                        unidirectional=False,
                                                                                                         test_moderate_score=False,
                                                                                                         num_walls=0,
                                                                                                         ):
         np.random.seed(seed)
         self.time_pressure = time_pressure
         self.ablate_message = ablate_message
+        self.unidirectional = unidirectional # Only first agent can send message.
         self.test_moderate_score = test_moderate_score
         self.mode = mode
         self.use_message = use_message
@@ -170,7 +172,7 @@ class Environment(ParallelEnv):
 
         self.collected_foods = []
         self.sent_message = {i:np.zeros((1,)).astype(np.int64) for i in range(self.num_agents)} # Message that each agent sends, each agent receive N-1 agents' messages
-
+        self.total_bump = 0
         return self.observe(), self.infos
 
     def generate_food_attribute(self):
@@ -318,6 +320,10 @@ class Environment(ParallelEnv):
                 if self.use_message: #TODO this is for two agents seeing each other message but not seeing its message
                     if self.ablate_message:
                         agent_obs[i]['message'] = np.array([0])
+                    elif self.unidirectional and i==0:
+                        # To introduce unidirectional communication
+                        # agent0 cannot receive any message from its partner
+                        agent_obs[i]['message'] = np.array([0])
                     else:
                         agent_obs[i]['message'] = self.sent_message[i]
                     
@@ -355,6 +361,7 @@ class Environment(ParallelEnv):
 
     def step(self, agent_action_dict, int_action=True):
         success = 0
+        bump = 0
         self.curr_steps+=1
         # Update food state: Clear all agents if not carried
         self.update_food()
@@ -406,6 +413,8 @@ class Environment(ParallelEnv):
                     # agent.energy -= 1
                     # self.rewards[agent.id] -= 0.1
                 else:
+                    if isinstance(self.grid[new_agent_position[0], new_agent_position[1]], EnvAgent):
+                        bump = 1
                     self.failed_action(agent)
 
             elif action == "pick_up":
@@ -469,7 +478,7 @@ class Environment(ParallelEnv):
 
         # normalize reward
         self.norm_rewards = self.normalize_reward(self.rewards)
-
+        self.total_bump += bump
         for agent in self.agent_maps:
             self.cumulative_rewards[agent.id] += self.rewards[agent.id]
             self.episode_lengths[agent.id] += 1
@@ -483,6 +492,7 @@ class Environment(ParallelEnv):
                                 "target_id": self.target_food_id,
                                 "food_scores": {f.id: f.energy_score for f in self.foods},
                                 "score_visible_to_agent" : self.score_visible_to_agent,
+                                "total_bump": self.total_bump,
                                 },
                             }
     
