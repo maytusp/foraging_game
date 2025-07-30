@@ -45,10 +45,10 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 5000
-    n_words = 16
+    total_episodes: int = 1000
+    n_words = 4
     """vocab size"""
-    image_size = 3
+    image_size = 5
     """number of observation grid"""
     N_att = 2
     """number of attributes"""
@@ -60,9 +60,9 @@ class Args:
     max_steps=10
     """grid size"""
     mode = "test"
-    agent_visible = False
-    model_name = "dec_ppo_invisible"
-    model_step = "307200000"
+    agent_visible = True
+    model_name = "dec_ppo"
+    model_step = "358400000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_high_v7/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_high_v7/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"

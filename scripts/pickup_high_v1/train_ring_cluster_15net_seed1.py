@@ -1,5 +1,6 @@
-# Created: 6 Feb 2024
-# The code is for training agents with separated networks during training and execution (no parameter sharing)
+# This is for circular network with cluster
+# 15 agents have 5 clusters, each contains 3 agents.
+#  2 agents in the cluster are connectged to other clusters.
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
 import os
@@ -18,10 +19,10 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_high_v7 import *
+from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v7.train_pop_3net_seed1
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.train_ring_cluster_15net_seed1
 @dataclass
 class Args:
     seed: int = 1
@@ -29,13 +30,13 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 64
+    num_steps: int = 16
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -63,7 +64,12 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 15
+    possible_pairs = [(3, 4), (12, 13), (0, 2), 
+                    (8, 9), (9, 11), (0, 14), (13, 14), 
+                    (6, 8), (4, 5), (5, 6), (0, 1), (9, 10), 
+                    (1, 2), (10, 11), (6, 7), (3, 5), 
+                    (12, 14), (2, 3), (11, 12), (7, 8)]
     reset_iteration: int = 1
     self_play_option: bool = False
     
@@ -87,7 +93,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = f"pop_ppo_{num_networks}net"
+    model_name = "ccnet_ppo_15net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -102,17 +108,19 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/pickup_high_v7/{model_name}/{train_combination_name}/seed{seed}/"
+    save_dir = f"checkpoints/pickup_high_v1/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = True
+    
     if load_pretrained:
-        pretrained_global_step = 332800000
+        pretrained_global_step = 870400000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_high_v1/pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10/seed1/agent_{a}_step_332800000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_high_v1/ring_ppo_15net_invisible/grid5_img3_ni2_nw4_ms10/seed1/agent_{a}_step_870400000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
+
     save_frequency = int(4e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
@@ -124,7 +132,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_high_v7"
+    wandb_project_name: str = "pickup_high_v1"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -184,7 +192,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=32, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}
@@ -255,7 +263,7 @@ if __name__ == "__main__":
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                 )
-            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
+            selected_networks = random.sample(args.possible_pairs, 1)[0]
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())

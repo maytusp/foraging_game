@@ -17,11 +17,16 @@ def load_score(filename):
                 continue
             scores[x[0].strip()] = float(x[1].strip())
     return scores
-
+# 652800000
+# 1792000000
 model_name_map = {
-                 "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000": "0",
-                  "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_460800000": "1",
-                  "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_460800000": "2",
+                #  "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000": "0",
+                #   "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_460800000": "1",
+                #   "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_460800000": "2",
+
+                "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6_1792000000": "0",
+                  "pop_ppo_3net_invisible_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_652800000": "1",
+                  "pop_ppo_3net_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_652800000": "2",          
                 }
 mode = "train"
 num_networks = 3

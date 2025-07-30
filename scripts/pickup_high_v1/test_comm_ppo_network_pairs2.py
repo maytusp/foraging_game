@@ -61,7 +61,7 @@ class Args:
     """grid size"""
     mode = "test"
     agent_visible = False
-    model_name = "wsk4p02_ppo_15net_invisible"
+    model_name = "optk2e30_ppo_15net_invisible"
     num_networks = 15
     
     model_step = "665600000"

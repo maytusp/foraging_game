@@ -1,5 +1,9 @@
 import random
 from collections import deque
+import numpy as np
+import math
+from itertools import combinations
+import random
 
 def compute_all_pairs_shortest_paths(num_nodes, edges):
     """
@@ -59,11 +63,8 @@ def watts_strogatz_pairs(num_nodes, k=4, p=0.2):
 
 def optimized_small_world(num_nodes, k=None, max_edges=None):
     """
-    Greedy small-world optimization: minimize path length under cost constraint.
+    Greedy small-world optimization: reduce path length under cost constraint.
     """
-    import math
-    from itertools import combinations
-    import random
     
     # Initial ring lattice
     edges = [[i, (i+j) % num_nodes] for i in range(num_nodes) for j in range(1, k//2 + 1)]
@@ -98,6 +99,18 @@ def optimized_small_world(num_nodes, k=None, max_edges=None):
     
     return edges
 
+def get_adjacency_matrix(connected_nodes, num_nodes):
+    '''
+    Input: A list of connected nodes in the graph
+    Output: Adjacency Matrix
+    '''
+    adj_matrix = np.zeros((num_nodes, num_nodes), dtype=int)
+
+    for pairs in connected_nodes:
+        i, j = pairs
+        adj_matrix[i, j] = 1
+        adj_matrix[j, i] = 1
+    return adj_matrix
 
 # possible_pairs_ws = watts_strogatz_pairs(15, k=4, p=0.2)
 possible_pairs_opt = optimized_small_world(15, k=2, max_edges=30)
@@ -111,3 +124,10 @@ for row in distances:
 
 WS_PAIRS = [[0, 1], [0, 2], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 7], [6, 7], [7, 8], [8, 9], [8, 10], [9, 10], [10, 12], [11, 12], [11, 13], [12, 13], [14, 0], [14, 1], [5, 13], [6, 7], [7, 10], [9, 6], [10, 8], [12, 5], [13, 6], [13, 5]]
 OPT_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 0], [0, 7], [0, 8], [1, 8], [1, 9], [2, 9], [2, 10], [3, 10], [3, 11], [4, 11], [4, 12], [5, 12], [5, 13], [6, 13], [6, 14], [7, 14]]
+
+WS_PAIRS = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS])
+OPT_PAIRS = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])
+print(f"Watt-Strogatz: {WS_PAIRS}")
+print(f"Greedy: {OPT_PAIRS}")
+# print(f"Watt-Strogatz: \n {get_adjacency_matrix(WS_PAIRS, 15)}")
+# print(f"Greedy: \n {get_adjacency_matrix(OPT_PAIRS, 15)}")

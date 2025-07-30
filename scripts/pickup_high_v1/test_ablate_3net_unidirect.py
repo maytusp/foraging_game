@@ -35,7 +35,9 @@ class Args:
 
     visualize = False
     save_trajectory = True
+    ablate_message = False
     ablate_type = "zero" # zero, noise
+    unidirectional = True
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -47,10 +49,6 @@ class Args:
     """vocab size"""
     image_size = 3
     """number of observation grid"""
-    N_att = 2
-    """number of attributes"""
-    N_val = 10
-    """number of values"""
     N_i = 2
     """number of items"""
     grid_size = 5
@@ -62,10 +60,7 @@ class Args:
     # selected_networks = network_pairs.split("-")
     
     model2step = {
-                "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10" : 332800000,
-                # "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms10":358400000,
-                "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms10":358400000,
-                # "pop_ppo_3net_ablate_message/grid5_img5_ni2_nw4_ms10":358400000,
+                "pop_ppo_3net_invisible_unidirectional/grid5_img3_ni2_nw4_ms10" : 460800000,
                 }
     
 
@@ -89,14 +84,10 @@ if __name__ == "__main__":
             else:
                 args.agent_visible  = True
 
-            if "_ablate_" in model_name:
-                args.ablate_message = True
-            else:
-                args.ablate_message = False
             for i in range(args.num_networks):
                 for j in range(i+1):
                     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-                    for seed in [1,2,3]:
+                    for seed in [1]:
                         args.seed = seed
                         args.n_words = 4
                         # args.combination_name = f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}_nw{args.n_words}_ms{args.max_steps}"
@@ -105,7 +96,7 @@ if __name__ == "__main__":
                         selected_networks = network_pairs.split("-")
                         args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
                         args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-                        args.saved_dir = f"logs/ablate_message_during_train/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+                        args.saved_dir = f"logs/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                         args.video_save_dir = args.saved_dir + "/videos/"
                         if args.test_moderate_score:
                             args.saved_dir = os.path.join(args.saved_dir, "hard")
@@ -135,7 +126,8 @@ if __name__ == "__main__":
                                             image_size=args.image_size,
                                             max_steps=args.max_steps,
                                             mode=args.mode,
-                                            test_moderate_score=args.test_moderate_score)
+                                            test_moderate_score=args.test_moderate_score,
+                                            unidirectional=args.unidirectional)
 
                         num_channels = env.num_channels
                         num_agents = len(env.possible_agents)

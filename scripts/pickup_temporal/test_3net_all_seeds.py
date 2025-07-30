@@ -34,7 +34,7 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = False
+    ablate_message = True
     ablate_type = "zero" # zero, noise
     fully_visible_score = False
     identical_item_obs = False

@@ -13,7 +13,7 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v7.test_vary_population_3_6
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v7.test_pop_ppo_3net
 import supersuit as ss
 from environments.pickup_high_v7 import *
 from utils.process_data import *
@@ -33,8 +33,8 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = False
-    save_trajectory = True
+    visualize = True
+    save_trajectory = False
     ablate_message = False
     ablate_type = "noise" # zero, noise
     agent_visible = True
@@ -63,7 +63,7 @@ class Args:
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    num_nets_to_model_step = {3: 332800000}
+    num_nets_to_model_step = {3: 563200000}
     
 
 if __name__ == "__main__":
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
         args.model_name = f"pop_ppo_{num_networks}net_invisible"
-        for seed in [1,2,3]:
+        for seed in [1]:
             for i in range(args.num_networks):
                 for j in range(i+1):
                     args.seed = seed
@@ -83,9 +83,10 @@ if __name__ == "__main__":
                     # Update the network pair and dependent paths/parameters
                     network_pairs = f"{i}-{j}"
                     selected_networks = network_pairs.split("-")
-                    args.ckpt_path = f"checkpoints/pickup_high_v7/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
-                    args.ckpt_path2 = f"checkpoints/pickup_high_v7/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
+                    args.ckpt_path = f"checkpoints/pickup_high_v7_from_scratch/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
+                    args.ckpt_path2 = f"checkpoints/pickup_high_v7_from_scratch/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
                     args.saved_dir = f"logs/pickup_high_v7/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+                    args.video_save_dir = args.saved_dir + "/videos/"
                     if args.ablate_message:
                         args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
                     else:

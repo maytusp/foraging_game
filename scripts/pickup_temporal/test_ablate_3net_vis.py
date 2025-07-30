@@ -52,7 +52,7 @@ class Args:
     """number of values"""
     N_i = 2
     """number of items"""
-    grid_size = 5
+    grid_size = 8
     freeze_dur = 6
     max_steps = 40
     """grid size"""
@@ -60,7 +60,7 @@ class Args:
     agent_visible = True
     model_name = "pop_ppo_3net_ablate_message"
     num_networks = 3
-    model_step = "524800000"
+    model_step = "652800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
 
 
