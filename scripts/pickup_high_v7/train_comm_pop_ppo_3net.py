@@ -20,10 +20,10 @@ import supersuit as ss
 from environments.pickup_high_v7 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v7.train_comm_pop_ppo_3net
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -78,15 +78,15 @@ class Args:
 
     log_every = 32
 
-    n_words = 16
-    image_size = 3
+    n_words = 4
+    image_size = 5
     N_i = 2
     grid_size = 5
     max_steps = 10
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "pop_ppo_24net"
+    model_name = "pop_ppo_3net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -106,9 +106,10 @@ class Args:
     load_pretrained = True
     
     if load_pretrained:
-        pretrained_global_step = 51200000
+        pretrained_global_step = 0
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
+        # Load from no-comm models because it is difficult to train if we start from scratch
         ckpt_path = {
                     a: f"checkpoints/pickup_high_v7/dec_ppo_ablate_message_visible_score/grid5_img5_ni2_nw4_ms10/seed1/agent_0_step_307200000.pt" for a in range(num_networks)
                     }
