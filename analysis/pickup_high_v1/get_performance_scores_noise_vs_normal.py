@@ -19,11 +19,12 @@ def load_score(filename):
     return scores
 
 model_name_map = {
-                "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10_332800000"
+                "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms10_358400000" : "Time Pressure",
+                "pop_ppo_3net_invisible_ablate_message_no_time_pressure/grid5_img3_ni2_nw4_ms10_204800000" : "No Time Pressure",
                 }
 mode = "test"
 num_networks = 3
-test_conditions = ["normal", "zero"] 
+test_conditions = ["hard"] 
 metrics = ["sr", "length"]
 model_score_dict = {test_cond:{"sr":{}, "length":{}} for test_cond in test_conditions}
 saved_fig_dir = f"plots/message_ablation/"
@@ -35,7 +36,7 @@ for test_condition in test_conditions:
         print(f"{model_name}/{combination_name}")
         sr_list = [] # sucess rates of different seeds and pairs
         l_list = [] # episode lengths of different seeds and pairs
-        for seed in [1,2,3]:
+        for seed in [1]:
             network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
             # network_pairs = ["0-1"]
             score_dict = {}
@@ -46,7 +47,7 @@ for test_condition in test_conditions:
                 row, col = int(row), int(col)
                 print(f"loading network pair {pair}")
                 
-                score_dict[pair] = load_score(f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{test_condition}/score.txt")
+                score_dict[pair] = load_score(f"../../logs/ablate_message_during_train/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{test_condition}/score.txt")
                 sr_list.append(score_dict[pair]["Success Rate"])
                 l_list.append(score_dict[pair]["Average Success Length"])
         model_score_dict[test_condition]["sr"][setting_name] = sr_list
@@ -56,12 +57,12 @@ for test_condition in test_conditions:
 # PLOT HERE
 # Prepare data for plotting
 plot_data = {
-    "condition": [], "sr": [], "length": []
+    "Model":[], "condition": [], "sr": [], "length": []
 }
 
 
-for model_key in model_name_map:
-
+for model_key, label in model_name_map.items():
+    plot_data["Model"].append(label)
     for test_condition in test_conditions:
         plot_data["condition"].append(test_condition)
         for metric in metrics:
@@ -78,7 +79,7 @@ for model_key in model_name_map:
 
             # report_score = f"{mean} ± {std}"
             # print(report_score)
-            plot_data[metric].append(f"{mean} ± {std}")
+            plot_data[metric].append(f"{mean:.3f} ± {std:.2f}")
 print(plot_data)
 df = pd.DataFrame(plot_data)
 print(df)

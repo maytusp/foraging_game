@@ -124,10 +124,14 @@ for row in distances:
 
 WS_PAIRS = [[0, 1], [0, 2], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 7], [6, 7], [7, 8], [8, 9], [8, 10], [9, 10], [10, 12], [11, 12], [11, 13], [12, 13], [14, 0], [14, 1], [5, 13], [6, 7], [7, 10], [9, 6], [10, 8], [12, 5], [13, 6], [13, 5]]
 OPT_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 0], [0, 7], [0, 8], [1, 8], [1, 9], [2, 9], [2, 10], [3, 10], [3, 11], [4, 11], [4, 12], [5, 12], [5, 13], [6, 13], [6, 14], [7, 14]]
-
-WS_PAIRS = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS])
-OPT_PAIRS = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])
-print(f"Watt-Strogatz: {WS_PAIRS}")
-print(f"Greedy: {OPT_PAIRS}")
+CC_PAIRS =  [(3, 4), (12, 13), (0, 2), 
+            (8, 9), (9, 11), (0, 14), (13, 14), 
+            (6, 8), (4, 5), (5, 6), (0, 1), (9, 10), 
+            (1, 2), (10, 11), (6, 7), (3, 5), 
+            (12, 14), (2, 3), (11, 12), (7, 8)] # Circular Clique Network: Follows R4
+WS_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS])
+OPT_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])
+# print(f"Watt-Strogatz: {WS_PAIRS}")
+# print(f"Greedy: {OPT_PAIRS}")
 # print(f"Watt-Strogatz: \n {get_adjacency_matrix(WS_PAIRS, 15)}")
 # print(f"Greedy: \n {get_adjacency_matrix(OPT_PAIRS, 15)}")

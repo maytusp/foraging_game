@@ -79,11 +79,23 @@ class Environment(ParallelEnv):
         self.reward_scale = 1 # normalize reward
         self.all_position_list =  [[x, y] for x in range(grid_size) 
                             for y in range(grid_size)]
-        self.train_position_list = [[x, y] for x in range(grid_size) 
-                                    for y in range(grid_size) 
-                                    if x % 2 == 0 and y % 2 == 0]
-        self.test_position_list = [pos for pos in self.all_position_list if pos not in self.train_position_list]
 
+        self.train_position_list = [[0, 3], [0, 2], [0, 0], 
+                                    [2, 0], [2, 3], [3, 2], 
+                                    [1, 4], [0, 1], [4, 0], 
+                                    [3, 4], [4, 4], [3, 0], 
+                                    [1, 3], [2, 1], [1, 1], 
+                                    [4, 3], [4, 1]]
+
+        self.test_position_list =  [[0, 4], [1, 0], [1, 2], [2, 2], [2, 4], [3, 1], [3, 3], [4, 2]]
+
+        # These positions are systematically selected not completely random.
+        # It might cause overfitting.
+        # self.train_position_list = [[x, y] for x in range(grid_size) 
+        #                             for y in range(grid_size) 
+        #                             if x % 2 == 0 and y % 2 == 0]
+        # self.test_position_list = [pos for pos in self.all_position_list if pos not in self.train_position_list]
+    
         if mode == "train":
             self.score_unit = 5
             self.start_steps = 0
@@ -118,10 +130,7 @@ class Environment(ParallelEnv):
         self.reset()
         
     def reset(self, seed=42, options=None):
-        if self.mode == "train":
-            self.food_positions = random.sample(self.food_position_list, self.N_i) # N_i foods
-        else:
-            self.food_positions = self.random_test_food_position() # N_i foods
+        self.food_positions = self.random_test_food_position() # N_i foods
         self.agent_position_list = [pos for pos in self.all_position_list if pos not in self.food_positions]
         self.agent_positions = random.sample(self.agent_position_list, 2) # 2 agents
         self.curr_steps = 0

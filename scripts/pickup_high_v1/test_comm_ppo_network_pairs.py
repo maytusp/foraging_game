@@ -18,7 +18,7 @@ import supersuit as ss
 from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-
+# python -m scripts.pickup_high_v1.test_comm_ppo_network_pairs
 
 
 
@@ -61,10 +61,10 @@ class Args:
     """grid size"""
     mode = "test"
     agent_visible = False
-    model_name = "wsk4p02_ppo_15net_invisible"
+    model_name = "ccnet_ppo_15net_invisible"
     num_networks = 15
     
-    model_step = "665600000"
+    model_step = "1126400000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 if __name__ == "__main__":

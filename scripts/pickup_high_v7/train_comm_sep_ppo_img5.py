@@ -90,14 +90,12 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     save_dir = f"checkpoints/pickup_high_v7/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
+    load_pretrained = False
     if load_pretrained:
         pretrained_global_step = 153600000
         learning_rate = 2e-4
     visualize_loss = True
     ckpt_path = {
-                0:f"checkpoints/pickup_high_v1/dec_ppo/grid5_img5_ni2_nw4_ms10/seed1/agent_0_step_153600000.pt", 
-                1:f"checkpoints/pickup_high_v1/dec_ppo/grid5_img5_ni2_nw4_ms10/seed1/agent_1_step_153600000.pt"
                 }
     save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]

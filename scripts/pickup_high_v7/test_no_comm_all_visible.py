@@ -18,7 +18,7 @@ import supersuit as ss
 from environments.pickup_high_v7 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# python -m scripts.pickup_high_v7.test_comm_ppo_separate
+# python -m scripts.pickup_high_v7.test_no_comm_all_visible
 
 
 
@@ -35,10 +35,10 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = False
+    ablate_message = True
     ablate_type = "zero" # zero, noise
-    agent_visible = False
-    fully_visible_score = False
+    agent_visible = True
+    fully_visible_score = True
     identical_item_obs = False
     zero_memory = False
     memory_transfer = False
@@ -60,14 +60,13 @@ class Args:
     max_steps=10
     """grid size"""
     mode = "train"
-    model_name = "dec_ppo_invisible"
-    model_step = "998400000"
+    agent_visible = True
+    model_name = "dec_ppo_ablate_message_visible_score"
+    model_step = "25600000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_high_v7/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_high_v7/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"
     saved_dir = f"logs/pickup_high_v7/{model_name}/{combination_name}_{model_step}/seed{seed}/mode_{mode}"
-    video_save_dir = saved_dir + "/videos/"
-
     if ablate_message:
         saved_dir = os.path.join(saved_dir, ablate_type)
     else:
@@ -209,14 +208,6 @@ if __name__ == "__main__":
                 frames.append(frame.transpose((1, 0, 2)))
 
             with torch.no_grad():
-                if args.ablate_message:
-                    if args.ablate_type == "zero":
-                        next_r_messages = torch.zeros_like(next_r_messages).to(device)
-                    elif args.ablate_type == "noise":
-                        next_r_messages = torch.randint(0, 10, next_r_messages.shape).to(device)
-                    else:
-                        raise Exception("only zero and noise are allowed")
-
                 ######### Logging #################
                 if args.save_trajectory:
                     log_obs[ep_step] = next_obs
