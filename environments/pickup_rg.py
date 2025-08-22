@@ -69,7 +69,6 @@ class Environment(ParallelEnv):
         self.observation_spaces = spaces.Dict({i: self.single_observation_space for i in range(num_agents)})
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
-        self.reward_scale = 1 # normalize reward
         if mode == "train":
             self.score_unit = 5
             self.start_steps = 0
@@ -259,9 +258,12 @@ class Environment(ParallelEnv):
             agent_obs = {i:{} for i in range(self.num_agents)}
             for i, agent in enumerate(self.agent_maps):
                 if self.cue_step:
-                    image = np.ones_like(agent.observe(self)) * 100
+                    image = np.ones_like(agent.observe(self)) * 0
                 else:
                     image = agent.observe(self)
+                    # Sanity check: agents see their items' scores
+                    # if np.max(image[:,:,1]) == 0: # image (W,H,C)
+                    #     print("ERROR: Agents do not see the score")
 
                 if self.torch_order:
                     image = np.transpose(image, (2,0,1))
@@ -291,11 +293,6 @@ class Environment(ParallelEnv):
         return received_message
 
 
-    def normalize_reward(self, reward):
-        norm_reward = {}
-        for key, item in reward.items():
-            norm_reward[key] = item / self.reward_scale
-        return norm_reward
 
     def failed_action(self, agent):
         pass
@@ -304,9 +301,10 @@ class Environment(ParallelEnv):
         success = 0
         episode_successs = True
         self.curr_steps+=1
+        
         if self.curr_steps == 1:
             self.agent_obs = self.observe()
-        elif self.curr_steps == self.max_steps - 1: # Give visual cue to make decision in the step before the last step
+        elif self.curr_steps == self.max_steps - 1: # Give visual cue to make decision
             self.cue_step = True
             self.agent_obs = self.observe()
 
@@ -341,6 +339,7 @@ class Environment(ParallelEnv):
         # Reward if food has highest energy among others
         # Punishment otherwise
         if self.curr_steps == self.max_steps:
+            # print(f"final step {self.curr_steps} obs {self.agent_obs}")
             self.pickup_agent_id = self.score_visible_to_agent[self.target_food_id]
             self.idle_agent_id = {0:1, 1:0}[self.pickup_agent_id]
             self.dones = {i:True for i in range(len(self.possible_agents))}
@@ -349,20 +348,20 @@ class Environment(ParallelEnv):
                 (agent, action) = actions[action_key]
 
                 # failed action
-                if action == "idle":
-                    episode_successs = False
-                elif agent.id == self.pickup_agent_id and action != "pick_up":
+                # if action == "idle":
+                #     episode_successs = False
+                if agent.id == self.pickup_agent_id and action != "pick_up":
                     episode_successs = False
                 elif agent.id == self.idle_agent_id and action != "not_pick_up":
                     episode_successs = False
-        else:
-            for action_key in actions.keys():
-                (agent, action) = actions[action_key]
+        # else:
+        #     for action_key in actions.keys():
+        #         (agent, action) = actions[action_key]
 
-                if action != "idle":
-                    episode_successs = False
-                    self.dones = {i:True for i in range(len(self.possible_agents))}
-                    break
+        #         if action != "idle":
+        #             episode_successs = False
+        #             self.dones = {i:True for i in range(len(self.possible_agents))}
+        #             break
 
                     
         if self.dones[0]:
@@ -371,9 +370,6 @@ class Environment(ParallelEnv):
                     self.rewards[agent.id] += 1
                 else:
                     self.rewards[agent.id] -= 1
-
-        # normalize reward
-        self.norm_rewards = self.normalize_reward(self.rewards)
 
         for agent in self.agent_maps:
             self.cumulative_rewards[agent.id] += self.rewards[agent.id]
@@ -391,7 +387,7 @@ class Environment(ParallelEnv):
                                 },
                             }
     
-        return self.agent_obs, self.norm_rewards, self.dones, self.truncated, self.infos
+        return self.agent_obs, self.rewards, self.dones, self.truncated, self.infos
 # Original Code: Non-vectorise
 # # Define the classes
 class EnvAgent:

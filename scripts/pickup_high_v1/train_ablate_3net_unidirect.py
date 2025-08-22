@@ -21,10 +21,10 @@ import supersuit as ss
 from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.train_ablate_3net_unidirect_seed1
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.train_ablate_3net_unidirect
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"

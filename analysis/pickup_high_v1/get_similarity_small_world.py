@@ -171,25 +171,36 @@ def average_score_by_distance(score_mat, dis_mat):
         np.ndarray: 1D array where element i is the average score for pairs at distance i+1.
     """
     max_distance = np.max(dis_mat)
-    avg_score = np.zeros(max_distance)
 
+
+    num_seeds = score_mat.shape[0]
+    scores = {d:[] for d in range(1, max_distance + 1)}
+    avg_scores = np.zeros((num_seeds, max_distance)) # avg_score across pairs with the same distance within one seed
     for d in range(1, max_distance + 1):
-        # Find all pairs at distance d (excluding self-pairs)
-        idx = np.where(dis_mat == d)
-        pairs = [(i, j) for i, j in zip(*idx) if i < j]
-        if pairs:
-            sims = [score_mat[i, j] for i, j in pairs]
-            avg_score[d - 1] = np.mean(sims)
-        else:
-            avg_score[d - 1] = np.nan  # No pairs at this distance
+        for s in range(num_seeds):
+            # Find all pairs at distance d (excluding self-pairs)
+            idx = np.where(dis_mat == d)
+            pairs = [(i, j) for i, j in zip(*idx) if i < j]
+            if pairs:
+                sims = [score_mat[s, i, j] for i, j in pairs]
+                scores[d] += sims
+            else:
+                scores[d] = np.nan  # No pairs at this distance
+            avg_scores[s, d-1] = np.mean(sims) # array starts from idx 0 to D-1
 
-    return avg_score
+    final_mean = np.mean(avg_scores, axis=0)
+    final_std = np.std(avg_scores, axis=0)
+
+
+    return list(final_mean), list(final_std)
+
+    
 
 if __name__ == "__main__":
     checkpoints_dict = {
-        "wsk4p02_ppo_15net_invisible": {'seed1': 665600000, 'seed2': 665600000, 'seed3':665600000},
-        "optk2e30_ppo_15net_invisible": {'seed1': 665600000, 'seed2': 665600000, 'seed3':665600000},
-        "ccnet_ppo_15net_invisible" : {'seed1': 1126400000, 'seed2': 1126400000, 'seed3':1126400000},
+        "wsk4p02_ppo_15net_invisible": {'seed1': 665600000, 'seed2': 819200000, 'seed3':819200000},
+        "optk2e30_ppo_15net_invisible": {'seed1': 665600000, 'seed2': 819200000, 'seed3':819200000},
+        "ccnet_ppo_15net_invisible" : {'seed1': 1126400000, 'seed2': 819200000, 'seed3':819200000},
         }
     connected_dict = {"wsk4p02_ppo_15net_invisible": [[0, 1], [0, 2], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 7], [6, 7], [7, 8], [8, 9], [8, 10], [9, 10], [10, 12], [11, 12], [11, 13], [12, 13], [14, 0], [14, 1], [5, 13], [6, 7], [7, 10], [9, 6], [10, 8], [12, 5], [13, 6], [13, 5]],
                      "optk2e30_ppo_15net_invisible": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 0], [0, 7], [0, 8], [1, 8], [1, 9], [2, 9], [2, 10], [3, 10], [3, 11], [4, 11], [4, 12], [5, 12], [5, 13], [6, 13], [6, 14], [7, 14]],
@@ -199,8 +210,9 @@ if __name__ == "__main__":
                                                     (1, 2), (10, 11), (6, 7), (3, 5), 
                                                     (12, 14), (2, 3), (11, 12), (7, 8)],
                     }
-    SEEDS = [1]
-
+    mean_std_by_model = {model_name : {"mean_ls":[], "std_ls":[], "mean_sr":[], "std_sr":[]} for model_name in checkpoints_dict.keys()}
+    SEEDS = [1, 2,3]
+    num_seed = len(SEEDS)
     for model_name in checkpoints_dict.keys():
         print(f"MODEL NAME: {model_name}")
         # This is to be changed based on the connectivity metric of small world network
@@ -216,9 +228,9 @@ if __name__ == "__main__":
         # Convert back to list if needed
         CONNECTIVITY = all_pairs
         for num_networks in [15]:
-            avg_similarity_mat = np.zeros((num_networks,num_networks))
-            avg_sr_mat = np.zeros((num_networks,num_networks))
-            for seed in SEEDS:
+            all_seed_ls_mat = np.zeros((num_seed, num_networks,num_networks))
+            all_seed_sr_mat = np.zeros((num_seed, num_networks,num_networks))
+            for s_idx, seed in enumerate(SEEDS):
                 
                 ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
                 combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
@@ -261,38 +273,39 @@ if __name__ == "__main__":
                     
 
                 ic = np.mean(ic_numerator) / np.mean(ic_denominator)
-                similarity_mat, avg_sim = get_similarity(message_data, num_networks, CONNECTIVITY)
-                # print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
-                # print(f"Interchangeability: {ic}")
-
-                
-                # avg_topsim = get_topsim(message_data, attribute_data, num_networks)
-                # print(f"avg topsim = {avg_topsim}")
-
+                ls_mat, avg_sim = get_similarity(message_data, num_networks, CONNECTIVITY)
                 
                 # Save the variables
                 np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), 
-                                        similarity_mat=similarity_mat, 
+                                        ls_mat=ls_mat, 
                                         avg_sim=avg_sim, 
                                         sr_mat=sr_mat,
                                         ic=ic)
 
 
-                avg_similarity_mat += similarity_mat
-                avg_sr_mat += sr_mat
+                all_seed_ls_mat[s_idx, :, :] = ls_mat
+                all_seed_sr_mat[s_idx, :, :] = sr_mat
 
-            avg_similarity_mat /= len(SEEDS) # 3 seeds
-            avg_sr_mat /= len(SEEDS) # 3 seeds
 
             distance_mat = compute_all_pairs_shortest_paths(15, CONNECTIVITY)
-            
+            avg_sr_mat = np.mean(all_seed_sr_mat, axis=0)
+            avg_ls_mat = np.mean(all_seed_ls_mat, axis=0)
             # This is ready to be plotted
-            y_ls = average_score_by_distance(avg_similarity_mat, distance_mat)
-            y_sr = average_score_by_distance(avg_sr_mat, distance_mat)
-            print("LS", y_ls)
-            print("SR", y_sr)
-            np.savez(os.path.join(saved_fig_dir, "avg_sim_sr_mat.npz"), 
-                                                avg_similarity_mat=avg_similarity_mat, 
-                                                avg_sr_mat=avg_sr_mat)
-            plot_heatmap(avg_similarity_mat, saved_fig_path_langsim)
+            avg_ls_list, std_ls_list = average_score_by_distance(all_seed_ls_mat, distance_mat)
+            avg_sr_list, std_sr_list = average_score_by_distance(all_seed_sr_mat, distance_mat)
+            print(f"LS: {avg_ls_list} +- {std_ls_list}")
+            print(f"SR: {avg_sr_list} +- {std_sr_list}")
+            mean_std_by_model[model_name]["mean_ls"] = avg_ls_list
+            mean_std_by_model[model_name]["std_ls"] = std_ls_list
+            mean_std_by_model[model_name]["mean_sr"] = avg_sr_list
+            mean_std_by_model[model_name]["std_sr"] = std_sr_list
+
+            np.savez(os.path.join(saved_score_dir, "sr_ls_dist.npz"), 
+                                                avg_ls_mat=avg_ls_mat, 
+                                                avg_sr_mat=avg_sr_mat,
+                                                distance_mat=distance_mat,)
+            plot_heatmap(avg_ls_mat, saved_fig_path_langsim)
             plot_heatmap(avg_sr_mat, saved_fig_path_sr)
+
+    with open(os.path.join(saved_fig_dir, "mean_std_by_model.pkl"), 'wb') as file:
+        pickle.dump(mean_std_by_model, file)

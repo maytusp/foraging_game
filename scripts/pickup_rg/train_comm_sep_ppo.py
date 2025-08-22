@@ -21,7 +21,7 @@ import supersuit as ss
 from environments.pickup_rg import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_rg.train_comm_sep_ppo
 @dataclass
 class Args:
     seed: int = 1
@@ -29,7 +29,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(4e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -55,7 +55,7 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01 # ori 0.01
     """coefficient of the action_entropy"""
-    m_ent_coef: float = 0.002
+    m_ent_coef: float = 0.001
     """coefficient of the message_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -65,11 +65,11 @@ class Args:
 
     log_every = 32
 
-    n_words = 16
+    n_words = 4
     image_size = 3
     N_i = 2
     grid_size = 5
-    max_steps=10
+    max_steps = 6
     fully_visible_score = False
     agent_visible = False
     mode = "train"
@@ -99,7 +99,7 @@ class Args:
                 0:f"", 
                 1:f""
                 }
-    save_frequency = int(2e5)
+    save_frequency = int(1e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"

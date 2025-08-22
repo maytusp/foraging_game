@@ -65,7 +65,7 @@ class Args:
     # Populations
     num_networks = 15
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -87,7 +87,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "optk2e30_ppo_15net" # WS with k=4 p=0.2
+    model_name = "optk2e30_sp_ppo_15net" # WS with k=4 p=0.2
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -245,6 +245,10 @@ if __name__ == "__main__":
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
     possible_pairs = OPT_PAIRS
+    if args.self_play_option:
+        possible_pairs += [[a,a] for a in range(args.num_networks)]
+        print("Enable self-play")
+        print(f"Pairs {possible_pairs}")
     # for visualization
     running_ep_r = 0.0
     running_ep_l = 0.0

@@ -65,13 +65,18 @@ class Args:
     target_kl: float = None
     # Populations
     num_networks = 15
+    self_play_option: bool = True
     possible_pairs = [(3, 4), (12, 13), (0, 2), 
                     (8, 9), (9, 11), (0, 14), (13, 14), 
                     (6, 8), (4, 5), (5, 6), (0, 1), (9, 10), 
                     (1, 2), (10, 11), (6, 7), (3, 5), 
                     (12, 14), (2, 3), (11, 12), (7, 8)]
+    if self_play_option:
+        possible_pairs += [[a,a] for a in range(num_networks)]
+        print("Enable self-play")
+        print(f"Pairs {possible_pairs}")
     reset_iteration: int = 1
-    self_play_option: bool = False
+    
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -93,7 +98,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "ccnet_ppo_15net"
+    model_name = "ccnet_sp_ppo_15net"
     
     if not(agent_visible):
         model_name+= "_invisible"
