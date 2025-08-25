@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
     next_obs, next_locs, next_r_messages, next_done, next_lstm_state = {}, {}, {}, {}, {}
     # TRY NOT TO MODIFY: start the game
-    next_obs_dict, _ = envs.reset()
+    next_obs_dict = envs.observe()
     swap_agent = {0:1, 1:0}
 
     for network_id in range(args.num_networks):

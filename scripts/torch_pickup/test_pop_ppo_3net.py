@@ -161,7 +161,7 @@ if __name__ == "__main__":
                     running_success_length=0
                     num_success_episodes=0
                     
-                    next_obs_dict, _ = envs.reset()
+                    next_obs_dict = envs.observe()
 
                     next_obs = torch.zeros((num_agents, num_channels, args.image_size, args.image_size)).to(device) # obs: vision
                     next_locs  = torch.zeros((num_agents, 2)).to(device)

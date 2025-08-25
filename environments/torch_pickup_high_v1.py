@@ -113,7 +113,7 @@ class TorchForagingEnv:
         self.last_msgs = torch.zeros(self.B, cfg.num_agents, dtype=torch.long, device=self.device)
         
         self._score_list = score_list.to(torch.float32)
-
+        self._reset_indices(torch.ones((self.B,)))
     # ---------------------- Utilities ----------------------
     def _rand_choice(self, choices: torch.Tensor, shape: Tuple[int, ...]) -> torch.Tensor:
         idx = torch.randint(0, choices.numel(), shape, generator=self._cpu_gen)
@@ -131,80 +131,6 @@ class TorchForagingEnv:
     def _make_index(self, yx: torch.Tensor, W: int) -> torch.Tensor:
         """Flattened indices from (.., 2) coords (y,x)."""
         return (yx[...,0] * W + yx[...,1]).to(torch.long)
-
-    # ---------------------- Reset ----------------------
-    def reset(self) -> Tuple[Dict[int, dict], Dict]:
-        cfg, B, A, Fd, G = self.cfg, self.B, self.cfg.num_agents, self.cfg.num_foods, self.cfg.grid_size
-
-        # Sample unique food energies per env
-        # (sample without replacement per env by shuffling full list first)
-        score_pool = self._score_list
-        if score_pool.numel() < Fd:
-            raise ValueError("Not enough distinct scores to sample without replacement.")
-
-        # energies
-        perm = torch.stack([torch.randperm(score_pool.numel(), generator=self._cpu_gen) for _ in range(B)])
-        chosen = score_pool[perm[:, :Fd]].to(self.device)  # (B, Fd)
-        self.food_energy.copy_(chosen)
-
-        # visible_to_agent: half 0s and half 1s (for 2 agents)
-        # Create per-env balanced assignment
-        base = torch.cat([torch.zeros(Fd//2, dtype=torch.long), torch.ones(Fd - Fd//2, dtype=torch.long)])
-        vis = torch.stack([base[torch.randperm(Fd, generator=self._cpu_gen)] for _ in range(B)]).to(self.device)
-        self.score_visible_to_agent.copy_(vis)
-
-        # target food: argmax energy per env
-        self.target_food_id = torch.argmax(self.food_energy, dim=1)
-
-        # spawn food alternating top vs bottom rows
-        y_top = torch.zeros(B, Fd, dtype=torch.long)
-        y_bottom = torch.full((B, Fd), G-1, dtype=torch.long)
-        y = torch.where(torch.arange(Fd) % 2 == 0, y_top, y_bottom)  # (Fd,) pattern
-
-        x = torch.randint(0, G, (B, Fd), generator=self._cpu_gen)
-        self.food_pos = torch.stack([y, x], dim=-1).to(self.device)
-        self.food_done.zero_()
-
-        # walls (midline row if requested)
-        if cfg.num_walls > 0:
-            # place equally spaced along middle row
-            mid = G // 2
-            xs = torch.linspace(0, G-1, steps=cfg.num_walls).round().to(torch.long)
-            wpos = torch.stack([torch.full((cfg.num_walls,), mid, dtype=torch.long), xs], dim=-1)  # (W, 2)
-            self.wall_pos = wpos.unsqueeze(0).expand(B, -1, -1).contiguous().to(self.device)
-        else:
-            self.wall_pos = torch.empty(B, 0, 2, dtype=torch.long, device=self.device)
-
-        # agents near their visible food (within 1 step) and on opposite halves
-        self.agent_pos = torch.zeros(B, A, 2, dtype=torch.long, device=self.device)
-        for b in range(B):
-            for aid in range(A):
-                # find one food seen by this agent
-                fidx = torch.nonzero(self.score_visible_to_agent[b] == aid, as_tuple=False)
-                fy, fx = (0, 0)
-                if fidx.numel() > 0:
-                    f = fidx[0,0].item()
-                    fy, fx = self.food_pos[b, f, 0].item(), self.food_pos[b, f, 1].item()
-                # sample a neighbor within dist 1 (clip to grid)
-                cand = torch.tensor([[fy, fx],
-                                     [max(0, fy-1), fx],
-                                     [min(G-1, fy+1), fx],
-                                     [fy, max(0, fx-1)],
-                                     [fy, min(G-1, fx+1)]], dtype=torch.long)
-                idx = torch.randint(0, cand.size(0), (1,), generator=self._cpu_gen).item()
-                self.agent_pos[b, aid] = cand[idx].to(self.device)
-
-        self.agent_energy.fill_(20.0)
-        self.curr_steps.zero_()
-        self.dones_batch.zero_()
-        self.trunc_batch.zero_()
-        self.total_bump.zero_()
-        self.cum_rewards.zero_()
-        self.episode_len.zero_()
-
-        obs = self.observe()  # PZ-style for B==1
-        info: Dict = {}
-        return obs, info
 
     # ---------------------- Observation ----------------------
     def _make_occupancy_and_attr_maps(self) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -322,35 +248,6 @@ class TorchForagingEnv:
                 obs[aid]["message"] = torch.zeros((B, self.cfg.message_length), dtype=torch.long, device=self.device)
         return obs
 
-    def get_batch_obs(self):
-        """
-        Returns batched tensors for ALL envs and agents.
-        imgs: [B, A, C, K, K]
-        loc : [B, A, 2]
-        eng : [B, A, 1]
-        recv: [B, A]   (each agent receives the other agents' last message; for A=2 it's the partner's)
-        """
-        occ, attr = self._make_occupancy_and_attr_maps()
-        occ_crops = self._crop_around(occ, self.agent_pos, pad_val=float(self.cfg.N_val))
-        attr_crops = self._crop_around(attr, self.agent_pos, pad_val=0.0)
-        imgs = torch.cat([occ_crops.unsqueeze(-1), attr_crops], dim=-1).permute(0,1,4,2,3).contiguous()
-        loc  = self.agent_pos.to(torch.float32)
-        eng  = self.agent_energy.unsqueeze(-1)
-
-        # recv message: for A=2, each receives the other agent's single-token message
-        A = self.cfg.num_agents
-        if A == 1:
-            recv = torch.zeros(self.B, 1, dtype=torch.long, device=self.device)
-        elif A == 2:
-            recv = torch.stack([self.last_msgs[:, 1], self.last_msgs[:, 0]], dim=1)
-        else:
-            # for A>2, you can choose a scheme; here we take the max of others
-            recv = self.last_msgs.unsqueeze(1).repeat(1,A,1)
-            mask = ~torch.eye(A, dtype=torch.bool, device=self.device).unsqueeze(0)
-            recv = (recv.masked_fill(~mask, -1)).max(dim=2).values.clamp_min(0)
-
-        return imgs, loc, eng, recv  # [B,A,...], [B,A,2], [B,A,1], [B,A]
-    # ---- inside TorchForagingEnv ----
 
     def _reset_indices(self, mask: torch.Tensor):
         """Reset only the envs where mask[b]==True (same logic as reset(), but per-batch)."""
@@ -361,7 +258,7 @@ class TorchForagingEnv:
             return
 
         idxs = torch.nonzero(mask, as_tuple=False).view(-1)
-        # sample energies (no replacement) per env
+        # sample scores
         score_pool = self._score_list
         perm = torch.stack([torch.randperm(score_pool.numel(), generator=self._cpu_gen) for _ in range(idxs.numel())])
         chosen = score_pool[perm[:, :Fd]].to(self.device)  # (n, Fd)
@@ -401,11 +298,16 @@ class TorchForagingEnv:
                 else:
                     fy = torch.randint(0, G, (1,), generator=self._cpu_gen).item()
                     fx = torch.randint(0, G, (1,), generator=self._cpu_gen).item()
-                cand = torch.tensor([[fy, fx],
+                cand = torch.tensor([
                                     [max(0, fy-1), fx],
                                     [min(G-1, fy+1), fx],
                                     [fy, max(0, fx-1)],
                                     [fy, min(G-1, fx+1)]], dtype=torch.long, device=self.device)
+                
+                # spawn an agent near a food item but not the same position
+                food_mask = ~((cand[:, 0] == fy) & (cand[:, 1] == fx))
+                cand = cand[food_mask]
+
                 j = torch.randint(0, cand.size(0), (1,), generator=self._cpu_gen).item()
                 self.agent_pos[b, aid] = cand[j]
 
@@ -461,13 +363,22 @@ class TorchForagingEnv:
         occ_walls = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
         if self.wall_pos.numel() > 0:
             idx_w = self._make_index(self.wall_pos, G)
-            occ_walls.view(self.B, -1)[b_idx[:,:idx_w.size(1)], idx_w] = True
+            b_idx_w = torch.arange(self.B, device=self.device).unsqueeze(1).expand_as(idx_w)
+            occ_walls.view(self.B, -1)[b_idx_w[:,:idx_w.size(1)], idx_w] = True
+
+        # food occupancy
+        occ_foods = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
+        if self.food_pos.numel() > 0:
+            idx_f = self._make_index(self.food_pos, G)
+            b_idx_f = torch.arange(self.B, device=self.device).unsqueeze(1).expand_as(idx_f)
+            occ_foods.view(self.B, -1)[b_idx_f[:,:idx_f.size(1)], idx_f] = True
 
         # invalid if target cell is a wall or another agent *current* pos
         tgt_flat = self._make_index(proposed, G)
         tgt_is_wall = occ_walls.view(self.B, -1)[b_idx, tgt_flat]
         tgt_has_agent = (occ_agents_now.view(self.B, -1)[b_idx, tgt_flat] != -1)
-        can_move = move_mask & (~tgt_is_wall) & (~tgt_has_agent)
+        tgt_has_food = occ_foods.view(self.B, -1)[b_idx, tgt_flat]
+        can_move = move_mask & (~tgt_is_wall) & (~tgt_has_agent) & (~tgt_has_food)
 
         # bumps: moving into another agent
         self.total_bump += (move_mask & tgt_has_agent).sum(dim=1)
