@@ -10,7 +10,7 @@ import torch.nn.functional as F
 @dataclass
 class EnvConfig:
     grid_size: int = 5
-    image_size: int = 5            # local obs crop (odd)
+    image_size: int = 3            # local obs crop (odd)
     num_agents: int = 2
     num_foods: int = 2             # N_i
     num_walls: int = 0
@@ -49,6 +49,7 @@ class TorchForagingEnv:
         self.cfg = cfg
         self.device = torch.device(device)
         self.B = int(num_envs)
+        self.num_actions = 5
 
         G = cfg.grid_size
         A = cfg.num_agents
@@ -108,6 +109,9 @@ class TorchForagingEnv:
                 steps = torch.arange(0, 125, dtype=torch.long)
                 score_list = (steps + 1) * 2
                 score_list = score_list[(score_list % 5) != 0]
+
+        self.last_msgs = torch.zeros(self.B, cfg.num_agents, dtype=torch.long, device=self.device)
+        
         self._score_list = score_list.to(torch.float32)
 
     # ---------------------- Utilities ----------------------
@@ -156,7 +160,7 @@ class TorchForagingEnv:
         y_top = torch.zeros(B, Fd, dtype=torch.long)
         y_bottom = torch.full((B, Fd), G-1, dtype=torch.long)
         y = torch.where(torch.arange(Fd) % 2 == 0, y_top, y_bottom)  # (Fd,) pattern
-        y = y.unsqueeze(0).expand(B, -1).clone()
+
         x = torch.randint(0, G, (B, Fd), generator=self._cpu_gen)
         self.food_pos = torch.stack([y, x], dim=-1).to(self.device)
         self.food_done.zero_()
@@ -309,30 +313,114 @@ class TorchForagingEnv:
 
         obs = {}
         # first batch element to keep PZ dict API
-        b = 0
         for aid in range(self.cfg.num_agents):
             obs[aid] = {
-                "image": img[b, aid],                            # (C,K,K) float32
-                "location": self.agent_pos[b, aid].to(torch.float32),
-                "energy": self.agent_energy[b, aid].view(1),
+                "image": img[:, aid],                            # (C,K,K) float32
+                "location": self.agent_pos[:, aid].to(torch.float32),
             }
             if self.cfg.use_message:
-                obs[aid]["message"] = torch.zeros(self.cfg.message_length, dtype=torch.long, device=self.device)
+                obs[aid]["message"] = torch.zeros((B, self.cfg.message_length), dtype=torch.long, device=self.device)
         return obs
 
-    # Optional: get batched obs tensors directly
-    def get_batch_obs(self) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return batched tensors: images [B,A,C,K,K], locations [B,A,2], energy [B,A,1]."""
+    def get_batch_obs(self):
+        """
+        Returns batched tensors for ALL envs and agents.
+        imgs: [B, A, C, K, K]
+        loc : [B, A, 2]
+        eng : [B, A, 1]
+        recv: [B, A]   (each agent receives the other agents' last message; for A=2 it's the partner's)
+        """
         occ, attr = self._make_occupancy_and_attr_maps()
         occ_crops = self._crop_around(occ, self.agent_pos, pad_val=float(self.cfg.N_val))
         attr_crops = self._crop_around(attr, self.agent_pos, pad_val=0.0)
-        img = torch.cat([occ_crops.unsqueeze(-1), attr_crops], dim=-1).permute(0,1,4,2,3).contiguous()
-        loc = self.agent_pos.to(torch.float32)
-        eng = self.agent_energy.unsqueeze(-1)
-        return img, loc, eng
+        imgs = torch.cat([occ_crops.unsqueeze(-1), attr_crops], dim=-1).permute(0,1,4,2,3).contiguous()
+        loc  = self.agent_pos.to(torch.float32)
+        eng  = self.agent_energy.unsqueeze(-1)
+
+        # recv message: for A=2, each receives the other agent's single-token message
+        A = self.cfg.num_agents
+        if A == 1:
+            recv = torch.zeros(self.B, 1, dtype=torch.long, device=self.device)
+        elif A == 2:
+            recv = torch.stack([self.last_msgs[:, 1], self.last_msgs[:, 0]], dim=1)
+        else:
+            # for A>2, you can choose a scheme; here we take the max of others
+            recv = self.last_msgs.unsqueeze(1).repeat(1,A,1)
+            mask = ~torch.eye(A, dtype=torch.bool, device=self.device).unsqueeze(0)
+            recv = (recv.masked_fill(~mask, -1)).max(dim=2).values.clamp_min(0)
+
+        return imgs, loc, eng, recv  # [B,A,...], [B,A,2], [B,A,1], [B,A]
+    # ---- inside TorchForagingEnv ----
+
+    def _reset_indices(self, mask: torch.Tensor):
+        """Reset only the envs where mask[b]==True (same logic as reset(), but per-batch)."""
+        cfg, B, A, Fd, G = self.cfg, self.B, self.cfg.num_agents, self.cfg.num_foods, self.cfg.grid_size
+        if mask.dtype != torch.bool:
+            mask = mask.bool()
+        if not mask.any():
+            return
+
+        idxs = torch.nonzero(mask, as_tuple=False).view(-1)
+        # sample energies (no replacement) per env
+        score_pool = self._score_list
+        perm = torch.stack([torch.randperm(score_pool.numel(), generator=self._cpu_gen) for _ in range(idxs.numel())])
+        chosen = score_pool[perm[:, :Fd]].to(self.device)  # (n, Fd)
+        self.food_energy[idxs] = chosen
+
+        # visible_to_agent: round-robin across agents
+        vis = torch.stack([
+            torch.tensor([i % A for i in torch.randperm(Fd, generator=self._cpu_gen)], dtype=torch.long)
+            for _ in range(idxs.numel())
+        ], dim=0).to(self.device)
+        self.score_visible_to_agent[idxs] = vis
+
+        # target is argmax energy
+        self.target_food_id[idxs] = torch.argmax(self.food_energy[idxs], dim=1)
+
+        # foods alternate top/bottom rows, random x
+        y = torch.zeros(idxs.numel(), Fd, dtype=torch.long)
+        y[:, 1::2] = G - 1
+        x = torch.randint(0, G, (idxs.numel(), Fd), generator=self._cpu_gen)
+        self.food_pos[idxs] = torch.stack([y, x], dim=-1).to(self.device)
+        self.food_done[idxs] = False
+
+        # walls mid-row
+        if cfg.num_walls > 0:
+            mid = G // 2
+            xs = torch.linspace(0, G - 1, steps=cfg.num_walls).round().to(torch.long)
+            wpos = torch.stack([torch.full((cfg.num_walls,), mid, dtype=torch.long), xs], dim=-1)  # (W,2)
+            self.wall_pos[idxs] = wpos.to(self.device)
+
+        # agents near one of the foods they can see
+        for k, b in enumerate(idxs.tolist()):
+            for aid in range(A):
+                fidx = torch.nonzero(self.score_visible_to_agent[b] == aid, as_tuple=False)
+                if fidx.numel() > 0:
+                    f = int(fidx[0, 0].item())
+                    fy, fx = int(self.food_pos[b, f, 0].item()), int(self.food_pos[b, f, 1].item())
+                else:
+                    fy = torch.randint(0, G, (1,), generator=self._cpu_gen).item()
+                    fx = torch.randint(0, G, (1,), generator=self._cpu_gen).item()
+                cand = torch.tensor([[fy, fx],
+                                    [max(0, fy-1), fx],
+                                    [min(G-1, fy+1), fx],
+                                    [fy, max(0, fx-1)],
+                                    [fy, min(G-1, fx+1)]], dtype=torch.long, device=self.device)
+                j = torch.randint(0, cand.size(0), (1,), generator=self._cpu_gen).item()
+                self.agent_pos[b, aid] = cand[j]
+
+        self.agent_energy[idxs] = 20.0
+        self.curr_steps[idxs] = 0
+        self.dones_batch[idxs] = False
+        self.trunc_batch[idxs] = False
+        self.total_bump[idxs] = 0
+        self.cum_rewards[idxs] = 0
+        self.episode_len[idxs] = 0
+        self.last_msgs[idxs] = 0  # clear messages
+
 
     # ---------------------- Step ----------------------
-    def step(self, actions) -> Tuple[Dict[int, dict], Dict[int, float], Dict[int, bool], Dict[int, bool], Dict]:
+    def step(self, actions, auto_reset=True) -> Tuple[Dict[int, dict], Dict[int, float], Dict[int, bool], Dict[int, bool], Dict]:
         """
         actions: Dict[int, int] or LongTensor [A] or [B,A]
           0: up, 1: down, 2: left, 3: right, 4: pick_up
@@ -437,12 +525,18 @@ class TorchForagingEnv:
                 rewards[wrong] -= 1.0
             # everyone done in those envs
             self.dones_batch = self.dones_batch | collected
+        
         # timeout
         timed_out = (self.curr_steps >= self.cfg.max_steps)
         if timed_out.any():
             rewards[timed_out] -= 1.0
             self.trunc_batch = self.trunc_batch | timed_out
             self.dones_batch = self.dones_batch | timed_out
+
+        finished  = self.dones_batch | self.trunc_batch
+
+        dones_out = self.dones_batch.clone()
+        truncs_out = self.trunc_batch.clone()
 
         # normalize rewards and update stats
         rewards = rewards / float(cfg.reward_scale)
@@ -468,13 +562,12 @@ class TorchForagingEnv:
             } for i in range(self.cfg.num_agents)
         }
 
-        # per-agent done/truncated dicts (from first env)
-        dones = {i: bool(self.dones_batch[b].item()) for i in range(self.cfg.num_agents)}
-        trunc = {i: bool(self.trunc_batch[b].item()) for i in range(self.cfg.num_agents)}
-        rews = {i: float(rewards[b, i].item()) for i in range(self.cfg.num_agents)}
+        if auto_reset and finished.any():
+            self._reset_indices(finished)
 
         obs = self.observe()
-        return obs, rews, dones, trunc, infos
+    
+        return obs, rewards, dones_out, truncs_out, infos
 
     def close(self):
         pass
