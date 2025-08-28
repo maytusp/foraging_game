@@ -29,7 +29,7 @@ class Args:
     """the id of the environment"""
     total_timesteps: int = int(6e8)
     """total timesteps of the experiments"""
-    learning_rate: float = 1.0e-3 / 4
+    learning_rate: float = 2.0e-3
     """the learning rate of the optimizer"""
     num_envs: int = 4096
     """the number of parallel game environments"""
