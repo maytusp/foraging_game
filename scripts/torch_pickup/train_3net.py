@@ -7,7 +7,6 @@ import random
 import time
 from dataclasses import dataclass
 
-import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,7 +14,6 @@ import torch.optim as optim
 import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
-import supersuit as ss
 
 
 from environments.torch_pickup_high_v1 import TorchForagingEnv, EnvConfig
@@ -29,11 +27,11 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(3e8)
+    total_timesteps: int = int(6e8)
     """total timesteps of the experiments"""
-    learning_rate: float = 4.0e-3
+    learning_rate: float = 1.0e-3 / 4
     """the learning rate of the optimizer"""
-    num_envs: int = 2048
+    num_envs: int = 4096
     """the number of parallel game environments"""
     num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
@@ -203,7 +201,9 @@ if __name__ == "__main__":
 
     next_obs, next_locs, next_r_messages, next_done, next_lstm_state = {}, {}, {}, {}, {}
     # TRY NOT TO MODIFY: start the game
-    next_obs_dict = envs.observe()
+    next_obs, next_locs, next_r_messages = envs._obs_core()
+    next_r_messages = next_r_messages.squeeze()
+    
     swap_agent = {0:1, 1:0}
 
     for network_id in range(args.num_networks):
@@ -230,17 +230,12 @@ if __name__ == "__main__":
         dones[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         values[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
 
-    
-        next_obs[i], next_locs[i], next_r_messages[i] = next_obs_dict[i]['image'], next_obs_dict[i]['location'], next_obs_dict[i]['message']
-
-        # print(next_obs[i].shape, next_locs[i].shape)
-        next_r_messages[i] = torch.tensor(next_r_messages[i]).squeeze().to(device)
         next_done[i] = torch.zeros(args.num_envs).to(device)
         next_lstm_state[i] = (
             torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
             torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
         )  # hidden and cell states (see https://youtu.be/8HyCNIVRbSU)
-
+    
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
@@ -294,16 +289,16 @@ if __name__ == "__main__":
             reward = {}
 
             for i in range(num_agents):
-                obs[i][step] = next_obs[i]
-                locs[i][step] = next_locs[i]
-                r_messages[i][step] = next_r_messages[i].squeeze()
+                obs[i][step] = next_obs[:,i,:,:,:]
+                locs[i][step] = next_locs[:,i,:]
+                r_messages[i][step] = next_r_messages[:, i].squeeze()
                 dones[i][step] = next_done[i]
 
                 network_id = selected_networks[i] # Two embodied agents have chance to share the same neural networks during training (self-play)
  
                 # ALGO LOGIC: action logic
                 with torch.no_grad():
-                    action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[network_id].get_action_and_value((next_obs[i], next_locs[i], next_r_messages[i]), 
+                    action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[network_id].get_action_and_value((next_obs[:,i,:,:,:], next_locs[:,i,:], next_r_messages[:,i]), 
                                                                                                         next_lstm_state[i], next_done[i])
                     values[i][step] = value[i].flatten()
 
@@ -317,13 +312,11 @@ if __name__ == "__main__":
             # --- build [B,A] tensors and step env ONCE on GPU ---
             acts_BA = torch.stack([action[i].long().to(device)    for i in range(num_agents)], dim=1)  # [B,A]
 
-            next_obs_dict, all_rewards, all_terminations, all_truncations, infos =  envs.step(acts_BA)
+            (next_obs, next_locs, next_msgs), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
             env_info = (all_rewards, all_terminations, all_truncations)
  
-            # Log experience from the environment into batches: separated by agent id
             for i in range(num_agents):
-                next_obs[i], next_locs[i] = next_obs_dict[i]['image'], next_obs_dict[i]['location']
-                next_r_messages[i] = s_message[swap_agent[i]]
+                next_r_messages[:,i] = next_msgs[:, swap_agent[i]] # agent exchange msgs
                 next_done[i] = (all_terminations | all_truncations).float()
                 rewards[i][step] = all_rewards[:, i] # (B,A)
             # Save Model Checkpoints: loop over networks not agents
@@ -388,7 +381,7 @@ if __name__ == "__main__":
             # bootstrap value if not done
             with torch.no_grad():
                 next_value = agents[network_id].get_value(
-                    (next_obs[i], next_locs[i], next_r_messages[i]),
+                    (next_obs[:,i,:,:,:], next_locs[:,i,:], next_r_messages[:,i]),
                     next_lstm_state[i],
                     next_done[i],
                 ).reshape(1, -1)
