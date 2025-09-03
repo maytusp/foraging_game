@@ -303,15 +303,18 @@ class TorchForagingEnv:
         idxs = torch.nonzero(mask, as_tuple=False).view(-1)
         n = idxs.numel()
 
-        score_pool = self._score_list
-        # sample Fd scores per env from pool
-        perm = torch.randperm(score_pool.numel(), device=self.device, generator=self.rng)
-        perm = perm[:Fd].unsqueeze(0).expand(n, -1)
-        self.food_energy[idxs] = score_pool[perm]
+        score_pool = self._score_list  # (M,)
+        M = score_pool.numel()
 
-        # round-robin-ish visibility (random perm then mod agents)
-        order = torch.randperm(Fd, device=self.device, generator=self.rng).unsqueeze(0).expand(n,-1)
-        self.score_visible_to_agent[idxs] = order % A
+        # per-env choose Fd distinct scores (vectorized "perm" via argsort of random noise)
+        noise = torch.rand(n, M, device=self.device, generator=self.rng)
+        perm_per_env = noise.argsort(dim=1, descending=False)[:, :Fd]   # (n, Fd)
+        self.food_energy[idxs] = score_pool[perm_per_env]               # (n, Fd)
+
+        # per-env order of Fd items
+        order_noise = torch.rand(n, Fd, device=self.device, generator=self.rng)
+        order = order_noise.argsort(dim=1, descending=False)            # (n, Fd)
+        self.score_visible_to_agent[idxs] = order % A                   # (n, Fd)
 
         # target food = argmax
         self.target_food_id[idxs] = torch.argmax(self.food_energy[idxs], dim=1)
