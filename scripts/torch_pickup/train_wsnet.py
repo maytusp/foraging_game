@@ -379,10 +379,8 @@ if __name__ == "__main__":
             finished = (all_terminations | all_truncations).bool()   # shape [B]
             if finished.any():
                 b_idx = finished.nonzero(as_tuple=False).squeeze(1)
-                # Push team-mean stats for each finished env this step
-                # (Use .sum(dim=1) if you prefer team-sum instead of mean)
-                finished_returns = ep_ret[b_idx].mean(dim=1).detach().cpu().tolist()
-                finished_lengths = ep_len[b_idx].mean(dim=1).detach().cpu().tolist()
+                finished_returns = ep_ret[b_idx].mean(dim=1).detach().cpu()   # team-mean per env
+                finished_lengths = ep_len[b_idx].mean(dim=1).detach().cpu()
 
 
                 # exact aggregation since last log
