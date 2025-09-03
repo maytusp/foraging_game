@@ -393,7 +393,7 @@ if __name__ == "__main__":
                 ep_len[b_idx] = 0
 
             # Log periodically (episode-based cadence)
-            if args.visualize_loss and episodes_since_log >= LOG_EVERY_EPISODES and len(recent_returns) > 0:
+            if args.visualize_loss and episodes_since_log >= LOG_EVERY_EPISODES:
                 mean_ret_since_log = sum_return_since_log / episodes_since_log
                 mean_len_since_log = sum_length_since_log / episodes_since_log
 
