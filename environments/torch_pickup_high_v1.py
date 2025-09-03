@@ -1,3 +1,4 @@
+# torch_pickup_high_v1.py
 # 22 Aug 2025
 from __future__ import annotations
 import math
@@ -58,6 +59,7 @@ class TorchForagingEnv:
         G = cfg.grid_size
         A = cfg.num_agents
         Fd = cfg.num_foods
+        self.agent_visible = cfg.agent_visible
 
         # --- RNG
         g = torch.Generator(device="cpu")
@@ -239,8 +241,10 @@ class TorchForagingEnv:
         occ, attr = self._make_occupancy_and_attr_maps() # occ:  (B, G, G), attr:  (B, G, G, N_att)
         occ_crops  = self._crop_around(occ,  self.agent_pos, pad_val=float(self.cfg.N_val)) # (B,A,1,K,K)
         attr_crops = self._crop_around(attr, self.agent_pos, pad_val=0.0) # (B,A,1,K,K)
+        
 
-        #TODO Mask Attribute bt agents who can see those items
+
+        # Mask Attribute bt agents who can see those items
         owner_map = torch.full((B, G*G), -1, dtype=torch.long, device=self.device)   # (B, G*G)
 
         idx_flat = self._make_index(self.food_pos, G)                 # (B, Fd) (Fd <= G*G)
@@ -265,7 +269,22 @@ class TorchForagingEnv:
         attr_mask = one_hot_crop.gather(2, channel_idx_exp) # (B,A,K,K)
         # print(f"attr_mask {attr_mask.shape}")
         attr_crops = attr_mask * attr_crops
-        #TODO check again before training
+
+        # Mask observation of other agents
+        if not(self.agent_visible):
+            agent_map = torch.full((B, G, G), -1, dtype=torch.long, device=self.device)   # (B, G, G)
+            agent_idx_flat = self._make_index(self.agent_pos, G)                 # (B, A) (A <= G*G)
+            agent_bidx = torch.arange(B, device=self.device).unsqueeze(1).expand(B, A)  # (B, A)
+            agent_id   = torch.arange(A, device=self.device).unsqueeze(0).expand(B, A)  # (B, A)
+            agent_map.view(B,-1)[agent_bidx, agent_idx_flat] = agent_id
+
+            agent_one_hot = F.one_hot(agent_map.clamp_min(0), num_classes=A).to(occ_crops.dtype)  # (B,G,G,A)
+            agent_one_hot = agent_one_hot * (agent_map >= 0).unsqueeze(-1).to(agent_one_hot.dtype) # set non-agent position to be zero
+            agent_one_hot_crop = self._crop_around(agent_one_hot, self.agent_pos, pad_val=0.0) # (B,A,A,K,K)
+            agent_channel_idx = torch.arange(A, device=self.device).view(1,A,1,1,1)
+            agent_channel_idx = agent_channel_idx.expand(B,-1,1,K,K)
+            occ_mask = agent_one_hot_crop.gather(2, agent_channel_idx) # (B,A,K,K)
+            occ_crops = occ_mask * occ_crops
 
         img = torch.cat([occ_crops, attr_crops], dim=2)  # (B,A,C,K,K)
         pos = self.agent_pos.to(torch.float32)             # (B,A,2)

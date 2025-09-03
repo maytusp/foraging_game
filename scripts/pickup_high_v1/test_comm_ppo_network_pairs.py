@@ -60,9 +60,14 @@ class Args:
     """grid size"""
     mode = "test"
     agent_visible = False
+    # model_name = "ring_ppo_15net_invisible"
+    # model_name = "ring_sp_ppo_15net_invisible"
     # model_name = "ccnet_ppo_15net_invisible"
+    # model_name = "ccnet_sp_ppo_15net_invisible"
     # model_name = "optk2e30_ppo_15net_invisible"
-    model_name = "wsk4p02_ppo_15net_invisible"
+    # model_name = "optk2e30_sp_ppo_15net_invisible"
+    # model_name = "wsk4p02_ppo_15net_invisible"    
+    model_name = "wsk4p02_sp_ppo_15net_invisible"
     num_networks = 15
     
     model_step = "819200000"
@@ -70,7 +75,7 @@ class Args:
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
-    for seed in [2,3]:
+    for seed in [1,2]:
         args.seed = seed
         # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
         for i in range(args.num_networks):

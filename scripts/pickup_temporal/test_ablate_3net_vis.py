@@ -19,7 +19,7 @@ from environments.pickup_temporal import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
-
+# python -m scripts.pickup_temporal.test_ablate_3net_vis
 @dataclass
 class Args:
 
@@ -60,7 +60,7 @@ class Args:
     agent_visible = True
     model_name = "pop_ppo_3net_ablate_message"
     num_networks = 3
-    model_step = "652800000"
+    model_step = "601600000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
 
 

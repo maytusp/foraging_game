@@ -24,7 +24,7 @@ from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.train_wsnet_15net
 @dataclass
 class Args:
-    seed: int = 3
+    seed: int = 2
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"

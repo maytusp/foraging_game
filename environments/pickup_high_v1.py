@@ -1,3 +1,4 @@
+# pickup_high_v1.py
 # 28 Feb 2025 Pickup high v1 Stable version
 # Agents are spawn on the different sides with their seen-score items
 # This is for study experiment1: what is encoded in communication?

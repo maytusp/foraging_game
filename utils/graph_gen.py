@@ -68,7 +68,7 @@ def optimized_small_world(num_nodes, k=None, max_edges=None):
     
     # Initial ring lattice
     edges = [[i, (i+j) % num_nodes] for i in range(num_nodes) for j in range(1, k//2 + 1)]
-    
+
     if max_edges is None:
         max_edges = len(edges) + num_nodes  # allow extra shortcuts
     
@@ -89,15 +89,77 @@ def optimized_small_world(num_nodes, k=None, max_edges=None):
             cost = 1.0 / (1 + gain)
             ratio = gain / cost
             if ratio > best_gain:
+                print(f"new ratio of {u,v} {ratio}")
+                print(f"best_gain {best_gain}")
                 best_gain = ratio
                 best_edge = (u, v)
         
         if best_edge:
+            print(f"{best_edge}")
+            print(f"ratio {ratio}")
             edges.append(list(best_edge))
         else:
             break
     
     return edges
+
+
+# Greedy optimization
+def optimized_small_worldv2(num_nodes, k, max_edges=None, alpha=1.0):
+    # ring lattice
+    edges = []
+    E = set()  # frozenset({u,v}) for O(1) membership
+    adj = [set() for _ in range(num_nodes)]
+    for i in range(num_nodes):
+        for j in range(1, k//2 + 1):
+            u, v = i, (i + j) % num_nodes
+            if frozenset((u, v)) in E: 
+                continue
+            edges.append([u, v]); E.add(frozenset((u, v)))
+            adj[u].add(v); adj[v].add(u)
+
+    if max_edges is None:
+        max_edges = len(edges) + num_nodes
+
+    def circular(u, v):
+        d = abs(u - v)
+        return min(d, num_nodes - d)
+
+    def sp_len(u, v):  # BFS hop distance in current graph
+        if u == v: return 0
+        seen = {u}
+        q = deque([(u, 0)])
+        while q:
+            x, d = q.popleft()
+            for y in adj[x]:
+                if y == v: return d + 1
+                if y not in seen:
+                    seen.add(y); q.append((y, d + 1))
+        return float('inf')
+
+    while len(edges) < max_edges:
+        best = None; best_ratio = 0.0
+        for u, v in combinations(range(num_nodes), 2):
+            if frozenset((u, v)) in E: 
+                continue
+            # gain = how many hops this edge saves for u↔v right now
+            current = sp_len(u, v)
+            if current <= 1 or current == float('inf'):  # no saving or disconnected
+                continue
+            gain = current - 1
+            cost = circular(u, v) ** alpha  # penalize long physical links
+            ratio = gain / cost
+            if ratio > best_ratio:
+                best_ratio = ratio; best = (u, v)
+
+        if best is None:
+            break
+        u, v = best
+        edges.append([u, v]); E.add(frozenset((u, v)))
+        adj[u].add(v); adj[v].add(u)
+
+    return edges
+
 
 def get_adjacency_matrix(connected_nodes, num_nodes):
     '''
@@ -114,8 +176,9 @@ def get_adjacency_matrix(connected_nodes, num_nodes):
 
 # possible_pairs_ws = watts_strogatz_pairs(15, k=4, p=0.2)
 possible_pairs_opt = optimized_small_world(15, k=2, max_edges=30)
-distances = compute_all_pairs_shortest_paths(15, possible_pairs_opt)
 
+# possible_pairs_opt2 = optimized_small_worldv2(15, k=2, max_edges=30)
+distances = compute_all_pairs_shortest_paths(15, possible_pairs_opt)
 # print(possible_pairs_ws)
 print(possible_pairs_opt)
 # # Print the distance matrix
