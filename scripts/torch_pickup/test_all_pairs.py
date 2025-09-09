@@ -166,7 +166,8 @@ if __name__ == "__main__":
                     running_success_length=0
                     num_success_episodes=0
                     
-                    next_obs, next_locs, next_r_messages = envs._obs_core()
+                    next_obs, next_locs = envs._obs_core()
+                    next_r_messages = torch.zeros((1, num_agents), dtype=torch.int64).to(device) # action: sent message
 
                     log_data = {}
 
@@ -248,11 +249,11 @@ if __name__ == "__main__":
                                 
 
                             acts_BA = action.unsqueeze(0)  # [B,A] = [1,2]
-                            (next_obs, next_locs, next_msgs), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
+                            (next_obs, next_locs), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
                             env_info = (all_rewards, all_terminations, all_truncations)
                 
                             for i in range(num_agents):
-                                next_r_messages[:,i] = next_msgs[:, swap_agent[i]] # agent exchange msgs
+                                next_r_messages[:,i] = s_message[swap_agent[i]] # agent exchange msgs
                                 next_done[i] = (all_terminations | all_truncations).float()
                                 
 

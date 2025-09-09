@@ -21,13 +21,13 @@ from utils.process_data import *
 from utils.process_env import *
 from models.pickup_models import PPOLSTMCommAgent
 
-from utils.graph_gen import WS_PAIRS_k4_p0 as WS_PAIRS
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_simultaneous_wsnet_k4p0
+from utils.graph_gen import WS_PAIRS_k4_p02 as WS_PAIRS
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_simultaneous_wsnet_k4p02
 @dataclass
 class Args:
     M_e = 8
     M_s = 1
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"

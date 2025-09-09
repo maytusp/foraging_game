@@ -120,7 +120,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "torch_pickup_high_v1"
     """the wandb's project name"""
@@ -256,6 +256,7 @@ if __name__ == "__main__":
     for iteration in range(1, args.num_iterations + 1):
         # print("iteration", iteration)
         if iteration % args.reset_iteration == 0:
+            # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
             for i in range(num_agents):
                 next_lstm_state[i] = (
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
@@ -336,7 +337,7 @@ if __name__ == "__main__":
                 b_idx = finished.nonzero(as_tuple=False).squeeze(1)
                 finished_returns = ep_ret[b_idx].mean(dim=1).detach().cpu()   # team-mean per env
                 finished_lengths = ep_len[b_idx].mean(dim=1).detach().cpu()
-
+                next_r_messages[b_idx] = torch.zeros((b_idx.numel(), num_agents), dtype=torch.int64).to(device) # action: sent message
 
                 # exact aggregation since last log
                 sum_return_since_log += float(finished_returns.sum())
