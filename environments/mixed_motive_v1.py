@@ -1,5 +1,5 @@
-# torch_pickup_high_v1.py
-# 22 Aug 2025
+# mixed_motive_v1
+# 8 Sep 2025
 from __future__ import annotations
 import math
 from dataclasses import dataclass
@@ -16,6 +16,7 @@ class EnvConfig:
     num_foods: int = 2             # N_i
     num_walls: int = 0
     max_steps: int = 10
+    use_message: bool = False
     agent_visible: bool = False    # show other agents in obs
     food_energy_fully_visible: bool = False
     identical_item_obs: bool = False
@@ -115,6 +116,7 @@ class TorchForagingEnv:
                 score_list = (steps + 1) * 2
                 score_list = score_list[(score_list % 5) != 0]
 
+        self.last_msgs = torch.zeros(self.B, cfg.num_agents, dtype=torch.long, device=self.device)
         
         self._score_list = score_list.to(torch.float32).to(self.device)
 
@@ -287,7 +289,11 @@ class TorchForagingEnv:
         img = torch.cat([occ_crops, attr_crops], dim=2)  # (B,A,C,K,K)
         pos = self.agent_pos.to(torch.float32)             # (B,A,2)
 
-        return img, pos
+        if self.cfg.use_message:
+            msgs = self.last_msgs                           # (B,A,L)
+        else:
+            msgs = None
+        return img, pos, msgs
 
 
     def _reset_indices(self, mask: torch.Tensor):
@@ -352,6 +358,7 @@ class TorchForagingEnv:
         self.total_bump[idxs] = 0
         self.cum_rewards[idxs] = 0
         self.episode_len[idxs] = 0
+        self.last_msgs[idxs] = 0
 
     @torch.no_grad()
     def step(self, actions, auto_reset=True) -> Tuple[Dict[int, dict], Dict[int, float], Dict[int, bool], Dict[int, bool], Dict]:

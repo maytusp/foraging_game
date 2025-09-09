@@ -21,22 +21,24 @@ from utils.process_data import *
 from utils.process_env import *
 from models.pickup_models import PPOLSTMCommAgent
 
-from utils.graph_gen import WS_PAIRS
-# CUDA_VISIBLE_DEIVCES=1 python -m scripts.torch_pickup.train_wsnet
+from utils.graph_gen import WS_PAIRS_k4_p0 as WS_PAIRS
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_wsnet_k4p0
 @dataclass
 class Args:
-    seed: int = 3
+    M_e = 8
+    M_s = 2
+    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
     total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
-    learning_rate: float = 2.5e-4 * 64
+    learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 1024 * 8
+    num_envs: int = 128 * M_e
     """the number of parallel game environments"""
-    num_steps: int = 16
+    num_steps: int = 16 * M_s
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -66,7 +68,7 @@ class Args:
     # Populations
     num_networks = 15
     reset_iteration: int = 1
-    self_play_option: bool = True
+    self_play_option: bool = False
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -88,7 +90,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "wsk4p02_sp_ppo_15net"
+    model_name = "wsk4p0_ppo_15net"
     
     if not(agent_visible):
         model_name+= "_invisible"

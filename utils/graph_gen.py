@@ -35,31 +35,72 @@ def compute_all_pairs_shortest_paths(num_nodes, edges):
 
     return distances
 
-def watts_strogatz_pairs(num_nodes, k=4, p=0.2):
-    """
-    Generate edges for a small-world network (Watts-Strogatz-like).
-    
-    num_nodes: number of nodes (agents)
-    k: each node is connected to k neighbors on each side (k must be even)
-    p: probability of rewiring an edge to a random node
-    """
-    edges = []
-    
-    # Start with ring lattice: connect k neighbors on each side
-    for i in range(num_nodes):
-        for j in range(1, k//2 + 1):
-            edges.append([i, (i + j) % num_nodes])
-    
-    # Rewire edges with probability p
-    for edge in edges.copy():
-        if random.random() < p:
-            u = edge[0]
-            v = random.choice([n for n in range(num_nodes) if n != u])
-            edges.remove(edge)
-            edges.append([u, v])
-    
-    return edges
+import random
 
+def watts_strogatz_pairs(num_nodes: int, k: int = 4, p: float = 0.2):
+    """
+    Watts–Strogatz small-world graph (undirected, simple graph).
+
+    num_nodes: number of nodes (N)
+    k: total degree per node in the initial ring (must be even, 0 < k < N)
+       Each node connects to k//2 neighbors on each side.
+    p: probability of rewiring each original ring edge (0 <= p <= 1)
+
+    Returns:
+        List of [u, v] pairs (u < v) with no duplicates.
+    """
+    if not (0 <= p <= 1):
+        raise ValueError("p must be in [0, 1].")
+    if k % 2 != 0:
+        raise ValueError("k must be even.")
+    if not (0 < k < num_nodes):
+        raise ValueError("require 0 < k < num_nodes.")
+
+    N = num_nodes
+    half = k // 2
+
+    # Build the initial ring lattice
+    edges = set()                 # store as sorted tuples (min, max)
+    neigh = [set() for _ in range(N)]
+    original_edges = []
+    for i in range(N):
+        for j in range(1, half + 1):
+            u, v = i, (i + j) % N
+            a, b = (u, v) if u < v else (v, u)
+            if (a, b) not in edges:
+                edges.add((a, b))
+                neigh[a].add(b)
+                neigh[b].add(a)
+            # keep track of the oriented “forward” edges to rewire
+            original_edges.append((u, v))
+
+    # Rewire each original ring edge with probability p
+    for (u, v_old) in original_edges:
+        if random.random() < p:
+            # remove the old undirected edge (u, v_old) if it still exists
+            a, b = (u, v_old) if u < v_old else (v_old, u)
+            if (a, b) in edges:
+                edges.remove((a, b))
+                neigh[a].discard(b)
+                neigh[b].discard(a)
+
+            # pick a new endpoint v_new not equal to u and not already adjacent to u
+            candidates = [x for x in range(N) if x != u and x not in neigh[u]]
+            if not candidates:
+                # fall back: restore the old edge if we cannot find a new one
+                edges.add((a, b))
+                neigh[a].add(b)
+                neigh[b].add(a)
+                continue
+
+            v_new = random.choice(candidates)
+            a2, b2 = (u, v_new) if u < v_new else (v_new, u)
+            edges.add((a2, b2))
+            neigh[a2].add(b2)
+            neigh[b2].add(a2)
+
+    # Return as list of [u, v] with u < v
+    return [[u, v] for (u, v) in sorted(edges)]
 
 def optimized_small_world(num_nodes, k=None, max_edges=None):
     """
@@ -174,26 +215,28 @@ def get_adjacency_matrix(connected_nodes, num_nodes):
         adj_matrix[j, i] = 1
     return adj_matrix
 
-# possible_pairs_ws = watts_strogatz_pairs(15, k=4, p=0.2)
-possible_pairs_opt = optimized_small_world(15, k=2, max_edges=30)
+possible_pairs_ws = watts_strogatz_pairs(15, k=4, p=0.1)
+# possible_pairs_opt = optimized_small_world(15, k=2, max_edges=30)
 
 # possible_pairs_opt2 = optimized_small_worldv2(15, k=2, max_edges=30)
-distances = compute_all_pairs_shortest_paths(15, possible_pairs_opt)
+# distances = compute_all_pairs_shortest_paths(15, possible_pairs_ws)
 # print(possible_pairs_ws)
-print(possible_pairs_opt)
+# print(possible_pairs_ws)
 # # Print the distance matrix
-for row in distances:
-    print(row)
+# for row in distances:
+#     print(row)
 
-WS_PAIRS = [[0, 1], [0, 2], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 7], [6, 7], [7, 8], [8, 9], [8, 10], [9, 10], [10, 12], [11, 12], [11, 13], [12, 13], [14, 0], [14, 1], [5, 13], [6, 7], [7, 10], [9, 6], [10, 8], [12, 5], [13, 6], [13, 5]]
+WS_PAIRS_k4_p02 = [[0, 1], [0, 2], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 7], [6, 7], [7, 8], [8, 9], [8, 10], [9, 10], [10, 12], [11, 12], [11, 13], [12, 13], [14, 0], [14, 1], [5, 13], [6, 7], [7, 10], [9, 6], [10, 8], [12, 5], [13, 6], [13, 5]]
+WS_PAIRS_k4_p0 = [[0, 1], [0, 2], [0, 13], [0, 14], [1, 2], [1, 3], [1, 14], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 6], [5, 7], [6, 7], [6, 8], [7, 8], [7, 9], [8, 9], [8, 10], [9, 10], [9, 11], [10, 11], [10, 12], [11, 12], [11, 13], [12, 13], [12, 14], [13, 14]]
+
 OPT_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 0], [0, 7], [0, 8], [1, 8], [1, 9], [2, 9], [2, 10], [3, 10], [3, 11], [4, 11], [4, 12], [5, 12], [5, 13], [6, 13], [6, 14], [7, 14]]
 CC_PAIRS =  [(3, 4), (12, 13), (0, 2), 
             (8, 9), (9, 11), (0, 14), (13, 14), 
             (6, 8), (4, 5), (5, 6), (0, 1), (9, 10), 
             (1, 2), (10, 11), (6, 7), (3, 5), 
             (12, 14), (2, 3), (11, 12), (7, 8)] # Circular Clique Network: Follows R4
-WS_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS])
-OPT_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])
+SET_WS_PAIRS_k4_p02 = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS_k4_p02])
+SET_OPT_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])
 # print(f"Watt-Strogatz: {WS_PAIRS}")
 # print(f"Greedy: {OPT_PAIRS}")
 # print(f"Watt-Strogatz: \n {get_adjacency_matrix(WS_PAIRS, 15)}")
