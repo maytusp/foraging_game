@@ -19,19 +19,22 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_pickup_high_v1 import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_pop
+
+from utils.graph_gen import WS_PAIRS_k4_p0 as WS_PAIRS
+
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_wsnet_k4p0
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(6e8)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
-    learning_rate: float = 2.5e-4
+    learning_rate: float = 1.0e-3
     """the learning rate of the optimizer"""
-    num_envs: int = 512
+    num_envs: int = 2048
     """the number of parallel game environments"""
     num_steps: int = 16
     """the number of steps to run in each environment per policy rollout"""
@@ -61,7 +64,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 15
     reset_iteration: int = 1
     self_play_option: bool = False
     
@@ -84,15 +87,11 @@ class Args:
     max_steps = 10
     fully_visible_score = False
     agent_visible = False
-    time_pressure = False
     mode = "train"
-    model_name = "pop_ppo_3net"
+    model_name = "wsk4p0_ppo_15net"
     
     if not(agent_visible):
         model_name+= "_invisible"
-
-    if not(time_pressure):
-        model_name+= "_wospeedrw"
     
 
     """train or test (different attribute combinations)"""
@@ -181,7 +180,6 @@ if __name__ == "__main__":
         food_energy_fully_visible=args.fully_visible_score,
         mode=args.mode,
         seed=args.seed,
-        time_pressure=args.time_pressure,
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
     num_agents = cfg.num_agents
@@ -243,8 +241,11 @@ if __name__ == "__main__":
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
-    possible_networks = [i for i in range(args.num_networks)]
-    selected_networks = [0,1]
+    possible_pairs = WS_PAIRS
+    if args.self_play_option:
+        possible_pairs += [[a,a] for a in range(args.num_networks)]
+        print("Enable self-play")
+        print(f"Pairs {possible_pairs}")
     
     # --- log performance ---
     episodes_since_log = 0
@@ -267,7 +268,7 @@ if __name__ == "__main__":
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                 )
-            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
+            selected_networks = random.sample(possible_pairs, 1)[0]
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())

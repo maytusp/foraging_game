@@ -22,7 +22,7 @@ from utils.process_env import *
 from models.pickup_models import PPOLSTMCommAgent
 
 from utils.graph_gen import WS_PAIRS_k4_p02 as WS_PAIRS
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_simultaneous_wsnet_k4p02
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_simultaneous_sp_wsnet_k4p02
 @dataclass
 class Args:
     M_e = 8
@@ -68,7 +68,7 @@ class Args:
     # Populations
     num_networks = 15
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -90,7 +90,7 @@ class Args:
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "wsk4p0_ppo_15net"
+    model_name = "wsk4p02_sp_ppo_15net"
     
     if not(agent_visible):
         model_name+= "_invisible"

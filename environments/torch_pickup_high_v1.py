@@ -466,7 +466,7 @@ class TorchForagingEnv:
             wrong = collected & (~right)
             # +1 (and time bonus) to all agents if right
             if right.any():
-                bonus = ((self.cfg.max_steps - self.curr_steps[right]) / self._max_steps_f).clamp_min(0.0) if self.cfg.time_pressure else 0.0
+                bonus = ((self.cfg.max_steps - self.curr_steps[right]) / self._max_steps_f).clamp_min(0.0) if self.cfg.time_pressure else torch.tensor(0.0, device=self.device)
                 rewards[right] += (1.0 + bonus).unsqueeze(-1)
                 success[right] = 1
             if wrong.any():
