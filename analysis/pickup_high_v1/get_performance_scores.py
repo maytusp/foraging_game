@@ -19,12 +19,14 @@ def load_score(filename):
     return scores
 
 model_name_map = {
-                "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10_332800000",
-                "pop_ppo_3net_invisible_unidirectional/grid5_img3_ni2_nw4_ms10_460800000",
+                # "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10_332800000",
+                # "pop_ppo_3net_invisible_unidirectional/grid5_img3_ni2_nw4_ms10_460800000",
+                # "pop_ppo_3net_invisible_train_test_v7/grid5_img5_ni2_nw4_ms10_614400000",
+                "pop_ppo_3net_ablate_message_visible_score_v7/grid5_img5_ni2_nw4_ms10_153600000"
                 }
-mode = "test"
+mode = "train"
 num_networks = 3
-test_conditions = ["normal", "hard"] 
+test_conditions = ["zero"] #, "normal", "hard"] 
 metrics = ["sr", "length"]
 model_score_dict = {test_cond:{"sr":{}, "length":{}} for test_cond in test_conditions}
 saved_fig_dir = f"plots/message_ablation/"

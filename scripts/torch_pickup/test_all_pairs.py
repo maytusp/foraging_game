@@ -34,11 +34,11 @@ class Args:
     wandb_entity: str = "maytusp"
     capture_video: bool = False
 
-    visualize = True
-    save_trajectory = False
+    visualize = False
+    save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = True
+    agent_visible = False
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -46,7 +46,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 100
+    total_episodes: int = 1000
     """vocab size"""
     image_size = 3
     """number of observation grid"""
@@ -60,22 +60,21 @@ class Args:
     max_steps = 10
     """grid size"""
     mode = "test"
-    agent_visible = False
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    num_nets_to_model_step = {15: 883200000}
+    num_nets_to_model_step = {3: 1177600000}
     
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
     swap_agent = {0:1, 1:0}
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-    for num_networks in [15]:
+    for num_networks in [3]:
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
-        args.model_name = f"wsk4p02_sp_ppo_15net_invisible"
-        for seed in [3]: # ,2,3]:
+        args.model_name = f"pop_ppo_3net_invisible_wospeedrw"
+        for seed in [1,2]: # ,2,3]:
             for i in range(args.num_networks):
                 for j in range(args.num_networks):
                     args.seed = seed
@@ -84,8 +83,8 @@ if __name__ == "__main__":
                     # Update the network pair and dependent paths/parameters
                     network_pairs = f"{i}-{j}"
                     selected_networks = network_pairs.split("-")
-                    args.ckpt_path = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/final_model_agent_{selected_networks[0]}.pt"
-                    args.ckpt_path2 = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/final_model_agent_{selected_networks[1]}.pt"
+                    args.ckpt_path = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
+                    args.ckpt_path2 = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
                     args.saved_dir = f"logs/torch_pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                     args.video_save_dir = os.path.join(args.saved_dir, "vids")
                     if args.ablate_message:
@@ -113,7 +112,6 @@ if __name__ == "__main__":
                         num_foods=args.N_i,
                         num_walls=0,
                         max_steps=args.max_steps,
-                        use_message=True,           # we’ll feed/receive messages
                         agent_visible=args.agent_visible,
                         food_energy_fully_visible=args.fully_visible_score,
                         mode=args.mode,

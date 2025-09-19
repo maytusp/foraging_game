@@ -19,14 +19,14 @@ from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
-# python -m scripts.pickup_high_v1.test_ablate_message_3net_all
+# python -m scripts.pickup_high_v1.test_ablate_3net_unidirect
 
 
 @dataclass
 class Args:
 
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    seed: int = 1
+    seed: int = 2
     torch_deterministic: bool = True
     cuda: bool = True
     wandb_project_name: str = "PPO Foraging Game"
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             for i in range(args.num_networks):
                 for j in range(i+1):
                     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-                    for seed in [1]:
+                    for seed in [2,3]:
                         args.seed = seed
                         args.n_words = 4
                         # args.combination_name = f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}_nw{args.n_words}_ms{args.max_steps}"

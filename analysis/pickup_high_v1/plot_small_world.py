@@ -14,7 +14,7 @@ with open("plots/population/small_world/sr_lang_sim/mean_std_by_model.pkl", "rb"
 saved_fig_dir = f"plots/small_world"
 
 ckptname2label = {"wsk4p02_ppo_15net_invisible": "WS",
-                "optk2e30_ppo_15net_invisible": "Opt",
+                "optk2e30_ppo_15net_invisible": "LRC",
                 "ccnet_ppo_15net_invisible": "Clq",
                 }
 distance_list = [i for i in range(1,8)]

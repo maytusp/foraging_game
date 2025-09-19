@@ -33,10 +33,11 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = False
-    ablate_type = "noise" # zero, noise
+    ablate_message = True
+    ablate_type = "zero" # zero, noise
+    mode = "test"
     agent_visible = True
-    fully_visible_score = False
+    fully_visible_score = True
     identical_item_obs = False
     zero_memory = False
     memory_transfer = False
@@ -57,12 +58,10 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    mode = "train"
-    agent_visible = False
-    model_name = "pop_ppo_3net_invisible"
+    model_name = "pop_ppo_3net_ablate_message_visible_score"
     num_networks = 3
     
-    model_step = "614400000"
+    model_step = "153600000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 if __name__ == "__main__":
@@ -99,6 +98,7 @@ if __name__ == "__main__":
 
                 env = Environment(use_message=True,
                                     agent_visible=args.agent_visible,
+                                    food_ener_fully_visible=args.fully_visible_score,
                                     n_words=args.n_words,
                                     seed=args.seed, 
                                     N_i = args.N_i,

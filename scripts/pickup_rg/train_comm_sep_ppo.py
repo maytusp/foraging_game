@@ -29,9 +29,9 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(4e8)
+    total_timesteps: int = int(6e8)
     """total timesteps of the experiments"""
-    learning_rate: float = 2.5e-4
+    learning_rate: float = 2.5e-3
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
@@ -55,7 +55,7 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01 # ori 0.01
     """coefficient of the action_entropy"""
-    m_ent_coef: float = 0.001
+    m_ent_coef: float = 0.002
     """coefficient of the message_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -65,11 +65,11 @@ class Args:
 
     log_every = 32
 
-    n_words = 4
+    n_words = 8
     image_size = 3
     N_i = 2
     grid_size = 5
-    max_steps = 6
+    max_steps = 5
     fully_visible_score = False
     agent_visible = False
     mode = "train"

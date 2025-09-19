@@ -20,17 +20,17 @@ def load_score(filename):
 # 652800000
 # 1792000000
 model_name_map = {
-                #  "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000": "0",
-                #   "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_460800000": "1",
-                #   "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_460800000": "2",
+                 "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000": "0",
+                  "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_409600000": "1",
+                  "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_409600000": "2",
 
-                "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6_1792000000": "0",
-                  "pop_ppo_3net_invisible_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_652800000": "1",
-                  "pop_ppo_3net_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_652800000": "2",          
+                # "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6_1792000000": "0",
+                #   "pop_ppo_3net_invisible_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_601600000": "1",
+                #   "pop_ppo_3net_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_601600000": "2",          
                 }
 mode = "train"
 num_networks = 3
-test_conditions = ["normal", "zero"] 
+test_conditions = ["normal", "zero"]  # 1 and 2 need to change to zero
 metrics = ["sr", "length"]
 model_score_dict = {test_cond:{"sr":{}, "length":{}} for test_cond in test_conditions}
 saved_fig_dir = f"plots/message_ablation/"
@@ -43,7 +43,7 @@ for test_condition in test_conditions:
         sr_list = [] # sucess rates of different seeds and pairs
         l_list = [] # episode lengths of different seeds and pairs
         try:
-            for seed in [1]: # Add 2 3 later
+            for seed in [1,2,3]: # Add 2 3 later
                 network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
                 # network_pairs = ["0-1"]
                 score_dict = {}
@@ -76,7 +76,7 @@ for model_key, label in model_name_map.items():
         # Handle model_name part only (strip path after slash if needed)
         base_model_key = model_key
 
-        score_list = model_score_dict["zero"][metric].get(base_model_key, None)
+        score_list = model_score_dict["normal"][metric].get(base_model_key, None)
         if score_list is not None:
             mean = np.mean(score_list)
             std = np.std(score_list)

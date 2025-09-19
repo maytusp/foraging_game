@@ -1,4 +1,3 @@
-# Created: 24 Aug 2025
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
@@ -7,6 +6,7 @@ import random
 import time
 from dataclasses import dataclass
 
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -14,28 +14,29 @@ import torch.optim as optim
 import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
+import supersuit as ss
 
 
-from environments.torch_pickup_high_v1 import TorchForagingEnv, EnvConfig
+from environments.pickup_temporal import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_pop
+# python -m scripts.pickup_temporal.train_8x8_longer
 @dataclass
 class Args:
-    seed: int = 3
+    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(6e8)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 512
+    num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 16
+    num_steps: int = 128
     """the number of steps to run in each environment per policy rollout"""
-    anneal_lr: bool = True
+    anneal_lr: bool = False
     """Toggle learning rate annealing for policy and value networks"""
     gamma: float = 0.99
     """the discount factor gamma"""
@@ -53,7 +54,7 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01
     """coefficient of the action_entropy"""
-    m_ent_coef: float = 0.001
+    m_ent_coef: float = 0.002
     """coefficient of the message_entropy"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
@@ -80,19 +81,17 @@ class Args:
     n_words = 4
     image_size = 3
     N_i = 2
-    grid_size = 5
-    max_steps = 10
+    grid_size = 8
+    max_steps = 40
+    freeze_dur = 12
+    comm_range = 2
     fully_visible_score = False
     agent_visible = False
-    time_pressure = False
     mode = "train"
-    model_name = "pop_ppo_3net"
+    model_name = f"pop_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
-
-    if not(time_pressure):
-        model_name+= "_wospeedrw"
     
 
     """train or test (different attribute combinations)"""
@@ -103,19 +102,21 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
-    save_dir = f"checkpoints/torch_pickup_high_v1/{model_name}/{train_combination_name}/seed{seed}/"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_range{comm_range}"
+    save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = True
+
     if load_pretrained:
-        pretrained_global_step = 1177600000
+        pretrained_global_step = 1792000000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/torch_pickup_high_v1/pop_ppo_3net_invisible_wospeedrw/grid5_img3_ni2_nw4_ms10/seed3/agent_{a}_step_1177600000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6/seed1/agent_{a}_step_1792000000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
-    save_frequency = int(5e4)
+
+    save_frequency = int(4e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
@@ -126,7 +127,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "torch_pickup_high_v1"
+    wandb_project_name: str = "pickup_temporal"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    run_name = args.exp_name
+    run_name = "pickup_temporal_" + args.exp_name
     if args.track:
         import wandb
 
@@ -169,25 +170,26 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
+    env = Environment(use_message=True,
+                        agent_visible=args.agent_visible,
+                        n_words=args.n_words,
+                        seed=args.seed, 
+                        N_i = args.N_i,
+                        grid_size=args.grid_size,
+                        image_size=args.image_size,
+                        max_steps=args.max_steps,
+                        mode="train",
+                        freeze_dur=args.freeze_dur,
+                        comm_range=args.comm_range)
+    
+    num_channels = env.num_channels
+    num_agents = len(env.possible_agents)
+    num_actions = env.action_space(env.possible_agents[0])['action'].n
+    observation_size = env.observation_space(env.possible_agents[0]).shape
 
-    cfg = EnvConfig(
-        grid_size=args.grid_size,
-        image_size=args.image_size,
-        num_agents=2,               # keep your setting
-        num_foods=args.N_i,
-        num_walls=0,
-        max_steps=args.max_steps,
-        agent_visible=args.agent_visible,
-        food_energy_fully_visible=args.fully_visible_score,
-        mode=args.mode,
-        seed=args.seed,
-        time_pressure=args.time_pressure,
-    )
-    envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
-    num_agents = cfg.num_agents
-    num_channels = 2
-
-    num_actions = envs.num_actions
+    # Vectorise env
+    envs = ss.pettingzoo_env_to_vec_env_v1(env)
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}
@@ -203,12 +205,9 @@ if __name__ == "__main__":
     dones = {}
     values = {}
 
-    next_obs, next_locs, next_done, next_lstm_state = {}, {}, {}, {}
+    next_obs, next_locs, next_r_messages, next_done, next_lstm_state = {}, {}, {}, {}, {}
     # TRY NOT TO MODIFY: start the game
-    next_obs, next_locs = envs._obs_core()
-    next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64).to(device) # action: sent message
-    
-    swap_agent = {0:1, 1:0}
+    next_obs_dict, _ = envs.reset(seed=args.seed)
 
     for network_id in range(args.num_networks):
         agents[network_id] = PPOLSTMCommAgent(num_actions=num_actions, 
@@ -234,34 +233,28 @@ if __name__ == "__main__":
         dones[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         values[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
 
+
+        next_obs[i], next_locs[i], next_r_messages[i], _ = extract_dict_separate(next_obs_dict, None, device, i, num_agents, use_message=True)
+        # print(next_obs[i].shape, next_locs[i].shape)
+        next_r_messages[i] = torch.tensor(next_r_messages[i]).squeeze().to(device)
         next_done[i] = torch.zeros(args.num_envs).to(device)
         next_lstm_state[i] = (
             torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
             torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
         )  # hidden and cell states (see https://youtu.be/8HyCNIVRbSU)
-    
+
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
     selected_networks = [0,1]
-    
-    # --- log performance ---
-    episodes_since_log = 0
-    sum_return_since_log = 0.0
-    sum_length_since_log = 0.0
-
-    # per-env accumulators
-    ep_ret = torch.zeros(args.num_envs, num_agents, device=device)
-    ep_len = torch.zeros(args.num_envs, num_agents, device=device)
-
-    episodes_since_log = 0
-    LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
-    # Start training
+    # for visualization
+    running_ep_r = 0.0
+    running_ep_l = 0.0
+    running_num_ep = 0
     for iteration in range(1, args.num_iterations + 1):
         # print("iteration", iteration)
         if iteration % args.reset_iteration == 0:
-            # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
             for i in range(num_agents):
                 next_lstm_state[i] = (
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
@@ -291,16 +284,16 @@ if __name__ == "__main__":
             reward = {}
 
             for i in range(num_agents):
-                obs[i][step] = next_obs[:,i,:,:,:]
-                locs[i][step] = next_locs[:,i,:]
-                r_messages[i][step] = next_r_messages[:, i].squeeze()
+                obs[i][step] = next_obs[i]
+                locs[i][step] = next_locs[i]
+                r_messages[i][step] = next_r_messages[i].squeeze()
                 dones[i][step] = next_done[i]
 
                 network_id = selected_networks[i] # Two embodied agents have chance to share the same neural networks during training (self-play)
- 
+
                 # ALGO LOGIC: action logic
                 with torch.no_grad():
-                    action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[network_id].get_action_and_value((next_obs[:,i,:,:,:], next_locs[:,i,:], next_r_messages[:,i]), 
+                    action[i], action_logprob[i], _, s_message[i], message_logprob[i], _, value[i], next_lstm_state[i] = agents[network_id].get_action_and_value((next_obs[i], next_locs[i], next_r_messages[i]), 
                                                                                                         next_lstm_state[i], next_done[i])
                     values[i][step] = value[i].flatten()
 
@@ -311,16 +304,19 @@ if __name__ == "__main__":
                 
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            # --- build [B,A] tensors and step env ONCE on GPU ---
-            acts_BA = torch.stack([action[i].long().to(device)    for i in range(num_agents)], dim=1)  # [B,A]
+            env_action, env_message = get_action_message_for_env(action, s_message)
+            next_obs_dict, all_reward, all_terminations, all_truncations, infos = envs.step({"action": env_action, "message": env_message})
+            env_info = (all_reward, all_terminations, all_truncations)
 
-            (next_obs, next_locs), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
-            env_info = (all_rewards, all_terminations, all_truncations)
-
+            # Log experience from the environment into batches: separated by agent id
             for i in range(num_agents):
-                next_r_messages[:,i] = s_message[swap_agent[i]] # agent exchange msgs
-                next_done[i] = (all_terminations | all_truncations).float()
-                rewards[i][step] = all_rewards[:, i] # (B,A)
+                next_obs[i], next_locs[i], next_r_messages[i], (reward[i], terminations, truncations) = extract_dict_separate(next_obs_dict, env_info, device, i, num_agents, use_message=True)
+            
+                next_done[i] = np.logical_or(terminations, truncations)
+                rewards[i][step] = torch.tensor(reward[i]).to(device).view(-1)
+                next_obs[i], next_done[i] = torch.Tensor(next_obs[i]).to(device), torch.Tensor(next_done[i]).to(device)
+                next_r_messages[i] = torch.tensor(next_r_messages[i]).to(device)
+
             # Save Model Checkpoints: loop over networks not agents
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
                 for network_id in range(args.num_networks):
@@ -332,38 +328,23 @@ if __name__ == "__main__":
                     torch.save(agents[network_id].state_dict(), save_path)
                     print(f"Model saved to {save_path}")
 
+            for info in infos:
+                if "terminal_observation" in info:
+                    # for info in each_infos:
+                    if "episode" in info:
+                        running_ep_r += info["episode"]["r"]
+                        running_ep_l += info["episode"]["l"]
+                        running_num_ep += 1
 
-            # For logging: accumulate returns/lengths
-            ep_ret += all_rewards          # shape [B, A]
-            ep_len += 1
-
-            finished = (all_terminations | all_truncations).bool()   # shape [B]
-            if finished.any():
-                b_idx = finished.nonzero(as_tuple=False).squeeze(1)
-                finished_returns = ep_ret[b_idx].mean(dim=1).detach().cpu()   # team-mean per env
-                finished_lengths = ep_len[b_idx].mean(dim=1).detach().cpu()
-                next_r_messages[b_idx] = torch.zeros((b_idx.numel(), num_agents), dtype=torch.int64).to(device) # action: sent message
-
-                # exact aggregation since last log
-                sum_return_since_log += float(finished_returns.sum())
-                sum_length_since_log += float(finished_lengths.sum())
-                episodes_since_log += finished_returns.numel()
-
-                # reset accumulators for those finished envs
-                ep_ret[b_idx] = 0
-                ep_len[b_idx] = 0
-
-            # Log periodically (episode-based cadence)
-            if args.visualize_loss and episodes_since_log >= LOG_EVERY_EPISODES:
-                mean_ret_since_log = sum_return_since_log / episodes_since_log
-                mean_len_since_log = sum_length_since_log / episodes_since_log
-
-                writer.add_scalar("charts/episodic_return/", mean_ret_since_log, global_step)
-                writer.add_scalar("charts/episodic_length/", mean_len_since_log, global_step)
-
-                sum_return_since_log = 0.0
-                sum_length_since_log = 0.0
-                episodes_since_log = 0
+            if args.visualize_loss and running_num_ep != 0 and (global_step // args.num_envs) % args.log_every == 0:
+                # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                running_ep_r /= running_num_ep
+                running_ep_l /= running_num_ep
+                writer.add_scalar("charts/episodic_return", running_ep_r, global_step)
+                writer.add_scalar("charts/episodic_length", running_ep_l, global_step)
+                running_ep_r = 0.0
+                running_ep_l = 0.0
+                running_num_ep = 0
                         
         #TODO Implement seprate network for this part
         b_obs = {}
@@ -385,7 +366,7 @@ if __name__ == "__main__":
             # bootstrap value if not done
             with torch.no_grad():
                 next_value = agents[network_id].get_value(
-                    (next_obs[:,i,:,:,:], next_locs[:,i,:], next_r_messages[:,i]),
+                    (next_obs[i], next_locs[i], next_r_messages[i]),
                     next_lstm_state[i],
                     next_done[i],
                 ).reshape(1, -1)
@@ -516,12 +497,9 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{network_id}/losses/explained_variance", explained_var, global_step)
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
                 print("SPS:", int(global_step / (time.time() - start_time)))
-    if args.load_pretrained:
-        saved_step = global_step + args.pretrained_global_step
-    else:
-        saved_step = global_step
+
     for network_id in range(args.num_networks):
-        final_save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{saved_step}.pt")
+        final_save_path = os.path.join(args.save_dir, f"final_model_agent_{network_id}.pt")
         torch.save(agents[network_id].state_dict(), final_save_path)
         print(f"Final model of network {network_id} saved to {final_save_path}")
 

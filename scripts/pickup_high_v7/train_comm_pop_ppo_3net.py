@@ -103,7 +103,7 @@ class Args:
     train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     save_dir = f"checkpoints/pickup_high_v7/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
+    load_pretrained = False
     
     if load_pretrained:
         pretrained_global_step = 0
