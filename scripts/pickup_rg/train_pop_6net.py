@@ -1,3 +1,4 @@
+# Created: 6 Feb 2024
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
@@ -17,26 +18,28 @@ from torch.utils.tensorboard import SummaryWriter
 import supersuit as ss
 
 
-from environments.pickup_temporal import *
+from environments.pickup_rg import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_temporal.train_8x8_ablate_3net_inv_longer
+
 @dataclass
+
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_rg.train_pop_3net
 class Args:
-    seed: int = 3
+    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e8)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
     num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 16
     """the number of steps to run in each environment per policy rollout"""
-    anneal_lr: bool = False
+    anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
     gamma: float = 0.99
     """the discount factor gamma"""
@@ -62,7 +65,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 6
     reset_iteration: int = 1
     self_play_option: bool = False
     
@@ -81,19 +84,16 @@ class Args:
     n_words = 4
     image_size = 3
     N_i = 2
-    grid_size = 8
-    max_steps = 40
-    freeze_dur = 12
+    grid_size = 5
+    max_steps = 6
     fully_visible_score = False
     agent_visible = False
-    ablate_message = True
     mode = "train"
-    model_name = f"pop_ppo_{num_networks}net"
+    model_name = "pop_ppo_6net_10score"
     
     if not(agent_visible):
         model_name+= "_invisible"
-    if ablate_message:
-        model_name += "_ablate_message"
+    
 
     """train or test (different attribute combinations)"""
     # to be filled in runtime
@@ -103,21 +103,19 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
-    save_dir = f"checkpoints/pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
+    save_dir = f"checkpoints/pickup_rg/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = True
-
+    load_pretrained = False
     if load_pretrained:
-        pretrained_global_step = 601600000
+        pretrained_global_step = 947200000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6/seed3/agent_{a}_step_601600000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_rg/MODEL_NAME/SETTING/seed1/agent_{a}_step_947200000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
-
-    save_frequency = int(1e5)
+    save_frequency = int(4e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
@@ -128,7 +126,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "pickup_temporal"
+    wandb_project_name: str = "pickup_rg"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -144,7 +142,7 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    run_name = "pickup_temporal_" + args.exp_name
+    run_name = args.exp_name
     if args.track:
         import wandb
 
@@ -179,9 +177,7 @@ if __name__ == "__main__":
                         grid_size=args.grid_size,
                         image_size=args.image_size,
                         max_steps=args.max_steps,
-                        mode="train",
-                        freeze_dur=args.freeze_dur,
-                        ablate_message=args.ablate_message)
+                        mode="train")
     
     num_channels = env.num_channels
     num_agents = len(env.possible_agents)
@@ -190,7 +186,7 @@ if __name__ == "__main__":
 
     # Vectorise env
     envs = ss.pettingzoo_env_to_vec_env_v1(env)
-    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=8, base_class="gymnasium")
+    envs = ss.concat_vec_envs_v1(envs, args.num_envs, num_cpus=32, base_class="gymnasium")
 
     # Initialize dicts for keeping agent models and experiences
     agents = {}

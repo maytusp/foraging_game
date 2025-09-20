@@ -70,15 +70,15 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         if mode == "train":
-            self.score_unit = 5
+            self.score_unit = 25
             self.start_steps = 0
-            self.last_steps = 50
+            self.last_steps = 10
             self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
         elif mode == "test":
-            self.score_unit = 2
+            self.score_unit = 20
             self.start_steps = 0
-            self.last_steps = 125
-            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
+            self.last_steps = 12
+            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 25 != 0]
 
         self.max_score = self.N_val
         self.food_ener_fully_visible = food_ener_fully_visible
@@ -258,7 +258,7 @@ class Environment(ParallelEnv):
             agent_obs = {i:{} for i in range(self.num_agents)}
             for i, agent in enumerate(self.agent_maps):
                 if self.cue_step:
-                    image = np.ones_like(agent.observe(self)) * 0
+                    image = np.ones_like(agent.observe(self)) * 100
                 else:
                     image = agent.observe(self)
                     # Sanity check: agents see their items' scores
@@ -304,7 +304,7 @@ class Environment(ParallelEnv):
         
         if self.curr_steps == 1:
             self.agent_obs = self.observe()
-        elif self.curr_steps == self.max_steps - 1: # Give visual cue to make decision
+        elif self.curr_steps == self.max_steps-1: # Give visual cue to make decision
             self.cue_step = True
             self.agent_obs = self.observe()
 
@@ -354,14 +354,15 @@ class Environment(ParallelEnv):
                     episode_successs = False
                 elif agent.id == self.idle_agent_id and action != "not_pick_up":
                     episode_successs = False
-        # else:
-        #     for action_key in actions.keys():
-        #         (agent, action) = actions[action_key]
 
-        #         if action != "idle":
-        #             episode_successs = False
-        #             self.dones = {i:True for i in range(len(self.possible_agents))}
-        #             break
+        else:
+            for action_key in actions.keys():
+                (agent, action) = actions[action_key]
+
+                if action != "idle":
+                    episode_successs = False
+                    self.dones = {i:True for i in range(len(self.possible_agents))}
+                    break
 
                     
         if self.dones[0]:

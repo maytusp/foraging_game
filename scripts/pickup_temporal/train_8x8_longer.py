@@ -23,7 +23,7 @@ from models.pickup_models import PPOLSTMCommAgent
 # python -m scripts.pickup_temporal.train_8x8_longer
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -112,7 +112,7 @@ class Args:
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6/seed1/agent_{a}_step_1792000000.pt" for a in range(num_networks)
+                    a: f"checkpoints/pickup_temporal/pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6/seed3/agent_{a}_step_1792000000.pt" for a in range(num_networks)
                     }
     visualize_loss = True
 
