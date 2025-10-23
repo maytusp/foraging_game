@@ -20,7 +20,7 @@ from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
 
-
+# python -m scripts.pickup_temporal.test_3net_all_seeds
 
 @dataclass
 class Args:
@@ -34,7 +34,7 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = True
+    ablate_message = False
     ablate_type = "zero" # zero, noise
     fully_visible_score = False
     identical_item_obs = False
@@ -55,15 +55,16 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 8
-    freeze_dur = 6
+    freeze_dur = 12
+    comm_range = 2
     max_steps = 40
     """grid size"""
     mode = "train"
     agent_visible = False
     model_name = "pop_ppo_3net_invisible"
     num_networks = 3
-    model_step = "1792000000"
-    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
+    model_step = "2252800000"
+    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_range{comm_range}"
 
 
 
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         args.seed = seed
         args.test_max_steps = 40
         for i in range(args.num_networks):
-            for j in range(args.num_networks):
+            for j in range(i+1):
                 # Update the network pair and dependent paths/parameters
                 network_pairs = f"{i}-{j}"
                 selected_networks = network_pairs.split("-")
@@ -111,7 +112,8 @@ if __name__ == "__main__":
                                     image_size=args.image_size,
                                     max_steps=args.test_max_steps,
                                     mode=args.mode,
-                                    freeze_dur=args.freeze_dur)
+                                    freeze_dur=args.freeze_dur,
+                                    comm_range=args.comm_range)
 
                 num_channels = env.num_channels
                 num_agents = len(env.possible_agents)

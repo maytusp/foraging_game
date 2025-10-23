@@ -19,11 +19,13 @@ def load_score(filename):
     return scores
 
 model_name_map = {
-                "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000"
+                # "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6_1792000000",
+            "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur12_range2_2252800000": "0",
+
                 }
 mode = "train"
 num_networks = 3
-test_conditions = ["normal", "zero"] 
+test_conditions =  ["zero"] 
 metrics = ["sr", "length"]
 model_score_dict = {test_cond:{"sr":{}, "length":{}} for test_cond in test_conditions}
 saved_fig_dir = f"plots/message_ablation/"
@@ -35,7 +37,7 @@ for test_condition in test_conditions:
         print(f"{model_name}/{combination_name}")
         sr_list = [] # sucess rates of different seeds and pairs
         l_list = [] # episode lengths of different seeds and pairs
-        for seed in [1,2,3]:
+        for seed in [1]:
             network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
             # network_pairs = ["0-1"]
             score_dict = {}

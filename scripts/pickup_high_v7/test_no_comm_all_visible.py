@@ -59,10 +59,10 @@ class Args:
     grid_size = 5
     max_steps=10
     """grid size"""
-    mode = "train"
+    mode = "test"
     agent_visible = True
     model_name = "dec_ppo_ablate_message_visible_score"
-    model_step = "25600000"
+    model_step = "76800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
     ckpt_path = f"checkpoints/pickup_high_v7/{model_name}/{combination_name}/seed{seed}/agent_0_step_{model_step}.pt"
     ckpt_path2 = f"checkpoints/pickup_high_v7/{model_name}/{combination_name}/seed{seed}/agent_1_step_{model_step}.pt"

@@ -57,6 +57,11 @@ class PPOLSTMCommAgent(nn.Module):
         self.critic = layer_init(nn.Linear(128, 1), std=1)
         self.message_head = layer_init(nn.Linear(128, n_words), std=0.01)
 
+    # [IL] reinit only actor & critic heads (keep encoders/LSTM/message head intact)
+    def reset_actor_critic(self):
+        layer_init(self.actor, std=0.01)
+        layer_init(self.critic, std=1)
+        
     def get_states(self, input, lstm_state, done, tracks=None):
         batch_size = lstm_state[0].shape[1]
         image, location, message = input

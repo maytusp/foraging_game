@@ -100,9 +100,10 @@ def save_classification_report_csv(report_dict, accuracy, filename):
 if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
     label_list = ['item_score', 'item_loc_x', 'item_loc_y']
-    model_name = "pop_ppo_3net_invisible"
+    model_name = "pop_ppo_3net_invisible_no_pressure"
     checkpoints_dict = {
                     "pop_ppo_3net_invisible": {'seed1': 332800000, 'seed2': 332800000, 'seed3':332800000},
+                    "pop_ppo_3net_invisible_no_pressure":  {'seed1': 307200000, 'seed2': 307200000, 'seed3':307200000},
                     }
     avg_accuracy_dict = {'item_score':[], 
                         'item_loc_x':[], 
@@ -114,7 +115,7 @@ if __name__ == "__main__":
 
         
         for i in range(3):
-            for j in range(3):
+            for j in range(i+1):
                 log_file_path = f"../../logs/linear_decode/pickup_high_v1/{model_name}/{i}-{j}/{combination_name}/seed{seed}/mode_test/normal/trajectory.pkl"
 
                 label_encoder = sklearn.preprocessing.LabelEncoder()

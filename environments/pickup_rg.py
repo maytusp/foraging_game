@@ -70,15 +70,15 @@ class Environment(ParallelEnv):
         self.action_spaces = spaces.Dict({i: self.single_action_space for i in range(num_agents)})
         self.render_mode = None
         if mode == "train":
-            self.score_unit = 25
+            self.score_unit = 5
             self.start_steps = 0
-            self.last_steps = 10
+            self.last_steps = 50
             self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps)] # each food item will have one of these energy scores, assigned randomly.
         elif mode == "test":
-            self.score_unit = 20
+            self.score_unit = 2
             self.start_steps = 0
-            self.last_steps = 12
-            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 25 != 0]
+            self.last_steps = 124
+            self.score_list = [(i+1)*self.score_unit for i in range(self.start_steps, self.last_steps) if (i+1) % 5 != 0]
 
         self.max_score = self.N_val
         self.food_ener_fully_visible = food_ener_fully_visible

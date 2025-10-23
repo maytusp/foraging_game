@@ -55,14 +55,14 @@ class Args:
     N_i = 2
     """number of items"""
     grid_size = 8
-    freeze_dur = 6
+    freeze_dur = 12
     max_steps = 40
     """grid size"""
     mode = "train"
     agent_visible = False
     model_name = "pop_ppo_3net_invisible_ablate_message"
     num_networks = 3
-    model_step = "601600000"
+    model_step = "793600000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
 
 

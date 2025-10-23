@@ -13,11 +13,14 @@ with open("plots/population/small_world/sr_lang_sim/mean_std_by_model.pkl", "rb"
     log_data = pickle.load(f)
 saved_fig_dir = f"plots/small_world"
 
-ckptname2label = {"wsk4p02_ppo_15net_invisible": "WS",
-                "optk2e30_ppo_15net_invisible": "LRC",
+ckptname2label = {
+            "wsk4p02_ppo_15net_invisible": "WS",
+            "optk2e30_ppo_15net_invisible": "LRC",
+                # "ccnet_sp_ppo_15net_invisible": "XP+SP",
                 "ccnet_ppo_15net_invisible": "Clq",
+                
                 }
-distance_list = [i for i in range(1,8)]
+distance_list = [i for i in range(1,6)]
 
 # Set seaborn style and global font settings
 sns.set(style="whitegrid")

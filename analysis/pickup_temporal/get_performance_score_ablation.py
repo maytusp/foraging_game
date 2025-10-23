@@ -20,13 +20,17 @@ def load_score(filename):
 # 652800000
 # 1792000000
 model_name_map = {
-                 "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000": "0",
-                  "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_409600000": "1",
-                  "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_409600000": "2",
+                #  "pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms20_freeze_dur6_819200000": "0",
+                #   "pop_ppo_3net_invisible_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_409600000": "1",
+                #   "pop_ppo_3net_ablate_message/grid5_img3_ni2_nw4_ms40_freeze_dur6_409600000": "2",
 
                 # "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur6_1792000000": "0",
                 #   "pop_ppo_3net_invisible_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_601600000": "1",
-                #   "pop_ppo_3net_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_601600000": "2",          
+                #   "pop_ppo_3net_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur6_601600000": "2",  
+
+                "pop_ppo_3net_invisible/grid8_img3_ni2_nw4_ms40_freeze_dur12_range2_2252800000": "0",
+                  "pop_ppo_3net_invisible_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur12_793600000": "1",
+                  "pop_ppo_3net_ablate_message/grid8_img3_ni2_nw4_ms40_freeze_dur12_691200000": "2",          
                 }
 mode = "train"
 num_networks = 3
@@ -44,7 +48,8 @@ for test_condition in test_conditions:
         l_list = [] # episode lengths of different seeds and pairs
         try:
             for seed in [1,2,3]: # Add 2 3 later
-                network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
+                print("seed", seed)
+                network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
                 # network_pairs = ["0-1"]
                 score_dict = {}
                 sr_mat = np.zeros((num_networks, num_networks))
@@ -52,7 +57,7 @@ for test_condition in test_conditions:
                 for pair in network_pairs:
                     row, col = pair.split("-")
                     row, col = int(row), int(col)
-                    print(f"loading network pair {pair}")
+                    # print(f"loading network pair {pair}")
                     
                     score_dict[pair] = load_score(f"../../logs/pickup_temporal/ablate/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{test_condition}/score.txt")
                     sr_list.append(score_dict[pair]["Success Rate"])

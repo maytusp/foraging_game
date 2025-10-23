@@ -21,7 +21,7 @@ from models.pickup_models import PPOLSTMCommAgent
 
 
 
-
+# python -m scripts.pickup_temporal.test_add_noise_pop
 @dataclass
 class Args:
 
@@ -55,16 +55,18 @@ class Args:
     """number of values"""
     N_i = 2
     """number of items"""
-    grid_size = 5
-    freeze_dur = 6
-    max_steps = 20
+    grid_size = 8
+    freeze_dur = 12
+    comm_range = 2
+    max_steps = 40
     """grid size"""
     mode = "train"
     agent_visible = False
     model_name = "pop_ppo_3net_invisible"
     num_networks = 3
-    model_step = "819200000"
-    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
+    
+    model_step = "2252800000"
+    combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_range{comm_range}"
 
 
 
@@ -111,7 +113,8 @@ if __name__ == "__main__":
                                     image_size=args.image_size,
                                     max_steps=args.test_max_steps,
                                     mode=args.mode,
-                                    freeze_dur=args.freeze_dur)
+                                    freeze_dur=args.freeze_dur,
+                                    comm_range=args.comm_range)
 
                 num_channels = env.num_channels
                 num_agents = len(env.possible_agents)
@@ -323,7 +326,7 @@ if __name__ == "__main__":
                     print(f"Success Rate: {collected_items / args.total_episodes}", file=log_file)
                     print(f"Average Reward {running_rewards / args.total_episodes}", file=log_file)
                     print(f"Average Length: {running_length / args.total_episodes}", file=log_file)
-                    print(f"Average Success Length: {running_success_length / num_success_episodes}", file=log_file)
+                    # print(f"Average Success Length: {running_success_length / num_success_episodes}", file=log_file)
                 
                 envs.close()
                 # writer.close()
