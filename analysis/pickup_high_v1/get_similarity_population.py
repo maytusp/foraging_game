@@ -129,15 +129,15 @@ def load_score(filename):
 
 
 if __name__ == "__main__":
-    checkpoints_dict = { "dec_ppo_invisible" : {"seed1":307200000, "seed2":307200000, "seed3":307200000},
+    checkpoints_dict = { "dec_ppo_invisible" : {"seed1":204800000, "seed2":204800000, "seed3":204800000},
                         "pop_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
                         "pop_ppo_6net_invisible": {'seed1': 332800000, 'seed2': 332800000, 'seed3':332800000},
                         "pop_ppo_9net_invisible": {'seed1': 486400000, 'seed2': 486400000, 'seed3':486400000},
                         "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
-                        "pop_ppo_15net_invisible": {'seed1': 947200000, 'seed2': 819200000, 'seed3':819200000},
+                        "pop_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
                         }
     # checkpoints_dict = {
-    #                     "hybrid_ppo_invisible" : {'seed1': 307200000, 'seed2': 307200000, 'seed3':307200000},
+    #                     "hybrid_ppo_invisible" : {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
     #                     "pop_sp_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
     #                     "pop_sp_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
     #                     "pop_sp_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},

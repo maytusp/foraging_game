@@ -12,6 +12,7 @@ import torch.nn.functional as F
 class EnvConfig:
     grid_size: int = 5
     image_size: int = 3            # local obs crop (odd)
+    num_channels: int = 2
     num_agents: int = 2
     num_foods: int = 2             # N_i
     num_walls: int = 0

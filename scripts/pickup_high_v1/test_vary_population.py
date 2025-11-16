@@ -19,7 +19,7 @@ from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.test_vary_population
 
 
 @dataclass
@@ -37,7 +37,7 @@ class Args:
     save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = True
+
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -63,16 +63,19 @@ class Args:
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    num_nets_to_model_step = {3: 204800000, 6: 460800000, 9:512000000, 12: 768000000, 15: 819200000}
+    num_nets_to_model_step = {2:204800000, 3: 204800000, 6: 460800000, 9:512000000, 12: 768000000, 15: 819200000}
     
 if __name__ == "__main__":
     args = tyro.cli(Args)
     
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-    for num_networks in [9]:
+    for num_networks in [3,6,9,12,15]: # [2,3,6,9,12,15]:
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
-        args.model_name = f"pop_sp_ppo_{num_networks}net_invisible"
+        if num_networks == 2:
+            args.model_name = f"dec_sp_ppo_invisible"
+        else:
+            args.model_name = f"pop_sp_ppo_{num_networks}net_invisible"
         for seed in [1,2,3]:
             for i in range(args.num_networks):
                 for j in range(i+1):
@@ -121,7 +124,6 @@ if __name__ == "__main__":
                     # Vectorise env
                     envs = ss.pettingzoo_env_to_vec_env_v1(env)
                     envs = ss.concat_vec_envs_v1(envs, 1, num_cpus=0, base_class="gymnasium")
-
                     agent0 = PPOLSTMCommAgent(num_actions=num_actions, 
                                                 grid_size=args.grid_size, 
                                                 n_words=args.n_words, 
@@ -161,7 +163,7 @@ if __name__ == "__main__":
                     
                     next_obs_dict, _ = envs.reset()
                     next_obs, next_locs, _, next_r_messages = extract_dict(next_obs_dict, device, use_message=True)
-
+                    
                     next_r_messages = torch.tensor(next_r_messages).squeeze().to(device)
 
                     log_data = {}
@@ -232,7 +234,6 @@ if __name__ == "__main__":
                                     log_locs[ep_step] = next_locs
                                     log_r_messages[ep_step] = next_r_messages.squeeze().to(device)
                                 ###################################
-
                                 (h0,c0) = (next_lstm_state[0][:,0,:].unsqueeze(1), next_lstm_state[1][:,0,:].unsqueeze(1))
                                 (h1,c1) = (next_lstm_state[0][:,1,:].unsqueeze(1), next_lstm_state[1][:,1,:].unsqueeze(1))
 

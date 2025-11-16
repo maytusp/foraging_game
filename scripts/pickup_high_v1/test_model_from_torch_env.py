@@ -1,3 +1,4 @@
+# Created 28 Feb2025: TODO
 import os
 import random
 import time
@@ -14,10 +15,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 import supersuit as ss
-from environments.pickup_ind import *
+from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_ind.test
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.test_model_from_torch_env
 
 
 
@@ -32,10 +33,9 @@ class Args:
     capture_video: bool = False
 
     visualize = False
-    save_trajectory = False
-    ablate_message = True
-    ablate_type = "zero" # zero, noise
-    mode = "test"
+    save_trajectory = True
+    ablate_message = False
+    ablate_type = "noise" # zero, noise
     agent_visible = False
     fully_visible_score = False
     identical_item_obs = False
@@ -44,10 +44,10 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 100
+    total_episodes: int = 1000
     n_words = 4
     """vocab size"""
-    image_size = 5
+    image_size = 3
     """number of observation grid"""
     N_att = 2
     """number of attributes"""
@@ -55,31 +55,31 @@ class Args:
     """number of values"""
     N_i = 2
     """number of items"""
-    grid_size = 6
-    max_steps = 20
+    grid_size = 5
+    max_steps = 10
     """grid size"""
-    model_name = "sp_ppo_3net_invisible"
-    num_networks = 3
+    mode = "test"
+    agent_visible = False
     
-    model_step = "25600000"
+    num_networks = 3
+    model_name = f"pop_ppo_{num_networks}net_invisible"
+
+    model_step = "204800000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
-    for seed in [1]:
+    for seed in [1,2,3]:
         args.seed = seed
         # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
         for i in range(args.num_networks):
-            # print("i", i)
             for j in range(args.num_networks):
-                # print(f"ij = {i} {j}")
                 # Update the network pair and dependent paths/parameters
                 network_pairs = f"{i}-{j}"
-                # print("num_networks", args.num_networks)
                 selected_networks = network_pairs.split("-")
-                args.ckpt_path = f"checkpoints/pickup_ind/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
-                args.ckpt_path2 = f"checkpoints/pickup_ind/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-                args.saved_dir = f"logs/pickup_ind/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+                args.ckpt_path = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
+                args.ckpt_path2 = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
+                args.saved_dir = f"logs/transfer/train_torchenv_test_cpuenv/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                 if args.ablate_message:
                     args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
                 else:
@@ -101,7 +101,6 @@ if __name__ == "__main__":
 
                 env = Environment(use_message=True,
                                     agent_visible=args.agent_visible,
-                                    food_ener_fully_visible=args.fully_visible_score,
                                     n_words=args.n_words,
                                     seed=args.seed, 
                                     N_i = args.N_i,
@@ -150,8 +149,8 @@ if __name__ == "__main__":
                     torch.zeros(agent0.lstm.num_layers, num_agents, agent0.lstm.hidden_size).to(device),
                 )
 
-                collected_items = [0] * num_agents
-                running_rewards = [0.0] * num_agents
+                collected_items = 0
+                running_rewards = 0.0
                 running_length = 0
                 running_success_length=0
                 num_success_episodes=0
@@ -167,7 +166,7 @@ if __name__ == "__main__":
                     energy_obs = {"agent0": set(), "agent1": set()}
 
                     next_done = torch.zeros((num_agents)).to(device)
-                    returns = [0] * num_agents
+                    returns = 0
                     ep_step = 0
                     frames = []
                     next_lstm_state = (
@@ -188,9 +187,20 @@ if __name__ == "__main__":
                     log_target_food_dict = {}
                     log_distractor_food_dict = {"location":[], "type":[], "score":[]}
                     
+                    target_food_id = single_env.target_food_id
+                    target_food = single_env.foods[target_food_id]
+                    log_target_food_dict['location'] = target_food.position
+                    log_target_food_dict['type'] = target_food.food_type
+                    log_target_food_dict['score'] = target_food.energy_score
 
+                    log_who_see_target = target_food.visible_to_agent
 
-                    # log_who_see_target = target_food.visible_to_agent
+                    for food_id in range(len(single_env.foods)):
+                        if food_id != target_food_id:
+                            distractor_food = single_env.foods[food_id]
+                            log_distractor_food_dict['location'].append(distractor_food.position)
+                            log_distractor_food_dict['type'].append(distractor_food.food_type)
+                            log_distractor_food_dict['score'].append(distractor_food.energy_score)
                     ############################################################
                     while not next_done[0]:
                         # print(f"step {ep_step}")
@@ -208,7 +218,7 @@ if __name__ == "__main__":
                                 if args.ablate_type == "zero":
                                     next_r_messages = torch.zeros_like(next_r_messages).to(device)
                                 elif args.ablate_type == "noise":
-                                    next_r_messages = torch.randint(0, args.n_words, next_r_messages.shape).to(device)
+                                    next_r_messages = torch.randint(0, 10, next_r_messages.shape).to(device)
                                 else:
                                     raise Exception("only zero and noise are allowed")
 
@@ -270,13 +280,56 @@ if __name__ == "__main__":
                         ##########################
 
                         ep_step+=1
-
                     ep_length = infos[0]['episode']['l']
+                    returns += infos[0]['episode']['r'] # torch.sum(reward).cpu()
+                    collected_items += infos[0]['episode']['success']
                     running_length += ep_length
+                    if infos[0]['episode']['success']:
+                        running_success_length += infos[0]['episode']['l']
+                        num_success_episodes += 1
 
-                    for aid in range(num_agents):
-                        returns[aid] += infos[aid]['episode']['r'] # torch.sum(reward).cpu()
-                        running_rewards[aid] += returns[aid]
+                    if args.save_trajectory:
+                        with torch.no_grad():
+                            # message sent from agent0 to agent1 --> use agent1's embedding
+                            log_s_message_embs[:ep_length, :, 0] = agent1.message_encoder(log_s_messages[:ep_length, 0])
+                            # message sent from agent1 to agent0 --> use agent0's embedding
+                            log_s_message_embs[:ep_length, :, 1] = agent0.message_encoder(log_s_messages[:ep_length, 1])
+
+                        log_s_message_embs = log_s_message_embs.cpu().numpy()
+                        log_obs = log_obs.cpu().numpy()
+                        log_locs = log_locs.cpu().numpy()
+                        log_r_messages = log_r_messages.cpu().numpy()
+                        log_actions = log_actions.cpu().numpy()
+                        log_s_messages = log_s_messages.cpu().numpy()
+                        log_rewards = log_rewards.cpu().numpy()
+                        import pickle
+                        # print("log_r_messages", log_r_messages)
+                        # Combine all your data into a dictionary
+                        log_data[f"episode_{episode_id}"] = {
+                            "log_target_food_dict": log_target_food_dict,
+                            "log_distractor_food_dict": log_distractor_food_dict,
+                            "log_s_message_embs": log_s_message_embs,
+                            "log_obs": log_obs,
+                            "log_locs": log_locs,
+                            "log_r_messages": log_r_messages,
+                            "log_actions": log_actions,
+                            "log_s_messages": log_s_messages,
+                            "log_rewards": log_rewards,
+                            "who_see_target": log_who_see_target
+                        }
+
+                    if not(args.save_trajectory):
+                        # Open the log file in append mode
+                        with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
+                            
+                            # Redirect the print statements to the log file
+                            print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)
+
+                            print(f"Agent Item Score Observations \n {energy_obs}", file=log_file)
+                            print(f"Final Score Obs Agent0:  \n {next_obs_arr[0,1,:,:]}", file=log_file)
+                            print(f"Final Score Obs Agent1:  \n {next_obs_arr[1,1,:,:]}", file=log_file)
+
+                    running_rewards += returns
 
                     if args.visualize: # and returns > 5:
                         print(len(frames))
@@ -289,11 +342,11 @@ if __name__ == "__main__":
                     with open(os.path.join(args.saved_dir, "trajectory.pkl"), "wb") as f:
                         pickle.dump(log_data, f)
 
-                with open(os.path.join(args.saved_dir, "score.txt"), "w") as log_file:
-                    print(f"Average Reward Agent0 {running_rewards[0] / args.total_episodes}", file=log_file)
-                    print(f"Average Reward Agent1 {running_rewards[1] / args.total_episodes}", file=log_file)
+                with open(os.path.join(args.saved_dir, "score.txt"), "a") as log_file:
+                    print(f"Success Rate: {collected_items / args.total_episodes}", file=log_file)
+                    print(f"Average Reward {running_rewards / args.total_episodes}", file=log_file)
                     print(f"Average Length: {running_length / args.total_episodes}", file=log_file)
-                
+                    print(f"Average Success Length: {running_success_length / num_success_episodes}", file=log_file)
                 
                 envs.close()
                 # writer.close()

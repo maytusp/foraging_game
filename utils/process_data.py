@@ -118,7 +118,63 @@ def unbatchify(x, num_envs, env):
     x = {i:{j:0 for j in range(2)} for i in range(8)}
 
     return x
+def init_logs(device, cfg, envs, agents):
+    log_obs = torch.zeros(
+        (
+            cfg.max_steps,
+            cfg.num_agents,
+            cfg.num_channels,
+            cfg.image_size,
+            cfg.image_size,
+        )
+    ).to(device)
+    log_locs = torch.zeros(
+        (cfg.max_steps, cfg.num_agents, 2)
+    ).to(device)
+    log_r_messages = torch.zeros(
+        (cfg.max_steps, cfg.num_agents), dtype=torch.int64
+    ).to(device)
+    log_actions = torch.zeros(
+        (cfg.max_steps, cfg.num_agents)
+    ).to(device)
+    log_s_messages = (
+        torch.zeros(
+            (cfg.max_steps, cfg.num_agents), dtype=torch.int64
+        ).to(device)
+        - 1
+    )
+    log_rewards = torch.zeros(
+        (cfg.max_steps, cfg.num_agents)
+    ).to(device)
+    log_s_message_embs = torch.zeros(
+        (cfg.max_steps, agents[0].embedding_size, cfg.num_agents)
+    ).to(device)
 
+    log_food_dict = {}
+    log_food_dict["target_food_id"] = (
+        envs.target_food_id.squeeze(0).cpu().numpy()
+    )
+    log_food_dict["location"] = (
+        envs.food_pos.squeeze(0).cpu().numpy()
+    )
+    log_food_dict["score"] = (
+        envs.food_energy.squeeze(0).cpu().numpy()
+    )
+
+    who_see_target = (
+        envs.score_visible_to_agent.squeeze(0).cpu().numpy()
+    )
+    return {
+        "log_obs": log_obs,
+        "log_locs": log_locs,
+        "log_r_messages": log_r_messages,
+        "log_actions": log_actions,
+        "log_s_messages": log_s_messages,
+        "log_rewards": log_rewards,
+        "log_s_message_embs": log_s_message_embs,
+        "log_food_dict": log_food_dict,
+        "who_see_target": who_see_target,
+    }
 if __name__ == "__main__":
     action = {}
     action[0] = np.array([f"agent0_env{i}" for i in range(32)])

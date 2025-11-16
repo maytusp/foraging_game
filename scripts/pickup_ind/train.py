@@ -20,15 +20,15 @@ import supersuit as ss
 from environments.pickup_ind import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_ind.train_comm_pop_ppo_3net
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_ind.train
 @dataclass
 class Args:
-    seed: int = 3
+    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e6)
+    total_timesteps: int = int(2e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -115,7 +115,7 @@ class Args:
                     }
     visualize_loss = True
 
-    save_frequency = int(4e4)
+    save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
     exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
