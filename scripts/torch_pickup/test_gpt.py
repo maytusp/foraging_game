@@ -48,9 +48,9 @@ class Args:
     torch_deterministic: bool = True
     cuda: bool = True
 
-    name2step = {"gpt_ppo_2net_invisible": 102400000,
-                "gpt_sp_ppo_2net_invisible": 102400000,
-                "gpt_ppo_3net_invisible": 102400000, 
+    name2step = {"gpt_ppo_2net_invisible": 153600000,
+                "gpt_sp_ppo_2net_invisible": 153600000,
+                "gpt_ppo_3net_invisible": 153600000, 
                 }
     name2numnet = {"gpt_ppo_2net_invisible": 2,
                 "gpt_sp_ppo_2net_invisible": 2,

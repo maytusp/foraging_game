@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_pickup_high_v1 import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_pop
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_pickup.train_pop
 @dataclass
 class Args:
     seed: int = 3
@@ -27,7 +27,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(6e8)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -61,7 +61,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 15
     reset_iteration: int = 1
     self_play_option: bool = False
     
@@ -86,7 +86,7 @@ class Args:
     agent_visible = False
     time_pressure = True
     mode = "train"
-    model_name = "lstm_ppo_3net"
+    model_name = f"lstm_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -217,6 +217,7 @@ if __name__ == "__main__":
                                     embedding_size=16, 
                                     num_channels=num_channels, 
                                     image_size=args.image_size).to(device)
+        print(f"NUM PARAMS:", count_parameters(agents[network_id]))
         if args.load_pretrained:
             agents[network_id].load_state_dict(torch.load(args.ckpt_path[network_id], map_location=device))
         optimizers[network_id] = optim.Adam(agents[network_id].parameters(), lr=args.learning_rate, eps=1e-5)

@@ -175,6 +175,10 @@ def init_logs(device, cfg, envs, agents):
         "log_food_dict": log_food_dict,
         "who_see_target": who_see_target,
     }
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 if __name__ == "__main__":
     action = {}
     action[0] = np.array([f"agent0_env{i}" for i in range(32)])

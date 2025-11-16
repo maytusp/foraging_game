@@ -18,7 +18,7 @@ from models.pickup_models import PPOTransformerCommAgent  # <-- changed import
 # CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_gpt_ppo
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -57,7 +57,7 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 15
     reset_iteration: int = 1
     self_play_option: bool = False
 
@@ -72,7 +72,8 @@ class Args:
     agent_visible = False
     time_pressure = True
     mode = "train"
-    model_name = f"ft_gpt_ppo_{num_networks}net"
+    model_name = f"gpt_200k_ppo_{num_networks}net"
+    d_model = 64 # original is 128
 
     if not (agent_visible):
         model_name += "_invisible"
@@ -197,10 +198,11 @@ if __name__ == "__main__":
             embedding_size=16,
             num_channels=num_channels,
             image_size=args.image_size,
-            d_model=128,
+            d_model=args.d_model,
             n_layers=2,
             n_heads=4,
         ).to(device)
+        print("NUM TRAIN PARAMS: ", count_parameters(agents[network_id]))
         if args.load_pretrained:
             agents[network_id].load_state_dict(
                 torch.load(args.ckpt_path[network_id], map_location=device),

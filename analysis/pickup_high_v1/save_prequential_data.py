@@ -171,33 +171,66 @@ def save_prequential_datasets(
 
 
 if __name__ == "__main__":
+    # checkpoints_dict = {
+    #     "dec_ppo_invisible": {
+    #         "seed1": 204800000,
+    #         "seed2": 204800000,
+    #         "seed3": 204800000,
+    #     },
+    #     "pop_ppo_3net_invisible": {
+    #         "seed1": 204800000,
+    #         "seed2": 204800000,
+    #         "seed3": 204800000,
+    #     },
+    #     "pop_ppo_6net_invisible": {
+    #         "seed1": 460800000,
+    #         "seed2": 460800000,
+    #         "seed3": 460800000,
+    #     },
+    #     "pop_ppo_9net_invisible": {
+    #         "seed1": 512000000,
+    #         "seed2": 512000000,
+    #         "seed3": 512000000,
+    #     },
+    #     "pop_ppo_12net_invisible": {
+    #         "seed1": 768000000,
+    #         "seed2": 768000000,
+    #         "seed3": 768000000,
+    #     },
+    #     "pop_ppo_15net_invisible": {
+    #         "seed1": 819200000,
+    #         "seed2": 819200000,
+    #         "seed3": 819200000,
+    #     },
+    # }
+
     checkpoints_dict = {
-        "dec_ppo_invisible": {
+        "dec_sp_ppo_invisible": {
             "seed1": 204800000,
             "seed2": 204800000,
             "seed3": 204800000,
         },
-        "pop_ppo_3net_invisible": {
+        "pop_sp_ppo_3net_invisible": {
             "seed1": 204800000,
             "seed2": 204800000,
             "seed3": 204800000,
         },
-        "pop_ppo_6net_invisible": {
+        "pop_sp_ppo_6net_invisible": {
             "seed1": 460800000,
             "seed2": 460800000,
             "seed3": 460800000,
         },
-        "pop_ppo_9net_invisible": {
+        "pop_sp_ppo_9net_invisible": {
             "seed1": 512000000,
             "seed2": 512000000,
             "seed3": 512000000,
         },
-        "pop_ppo_12net_invisible": {
+        "pop_sp_ppo_12net_invisible": {
             "seed1": 768000000,
             "seed2": 768000000,
             "seed3": 768000000,
         },
-        "pop_ppo_15net_invisible": {
+        "pop_sp_ppo_15net_invisible": {
             "seed1": 819200000,
             "seed2": 819200000,
             "seed3": 819200000,
@@ -207,14 +240,14 @@ if __name__ == "__main__":
     compute_topsim = True
     cbar = False
     max_length = 4 # max message length
-    for num_networks in [2]: # [2,3, 6, 9, 12, 15]:
+    for num_networks in [2,3,6,9,12,15]: # [2,3, 6, 9, 12, 15]:
         avg_similarity_mat = np.zeros((num_networks, num_networks))
         avg_sr_mat = np.zeros((num_networks, num_networks))
         for seed in range(1, 4):
             if num_networks >= 3:
-                model_name = f"pop_ppo_{num_networks}net_invisible"
+                model_name = f"pop_sp_ppo_{num_networks}net_invisible"
             else:
-                model_name = "dec_ppo_invisible"
+                model_name = "dec_sp_ppo_invisible"
 
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
