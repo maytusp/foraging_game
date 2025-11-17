@@ -18,7 +18,7 @@ def load_trajectory(file_path):
     return log_data
 
 # Extract and prepare data for t-SNE
-def extract_data(log_data, max_length=5):
+def extract_data(log_data, max_length=3):
     message_data = {"agent0": [], "agent1": []}
     attribute_data = []
     scores = {"agent0": [], "agent1": []}
@@ -36,63 +36,17 @@ def extract_data(log_data, max_length=5):
                 message_data[f"agent{agent_id}"].append(
                     messages
                 )  # Collect all time steps for the agent
-                extract_attribute = [
-                    target_score,
-                    target_loc[0],
-                    target_loc[1],
-                    distractor_score,
-                    distractor_loc[0],
-                    distractor_loc[1],
-                ]
+            extract_attribute = [
+                target_score,
+                target_loc[0],
+                target_loc[1],
+                distractor_score,
+                distractor_loc[0],
+                distractor_loc[1],]
+
             attribute_data.append(extract_attribute)
     return message_data, attribute_data
 
-
-
-
-def get_similarity(message_data, num_networks):
-    sender_list = [i for i in range(num_networks)]
-    similarity_mat = np.zeros((num_networks, num_networks))
-    n_samples = 1000000
-    extracted_message = []
-    receiver = 0
-    for sender in sender_list:
-        extracted_message.append(
-            np.array(message_data[f"{sender}-{receiver}"]["agent0"])
-        )
-        n_samples = min(extracted_message[sender].shape[0], n_samples)
-
-    for first_agent_id in range(len(sender_list)):
-        for second_agent_id in range(len(sender_list)):
-            for i in range(n_samples):
-                m1 = extracted_message[sender_list[first_agent_id]][i]
-                m2 = extracted_message[sender_list[second_agent_id]][i]
-
-                m1 = [i for i in m1 if i != -1]
-                m2 = [i for i in m2 if i != -1]
-
-                dist = editdistance.eval(m1, m2) / max(len(m1), len(m2))
-
-                similarity_mat[first_agent_id, second_agent_id] += (1 - dist)
-
-    similarity_mat = similarity_mat / n_samples
-    mask = np.ones_like(similarity_mat)
-    mask[np.triu_indices_from(mask, k=0)] = 0
-    avg_sim = np.sum(similarity_mat * mask) / np.sum(mask)
-
-    return similarity_mat, avg_sim
-
-
-
-def load_score(filename):
-    scores = {}
-    with open(filename, "r") as f:
-        for line in f:
-            x = line.strip().split(": ")
-            if "Reward" in x[0]:
-                continue
-            scores[x[0].strip()] = float(x[1].strip())
-    return scores
 
 
 # ---------- NEW: save datasets for prequential training ----------
@@ -134,9 +88,9 @@ def save_prequential_datasets(
         w = torch.as_tensor(msgs, dtype=torch.long)       # [N, msg_dim]
 
         # sanity check on z shape
-        if z.ndim != 2 or z.shape[1] < 6:
-            raise ValueError(f"Expected z to have shape [N, 6], got {z.shape}")
-
+        # if z.ndim != 2 or z.shape[1] < 6:
+        #     raise ValueError(f"Expected z to have shape [N, 6], got {z.shape}")
+        print("message shape", msgs.shape)
         # ---- normalization ----
         z_norm = z.clone()
         # dims 0 and 3: range {5, 10, ..., 255}
@@ -171,83 +125,91 @@ def save_prequential_datasets(
 
 
 if __name__ == "__main__":
-    # checkpoints_dict = {
-    #     "dec_ppo_invisible": {
-    #         "seed1": 204800000,
-    #         "seed2": 204800000,
-    #         "seed3": 204800000,
-    #     },
-    #     "pop_ppo_3net_invisible": {
-    #         "seed1": 204800000,
-    #         "seed2": 204800000,
-    #         "seed3": 204800000,
-    #     },
-    #     "pop_ppo_6net_invisible": {
-    #         "seed1": 460800000,
-    #         "seed2": 460800000,
-    #         "seed3": 460800000,
-    #     },
-    #     "pop_ppo_9net_invisible": {
-    #         "seed1": 512000000,
-    #         "seed2": 512000000,
-    #         "seed3": 512000000,
-    #     },
-    #     "pop_ppo_12net_invisible": {
-    #         "seed1": 768000000,
-    #         "seed2": 768000000,
-    #         "seed3": 768000000,
-    #     },
-    #     "pop_ppo_15net_invisible": {
-    #         "seed1": 819200000,
-    #         "seed2": 819200000,
-    #         "seed3": 819200000,
-    #     },
-    # }
-
     checkpoints_dict = {
-        "dec_sp_ppo_invisible": {
+        "dec_ppo_invisible": {
             "seed1": 204800000,
             "seed2": 204800000,
             "seed3": 204800000,
         },
-        "pop_sp_ppo_3net_invisible": {
+        "pop_ppo_3net_invisible": {
             "seed1": 204800000,
             "seed2": 204800000,
             "seed3": 204800000,
         },
-        "pop_sp_ppo_6net_invisible": {
-            "seed1": 460800000,
-            "seed2": 460800000,
-            "seed3": 460800000,
-        },
-        "pop_sp_ppo_9net_invisible": {
-            "seed1": 512000000,
-            "seed2": 512000000,
-            "seed3": 512000000,
-        },
-        "pop_sp_ppo_12net_invisible": {
-            "seed1": 768000000,
-            "seed2": 768000000,
-            "seed3": 768000000,
-        },
-        "pop_sp_ppo_15net_invisible": {
-            "seed1": 819200000,
-            "seed2": 819200000,
-            "seed3": 819200000,
-        },
+        # "pop_ppo_6net_invisible": {
+        #     "seed1": 460800000,
+        #     "seed2": 460800000,
+        #     "seed3": 460800000,
+        # },
+        # "pop_ppo_9net_invisible": {
+        #     "seed1": 512000000,
+        #     "seed2": 512000000,
+        #     "seed3": 512000000,
+        # },
+        # "pop_ppo_12net_invisible": {
+        #     "seed1": 768000000,
+        #     "seed2": 768000000,
+        #     "seed3": 768000000,
+        # },
+        # "pop_ppo_15net_invisible": {
+        #     "seed1": 819200000,
+        #     "seed2": 819200000,
+        #     "seed3": 819200000,
+        # },
+        # "dec_sp_ppo_invisible": {
+        #     "seed1": 204800000,
+        #     "seed2": 204800000,
+        #     "seed3": 204800000,
+        # },
+        # "pop_sp_ppo_3net_invisible": {
+        #     "seed1": 204800000,
+        #     "seed2": 204800000,
+        #     "seed3": 204800000,
+        # },
+        # "pop_sp_ppo_6net_invisible": {
+        #     "seed1": 460800000,
+        #     "seed2": 460800000,
+        #     "seed3": 460800000,
+        # },
+        # "pop_sp_ppo_9net_invisible": {
+        #     "seed1": 512000000,
+        #     "seed2": 512000000,
+        #     "seed3": 512000000,
+        # },
+        # "pop_sp_ppo_12net_invisible": {
+        #     "seed1": 768000000,
+        #     "seed2": 768000000,
+        #     "seed3": 768000000,
+        # },
+        # "pop_sp_ppo_15net_invisible": {
+        #     "seed1": 819200000,
+        #     "seed2": 819200000,
+        #     "seed3": 819200000,
+        # },
+    }
+    model2numnet = {
+        "dec_ppo_invisible": 2,
+        "pop_ppo_3net_invisible": 3,
+        "pop_ppo_6net_invisible": 6,
+        "pop_ppo_9net_invisible": 9,
+        "pop_ppo_12net_invisible": 12,
+        "pop_ppo_15net_invisible": 15,
+        "dec_sp_ppo_invisible": 2,
+        "pop_sp_ppo_3net_invisible": 3,
+        "pop_sp_ppo_6net_invisible": 6,
+        "pop_sp_ppo_9net_invisible": 9,
+        "pop_sp_ppo_12net_invisible": 12,
+        "pop_sp_ppo_15net_invisible": 15,
     }
 
     compute_topsim = True
     cbar = False
     max_length = 4 # max message length
-    for num_networks in [2,3,6,9,12,15]: # [2,3, 6, 9, 12, 15]:
+    for model_name in checkpoints_dict.keys():
+        num_networks = model2numnet[model_name]
         avg_similarity_mat = np.zeros((num_networks, num_networks))
         avg_sr_mat = np.zeros((num_networks, num_networks))
         for seed in range(1, 4):
-            if num_networks >= 3:
-                model_name = f"pop_sp_ppo_{num_networks}net_invisible"
-            else:
-                model_name = "dec_sp_ppo_invisible"
 
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
@@ -287,5 +249,5 @@ if __name__ == "__main__":
                 seed=seed,
                 model_name=model_name,
                 combination_name=combination_name,
-                root_dir="../../logs/prequential_datasets",  # change if you like
+                root_dir="../../logs/repcom_dataset",  # change if you like
             )

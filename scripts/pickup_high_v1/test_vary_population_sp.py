@@ -19,7 +19,7 @@ from environments.pickup_high_v1 import *
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.test_vary_population
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.pickup_high_v1.test_vary_population_sp
 
 
 @dataclass
@@ -73,9 +73,9 @@ if __name__ == "__main__":
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
         if num_networks == 2:
-            args.model_name = f"dec_ppo_invisible"
+            args.model_name = f"dec_sp_ppo_invisible"
         else:
-            args.model_name = f"pop_ppo_{num_networks}net_invisible"
+            args.model_name = f"pop_sp_ppo_{num_networks}net_invisible"
         for seed in [1,2,3]:
             for i in range(args.num_networks):
                 for j in range(i+1):

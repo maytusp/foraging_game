@@ -14,7 +14,7 @@ def load_trajectory(file_path):
     return log_data
 
 # Extract and prepare data for t-SNE
-def extract_data(log_data):
+def extract_data(log_data, max_length):
     message_data = {"agent0": [], "agent1":[]}
     attribute_data = []
     scores = {"agent0": [], "agent1":[]}
@@ -27,13 +27,13 @@ def extract_data(log_data):
         target_loc = data["log_target_food_dict"]["location"] # (2,)
         distractor_score = data["log_distractor_food_dict"]["score"][0]
         distractor_loc = data["log_distractor_food_dict"]["location"][0] # (2,)
-
-        for agent_id in range(2):
-            messages = log_s_messages[:, agent_id].flatten()
-            message_data[f"agent{agent_id}"].append(messages)  # Collect all time steps for the agent
+        if log_s_messages[max_length,0] != -1:
+            for agent_id in range(2):
+                messages = log_s_messages[:, agent_id].flatten()
+                message_data[f"agent{agent_id}"].append(messages)  # Collect all time steps for the agent
             extract_attribute = [target_score, target_loc[0], target_loc[1], 
                                 distractor_score, distractor_loc[0], distractor_loc[1]]
-        attribute_data.append(extract_attribute)
+            attribute_data.append(extract_attribute)
     return message_data, attribute_data
 
 
@@ -46,7 +46,7 @@ def get_topsim(message_data,attribute_data, num_networks):
     receiver = 0
     avg_topsim = 0
     max_eval_episodes=1000
-    max_message_length=5
+
     for sender in sender_list:
         extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
         extracted_attribute.append(attribute_data[f"{sender}-{receiver}"])
@@ -55,8 +55,9 @@ def get_topsim(message_data,attribute_data, num_networks):
 
     for agent_id in range(len(sender_list)):
         messages = np.array(extracted_message[sender_list[agent_id]])
+        print(f"message shape {messages.shape}")
         attributes = np.array(extracted_attribute[sender_list[agent_id]])
-        topsim = TopographicSimilarity.compute_topsim(attributes[:max_eval_episodes], messages[:max_eval_episodes, :max_message_length])     
+        topsim = TopographicSimilarity.compute_topsim(attributes[:max_eval_episodes], messages[:max_eval_episodes, :])     
         avg_topsim += topsim
         print(f"agent_id {agent_id} has topsim {topsim}")
     avg_topsim /= num_networks
@@ -129,14 +130,15 @@ def load_score(filename):
 
 
 if __name__ == "__main__":
-    # checkpoints_dict = { "dec_ppo_invisible" : {"seed1":204800000, "seed2":204800000, "seed3":204800000},
-    #                     "pop_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-    #                     "pop_ppo_6net_invisible": {'seed1': 332800000, 'seed2': 332800000, 'seed3':332800000},
-    #                     "pop_ppo_9net_invisible": {'seed1': 486400000, 'seed2': 486400000, 'seed3':486400000},
-    #                     "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
-    #                     "pop_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
-    #                     }
+
+
     checkpoints_dict = {
+                        "dec_ppo_invisible" : {"seed1":204800000, "seed2":204800000, "seed3":204800000},
+                        "pop_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
+                        "pop_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
+                        "pop_ppo_9net_invisible": {'seed1': 486400000, 'seed2': 486400000, 'seed3':486400000},
+                        "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
+                        "pop_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
                         "dec_sp_ppo_invisible" : {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
                         "pop_sp_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
                         "pop_sp_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
@@ -144,23 +146,34 @@ if __name__ == "__main__":
                         "pop_sp_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
                         "pop_sp_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
                         }
+    model2numnet = {
+        "dec_ppo_invisible": 2,
+        "pop_ppo_3net_invisible": 3,
+        "pop_ppo_6net_invisible": 6,
+        "pop_ppo_9net_invisible": 9,
+        "pop_ppo_12net_invisible": 12,
+        "pop_ppo_15net_invisible": 15,
+        "dec_sp_ppo_invisible": 2,
+        "pop_sp_ppo_3net_invisible": 3,
+        "pop_sp_ppo_6net_invisible": 6,
+        "pop_sp_ppo_9net_invisible": 9,
+        "pop_sp_ppo_12net_invisible": 12,
+        "pop_sp_ppo_15net_invisible": 15,
+    }
     compute_topsim = True
     cbar = False
-    for num_networks in [2, 3,6,9,12,15]:# [2, 3,6,9,12,15]: #[2, 3,6,9,12,15]
+    max_length = 5
+    for model_name in checkpoints_dict.keys():
+        num_networks = model2numnet[model_name]
         avg_similarity_mat = np.zeros((num_networks,num_networks))
         avg_sr_mat = np.zeros((num_networks,num_networks))
         for seed in range(1,4):
-            if num_networks >= 3:
-                model_name = f"pop_sp_ppo_{num_networks}net_invisible"
-            else:
-                model_name = "dec_sp_ppo_invisible"
-                # model_name = "hybrid_ppo_invisible"
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
 
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"plots/population/fc/sr_lang_sim"
-            saved_score_dir = f"../../logs/vary_n_pop/msg_len_10/{model_name}/{combination_name}_seed{seed}"
+            saved_score_dir = f"../../logs/vary_n_pop/msg_len_{max_length}/{model_name}/{combination_name}_seed{seed}"
             saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.pdf")
             saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.pdf")
             os.makedirs(saved_fig_dir, exist_ok=True)
@@ -192,8 +205,8 @@ if __name__ == "__main__":
                 log_data = load_trajectory(log_file_path[pair])
 
                 # Prepare data for t-SNE
-                message_data[pair], attribute_data[pair] = extract_data(log_data)
-                
+                message_data[pair], attribute_data[pair] = extract_data(log_data, max_length)
+
 
             ic = np.mean(ic_numerator) / np.mean(ic_denominator)
             similarity_mat, avg_sim = get_similarity(message_data, num_networks)
