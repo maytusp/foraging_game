@@ -2,6 +2,7 @@
 # The earlier spawn item is picked up before the later spawn item
 # Communication range is limited
 # Agent is visible to each other
+# UPDATE 18 Nov 2025: Walls spawn randomly across the map
 
 import pygame
 import numpy as np
@@ -92,7 +93,7 @@ class Environment(ParallelEnv):
             self.agent_spawn_range = {0:((0, 2), (0, self.grid_size-3)), 1:((self.grid_size-1, 2), (self.grid_size-1, self.grid_size-3))}
         else:
             self.agent_spawn_range = {0:((0, 1), (0, self.grid_size-2)), 1:((self.grid_size-1, 1), (self.grid_size-1, self.grid_size-2))}
-        self.wall_spawn_range = ((self.grid_size // 2, 0), (self.grid_size // 2, self.grid_size-1))        
+        self.wall_spawn_range = ((0, 0), (self.grid_size-1, self.grid_size-1))        
         self.reset()
         
     

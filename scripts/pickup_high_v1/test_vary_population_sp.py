@@ -69,7 +69,7 @@ if __name__ == "__main__":
     args = tyro.cli(Args)
     
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-    for num_networks in [2,3,6,9,12,15]: # [2,3,6,9,12,15]:
+    for num_networks in [2]: # [2,3,6,9,12,15]:
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
         if num_networks == 2:
@@ -78,7 +78,7 @@ if __name__ == "__main__":
             args.model_name = f"pop_sp_ppo_{num_networks}net_invisible"
         for seed in [1,2,3]:
             for i in range(args.num_networks):
-                for j in range(i+1):
+                for j in range(args.num_networks): #TODO cahnge to i+1 to reduce time
                     args.seed = seed
                     args.n_words = 4
                     args.combination_name = f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}_nw{args.n_words}_ms{args.max_steps}"

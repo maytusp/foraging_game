@@ -33,18 +33,18 @@ class Args:
 
     visualize = False
     save_trajectory = True
-    ablate_message = True
+    ablate_message = False
     ablate_type = "zero" # zero, noise
     mode = "test"
-    agent_visible = True
-    fully_visible_score = True
+    agent_visible = False
+    fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
     memory_transfer = False
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
+    total_episodes: int = 5000
     n_words = 4
     """vocab size"""
     image_size = 5
@@ -58,10 +58,10 @@ class Args:
     grid_size = 5
     max_steps = 10
     """grid size"""
-    model_name = "pop_ppo_3net_ablate_message_visible_score"
+    model_name = "pop_ppo_3net_invisible"
     num_networks = 3
     
-    model_step = "153600000"
+    model_step = "614400000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 if __name__ == "__main__":
@@ -318,7 +318,7 @@ if __name__ == "__main__":
 
                     if not(args.save_trajectory):
                         # Open the log file in append mode
-                        with open(os.path.join(args.saved_dir, "log.txt"), "a") as log_file:
+                        with open(os.path.join(args.saved_dir, "log.txt"), "w") as log_file:
                             
                             # Redirect the print statements to the log file
                             print(f"EPISODE {episode_id}: {infos[0]['episode']['collect']}", file=log_file)
@@ -340,7 +340,7 @@ if __name__ == "__main__":
                     with open(os.path.join(args.saved_dir, "trajectory.pkl"), "wb") as f:
                         pickle.dump(log_data, f)
 
-                with open(os.path.join(args.saved_dir, "score.txt"), "a") as log_file:
+                with open(os.path.join(args.saved_dir, "score.txt"), "w") as log_file:
                     print(f"Success Rate: {collected_items / args.total_episodes}", file=log_file)
                     print(f"Average Reward {running_rewards / args.total_episodes}", file=log_file)
                     print(f"Average Length: {running_length / args.total_episodes}", file=log_file)

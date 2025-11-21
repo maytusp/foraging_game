@@ -20,7 +20,7 @@ from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 
 
-# python -m scripts.pickup_temporal.test_3net_all_seeds
+# CUDA_VISIBLE_DEIVICES=1 python -m scripts.pickup_temporal.test_3net_all_seeds
 
 @dataclass
 class Args:
@@ -43,7 +43,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
+    total_episodes: int = 100
     n_words = 4
     """vocab size"""
     image_size = 3

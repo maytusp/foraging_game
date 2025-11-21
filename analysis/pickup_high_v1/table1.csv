@@ -1,2 +1,4 @@
 Model,Self SR (mean ± std),Cross SR (mean ± std),IC (mean ± std),LS (mean ± std)
-pop_ppo_3net_invisible,0.944 ± 0.018,0.977 ± 0.007,0.966 ± 0.014,0.527 ± 0.036
+gpt_ppo_2net_invisible,0.400 ± 0.121,0.951 ± 0.000,0.420 ± 0.127,0.354 ± 0.036
+gpt_sp_ppo_2net_invisible,0.953 ± 0.003,0.951 ± 0.005,1.002 ± 0.002,0.636 ± 0.020
+gpt_ppo_3net_invisible,0.939 ± 0.009,0.942 ± 0.007,0.997 ± 0.002,0.631 ± 0.024

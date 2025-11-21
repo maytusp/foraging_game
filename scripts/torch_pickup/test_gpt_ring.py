@@ -1,9 +1,5 @@
 
 # test_gpt.py
-#TODO add         target_score = data["log_target_food_dict"]["score"]
-        # target_loc = data["log_target_food_dict"]["location"] # (2,)
-        #         distractor_score = data["log_distractor_food_dict"]["score"][0]
-        # distractor_loc = data["log_distractor_food_dict"]["location"][0] # (2,)
 import os
 import random
 import time
@@ -20,10 +16,9 @@ from environments.torch_pickup_high_v1 import TorchForagingEnv, EnvConfig
 from utils.process_data import init_logs
 from models.pickup_models import PPOTransformerCommAgent  # <-- changed import
 
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.test_gpt
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.test_gpt_ring
 @dataclass
 class Args:
-    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -36,7 +31,6 @@ class Args:
     save_trajectory: bool = True
     visualize: bool = False
     # Populations
-    num_networks = 3
     reset_iteration: int = 1
     self_play_option: bool = False
     log_every = 32
@@ -51,14 +45,10 @@ class Args:
     mode = "test"
     torch_deterministic: bool = True
     cuda: bool = True
-
-    name2step = {#"gpt_ppo_2net_invisible": 153600000,
-                #"gpt_sp_ppo_2net_invisible": 153600000,
-                "gpt_ppo_3net_invisible": 153600000, 
+    d_model = 64
+    name2step = {"gpt_200k_sp_ring_ppo_15net_invisible": 599998464
                 }
-    name2numnet = {"gpt_ppo_2net_invisible": 2,
-                "gpt_sp_ppo_2net_invisible": 2,
-                "gpt_ppo_3net_invisible": 3, 
+    name2numnet = {"gpt_200k_sp_ring_ppo_15net_invisible": 15,
                 }
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
@@ -71,14 +61,12 @@ if __name__ == "__main__":
         args.model_step = args.name2step[model_name]
         args.num_networks = args.name2numnet[model_name]
         
-        for seed in [1,2,3]:
+        for seed in [1]:
             args.seed = seed
             # loop over network pairs here
             ckpt_dir = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/"
-            # for i in range(args.num_networks):
-            #     for j in range(i+1):
-            for n1 in range(2,3):
-                for n2 in range(1,2):
+            for n1 in range(args.num_networks):
+                for n2 in range(args.num_networks):
                     # TRY NOT TO MODIFY: seeding
                     random.seed(args.seed)
                     np.random.seed(args.seed)
@@ -95,6 +83,7 @@ if __name__ == "__main__":
                                 )   
                     os.makedirs(args.saved_dir, exist_ok=True)
                     print(f"saved at {args.saved_dir}")
+
 
                     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
@@ -155,7 +144,7 @@ if __name__ == "__main__":
                             embedding_size=16,
                             num_channels=num_channels,
                             image_size=args.image_size,
-                            d_model=128,
+                            d_model=args.d_model,
                             n_layers=2,
                             n_heads=4,
                         ).to(device)
@@ -330,11 +319,11 @@ if __name__ == "__main__":
                     mean_ret_since_log = sum_return_since_log / episodes_since_log
                     mean_len_since_log = sum_length_since_log / episodes_since_log
                     success_rate_since_log = successes_since_log / episodes_since_log
-                    print(f"NUM EPISODES: {episodes_since_log}")
-                    print(f"AVG SR: {success_rate_since_log}")
-                    print(f"AVG LENGTH: {mean_len_since_log}")
-                    print(f"AVG RETURN: {mean_ret_since_log}")
-                    print(f"-----------------")
+                    # print(f"NUM EPISODES: {episodes_since_log}")
+                    # print(f"AVG SR: {success_rate_since_log}")
+                    # print(f"AVG LENGTH: {mean_len_since_log}")
+                    # print(f"AVG RETURN: {mean_ret_since_log}")
+                    # print(f"-----------------")
                     # Save summary scores
                     with open(os.path.join(args.saved_dir, "score.txt"), "w") as log_file:
                         print(

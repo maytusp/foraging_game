@@ -1,10 +1,11 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # ---- CONFIG ----
 
-ROOT_DIR = "../../logs/prequential_datasets"  # adjust if needed
+ROOT_DIR = "../../logs/repcom_dataset_len4_all"  # adjust if needed
 
 checkpoints_dict = {
     "dec_ppo_invisible": {
@@ -153,6 +154,7 @@ def collect_CZ_for_model(model_name):
 def main():
     population_sizes = sorted(popsize_to_models.keys())
 
+
     xp_means, xp_stds = [], []
     xp_sp_means, xp_sp_stds = [], []
     saved_fig_dir = f"plots/population/fc/"
@@ -173,34 +175,30 @@ def main():
     xp_stds = np.array(xp_stds, dtype=float)
     xp_sp_means = np.array(xp_sp_means, dtype=float)
     xp_sp_stds = np.array(xp_sp_stds, dtype=float)
+    sns.set(style="whitegrid")
+    plt.rcParams.update({'font.size': 18, 'axes.labelsize': 20, 'axes.titlesize': 20, 
+                        'xtick.labelsize': 20, 'ytick.labelsize': 20, 'legend.fontsize': 20})
+    plt.figure(figsize=(6, 5))
+    sns.lineplot(x=population_sizes, y=xp_sp_means, marker="s", label='XP+SP')
+    plt.fill_between(population_sizes, 
+            xp_sp_means - xp_sp_stds,
+            xp_sp_means + xp_sp_stds,
+            alpha=0.2)
 
-    plt.figure(figsize=(6, 4))
+    sns.lineplot(x=population_sizes, y=xp_means, marker="o", label='XP')
+    plt.fill_between(population_sizes, 
+            xp_means - xp_stds,
+            xp_means + xp_stds,
+            alpha=0.2)
 
-    # xp line + std band
-    plt.plot(population_sizes, xp_means, marker="o", linestyle="-", label="xp")
-    plt.fill_between(
-        population_sizes,
-        xp_means - xp_stds,
-        xp_means + xp_stds,
-        alpha=0.2,
-    )
-
-    # xp+sp line + std band
-    plt.plot(population_sizes, xp_sp_means, marker="s", linestyle="-", label="xp+sp")
-    plt.fill_between(
-        population_sizes,
-        xp_sp_means - xp_sp_stds,
-        xp_sp_means + xp_sp_stds,
-        alpha=0.2,
-    )
 
     plt.xlabel("Population size")
+    plt.xticks(population_sizes)
     plt.ylabel("repcom")
-    plt.title("")
     plt.grid(True, alpha=0.3)
-    plt.legend()
+    plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig(os.path.join(saved_fig_dir, "repcom_vs_distance.png"))
+    plt.savefig(os.path.join(saved_fig_dir, "repcom_vs_distance.pdf"))
     plt.close()
 
 

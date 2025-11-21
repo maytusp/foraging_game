@@ -45,7 +45,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
+    total_episodes: int = 2000
     """vocab size"""
     image_size = 3
     """number of observation grid"""

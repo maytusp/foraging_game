@@ -57,12 +57,12 @@ def extract_data(log_data, max_length):
         ep_len = get_episode_length(log_s_messages)
 
         # Option 1: only keep episodes whose length == mode_length
-        if ep_len == 4 and who_see_target == 0:
+        if ep_len == max_length and who_see_target == 0:
             messages = log_s_messages[:ep_len, 0].flatten()
             message_data["agent0"].append(messages)
             extract_attribute = [target_score, target_loc[0], target_loc[1]] # [target_score, target_loc[0], target_loc[1]]
             attribute_data.append(extract_attribute)
-        elif ep_len == 4 and who_see_target == 1:
+        elif ep_len == max_length and who_see_target == 1:
             messages = log_s_messages[:ep_len, 0].flatten()
             message_data["agent0"].append(messages)
             extract_attribute = [distractor_score, distractor_loc[0], distractor_loc[1]] # [target_score, target_loc[0], target_loc[1]]
@@ -155,68 +155,7 @@ def save_prequential_datasets(
 
 
 if __name__ == "__main__":
-    checkpoints_dict = {
-        # "dec_ppo_invisible": {
-        #     "seed1": 204800000,
-        #     "seed2": 204800000,
-        #     "seed3": 204800000,
-        # },
-        # "pop_ppo_3net_invisible": {
-        #     "seed1": 204800000,
-        #     "seed2": 204800000,
-        #     "seed3": 204800000,
-        # },
-        # "pop_ppo_6net_invisible": {
-        #     "seed1": 460800000,
-        #     "seed2": 460800000,
-        #     "seed3": 460800000,
-        # },
-        # "pop_ppo_9net_invisible": {
-        #     "seed1": 512000000,
-        #     "seed2": 512000000,
-        #     "seed3": 512000000,
-        # },
-        # "pop_ppo_12net_invisible": {
-        #     "seed1": 768000000,
-        #     "seed2": 768000000,
-        #     "seed3": 768000000,
-        # },
-        # "pop_ppo_15net_invisible": {
-        #     "seed1": 819200000,
-        #     "seed2": 819200000,
-        #     "seed3": 819200000,
-        # },
-        # "dec_sp_ppo_invisible": {
-        #     "seed1": 204800000,
-        #     "seed2": 204800000,
-        #     "seed3": 204800000,
-        # },
-        # "pop_sp_ppo_3net_invisible": {
-        #     "seed1": 204800000,
-        #     "seed2": 204800000,
-        #     "seed3": 204800000,
-        # },
-        # "pop_sp_ppo_6net_invisible": {
-        #     "seed1": 460800000,
-        #     "seed2": 460800000,
-        #     "seed3": 460800000,
-        # },
-        # "pop_sp_ppo_9net_invisible": {
-        #     "seed1": 512000000,
-        #     "seed2": 512000000,
-        #     "seed3": 512000000,
-        # },
-        # "pop_sp_ppo_12net_invisible": {
-        #     "seed1": 768000000,
-        #     "seed2": 768000000,
-        #     "seed3": 768000000,
-        # },
-        # "pop_sp_ppo_15net_invisible": {
-        #     "seed1": 819200000,
-        #     "seed2": 819200000,
-        #     "seed3": 819200000,
-        # },
-    }
+
     model2numnet = {
         "dec_ppo_invisible": 2,
         "pop_ppo_3net_invisible": 3,
@@ -234,15 +173,16 @@ if __name__ == "__main__":
 
     compute_topsim = True
     cbar = False
-    max_length = 5 # max message length
-    for model_name in checkpoints_dict.keys():
-        num_networks = model2numnet[model_name]
+    max_length = 4 # max message length
+    num_networks = 3
+    model_name = "pop_ppo_3net_invisible"
+    ckpt_name = "307200000" # model steps
+    for n_words in [16,32]:
+        
         avg_similarity_mat = np.zeros((num_networks, num_networks))
         avg_sr_mat = np.zeros((num_networks, num_networks))
         for seed in range(1, 4):
-
-            ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
-            combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
+            combination_name = f"grid5_img3_ni2_nw{n_words}_ms10_{ckpt_name}"
 
             mode = "test"
             if num_networks == 2:
@@ -264,7 +204,7 @@ if __name__ == "__main__":
                 row, col = int(row), int(col)
                 print(f"loading network pair {pair}")
                 log_file_path[pair] = (
-                    f"../../logs/vary_n_pop/{model_name}/{pair}/{combination_name}"
+                    f"../../logs/vary_n_words/{model_name}/{pair}/{combination_name}"
                     f"/seed{seed}/mode_{mode}/normal/trajectory.pkl"
                 )
 
@@ -284,5 +224,5 @@ if __name__ == "__main__":
                 seed=seed,
                 model_name=model_name,
                 combination_name=combination_name,
-                root_dir="../../logs/repcom_dataset_len4_all",  # change if you like
+                root_dir=f"../../logs/repcom_dataset_len{max_length}_n_words",  # change if you like
             )
