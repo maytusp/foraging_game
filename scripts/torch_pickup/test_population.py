@@ -1,3 +1,5 @@
+# TODO: Has a bus in memory like I faced with gpt (PPO-RMT) before
+
 # Created 25 Aug 2025
 # Note: This code only work for single environment. It doesn't support parallel environments.
 import os
@@ -37,7 +39,7 @@ class Args:
     save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = True
+    agent_visible = False
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -45,11 +47,10 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
+    total_episodes: int = 100
     """vocab size"""
     image_size = 3
     """number of observation grid"""
-    N_att = 2
     """number of values"""
     N_i = 2
     """number of items"""
@@ -60,28 +61,28 @@ class Args:
     # network_pairs = "0-0" # population training evaluation
     # selected_networks = network_pairs.split("-")
     
-    num_nets_to_model_step = {3: 204800000, 6: 460800000, 9:512000000, 12: 768000000, 15: 819200000}
+    num_nets_to_model_step = {3: 1945600000}
     
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
     swap_agent = {0:1, 1:0}
     # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
-    for num_networks in [3,6,9,12,15]:
+    for num_networks in [3]:
         args.model_step = args.num_nets_to_model_step[num_networks]
         args.num_networks = num_networks
-        args.model_name = f"pop_ppo_{num_networks}net"
-        for seed in [1,2,3]:
+        args.model_name = f"wsk4p0_ppo_15net_invisible"
+        for seed in [2]:
             for i in range(args.num_networks):
                 for j in range(args.num_networks):
                     args.seed = seed
-                    args.n_words = 16
+                    args.n_words = 4
                     args.combination_name = f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}_nw{args.n_words}_ms{args.max_steps}"
                     # Update the network pair and dependent paths/parameters
                     network_pairs = f"{i}-{j}"
                     selected_networks = network_pairs.split("-")
-                    args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
-                    args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
+                    args.ckpt_path = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
+                    args.ckpt_path2 = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
                     args.saved_dir = f"logs/torch_pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                     args.video_save_dir = os.path.join(args.saved_dir, "vids")
                     if args.ablate_message:
@@ -186,7 +187,6 @@ if __name__ == "__main__":
                         log_s_messages = torch.zeros((cfg.max_steps, num_agents), dtype=torch.int64).to(device) -1 # action: sent message
                         log_rewards = torch.zeros((cfg.max_steps, num_agents)).to(device)
                         log_s_message_embs = torch.zeros((cfg.max_steps, agent0.embedding_size, num_agents)).to(device) # obs: received message
-
                         log_food_dict = {}
                         log_food_dict['target_food_id'] = envs.target_food_id.squeeze(0).cpu().numpy()
                         log_food_dict['location'] = envs.food_pos.squeeze(0).cpu().numpy()

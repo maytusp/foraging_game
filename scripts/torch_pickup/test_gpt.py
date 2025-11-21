@@ -28,7 +28,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_episodes: int = 1000
+    total_episodes: int = 5000
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -75,10 +75,8 @@ if __name__ == "__main__":
             args.seed = seed
             # loop over network pairs here
             ckpt_dir = f"checkpoints/torch_pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/"
-            # for i in range(args.num_networks):
-            #     for j in range(i+1):
-            for n1 in range(2,3):
-                for n2 in range(1,2):
+            for n1 in range(args.num_networks):
+                for n2 in range(n1+1):
                     # TRY NOT TO MODIFY: seeding
                     random.seed(args.seed)
                     np.random.seed(args.seed)
@@ -90,7 +88,7 @@ if __name__ == "__main__":
                     selected_networks[0], selected_networks[1] = int(selected_networks[0]), int(selected_networks[1])
                     # Where to save evaluation logs / trajectories
                     args.saved_dir = (
-                                f"logs/torch_pickup_high_v1/{args.model_name}/{network_pairs}/"
+                                f"logs/torch_pickup_high_v1/5k_test_eps/{args.model_name}/{network_pairs}/"
                                 f"{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                                 )   
                     os.makedirs(args.saved_dir, exist_ok=True)
@@ -195,6 +193,11 @@ if __name__ == "__main__":
                     log_data = {}
                     for episode_id in range(args.total_episodes):
                         logs = init_logs(device, cfg, envs, agents)
+
+                        logs["log_food_dict"]['target_food_id'] = envs.target_food_id.squeeze(0).cpu().numpy()
+                        logs["log_food_dict"]['location'] = envs.food_pos.squeeze(0).cpu().numpy()
+                        logs["log_food_dict"]['score'] = envs.food_energy.squeeze(0).cpu().numpy()
+
                         frames = []
                         # Reset memory state whenever we re-sample networks
                         for i in range(num_agents):
