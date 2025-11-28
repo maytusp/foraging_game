@@ -14,6 +14,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from transforms import *
+from collections import Counter
+
 # Load the .pkl file
 def load_trajectory(file_path):
     with open(file_path, "rb") as f:
@@ -63,18 +65,18 @@ def extract_label(attributes_dict, agent_id=0):
     num_episodes = len(attributes_dict[agent_id])
     # extract labels
     item_score_arr = []
-    item_loc_x_arr = []
-    item_loc_y_arr = []
+    item_loc_r_arr = [] # row posiiton
+    item_loc_c_arr = [] # column position
     for ep in range(num_episodes):
         ep_data = attributes_dict[agent_id][ep]
         item_score_arr.append(ep_data["item_score"])
-        item_loc_x_arr.append(ep_data["item_location"][0])
-        item_loc_y_arr.append(ep_data["item_location"][1])
+        item_loc_r_arr.append(ep_data["item_location"][0])
+        item_loc_c_arr.append(ep_data["item_location"][1])
 
     return {
-            "item_score": item_score_arr,
-            "item_loc_x": item_loc_x_arr,
-            "item_loc_y": item_loc_y_arr,
+            "score": item_score_arr,
+            "vertical position": item_loc_r_arr,
+            "horizontal position": item_loc_c_arr,
 
             }
 def visualise_class(agent_pos_x_arr):
@@ -99,27 +101,25 @@ def save_classification_report_csv(report_dict, accuracy, filename):
 
 if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
-    label_list = ['item_score', 'item_loc_x', 'item_loc_y']
-    model_name = "pop_ppo_3net_invisible_no_pressure"
+    label_list = ['score', 'vertical position', 'horizontal position']
+    model_name = "pop_ppo_3net_invisible"
+    log_dir = "../../logs/pickup_high_v7/5k_test_eps/"
+    saved_dir_prefix = "reports/pickup_high_v7/"
     checkpoints_dict = {
-                    "pop_ppo_3net_invisible": {'seed1': 332800000, 'seed2': 332800000, 'seed3':332800000},
-                    "pop_ppo_3net_invisible_no_pressure":  {'seed1': 307200000, 'seed2': 307200000, 'seed3':307200000},
-                    }
-    avg_accuracy_dict = {'item_score':[], 
-                        'item_loc_x':[], 
-                        'item_loc_y':[]}
+                    "pop_ppo_3net_invisible": {'seed1': 614400000, 'seed2': 614400000, 'seed3':614400000},
+    }
+    avg_accuracy_dict = {k:[] for k in label_list}
     decoding_mode = "embedding_decoding" # ["embedding_decoding", "token_decoding"]
     for seed in range(1,4):
         model_step = checkpoints_dict[model_name][f"seed{seed}"]
-        combination_name = f"grid5_img3_ni2_nw4_ms10_{model_step}"
-
+        # combination_name = f"grid5_img3_ni2_nw4_ms10_{model_step}" 
+        combination_name = f"grid5_img5_ni2_nw4_ms10_{model_step}"  # for generalization across positions
         
         for i in range(3):
             for j in range(i+1):
-                log_file_path = f"../../logs/linear_decode/pickup_high_v1/{model_name}/{i}-{j}/{combination_name}/seed{seed}/mode_test/normal/trajectory.pkl"
+                log_file_path = os.path.join(log_dir, f"{model_name}/{i}-{j}/{combination_name}/seed{seed}/mode_test/normal/trajectory.pkl")
 
-                label_encoder = sklearn.preprocessing.LabelEncoder()
-                saved_dir = f"reports/{decoding_mode}/{model_name}_{combination_name}_seed{seed}"
+                saved_dir = os.path.join(saved_dir_prefix, f"{decoding_mode}/{model_name}_{combination_name}_seed{seed}")
                 os.makedirs(saved_dir, exist_ok=True)
 
                 agent_id = 0
@@ -136,7 +136,8 @@ if __name__ == "__main__":
                     label_arr = np.array(label_dict[groundtruth_name])
                     if "score" in k:
                         label_arr = transform_to_range_class(label_arr)
-
+                    else:
+                        print(f"possible {k}: {Counter(label_arr)}")
                     # visualise_class(label_arr)
                     # Split data into training and testing sets
                     X_train, X_test, y_train, y_test = train_test_split(

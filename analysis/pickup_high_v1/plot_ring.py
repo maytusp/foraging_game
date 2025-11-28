@@ -45,8 +45,12 @@ saved_fig_dir = f"plots/population/ring/vs_distance/15net/"
 os.makedirs(saved_fig_dir, exist_ok=True)
 model_name_list = []
 checkpoints_dict = {
-    "ring_sp_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
-    "ring_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000},
+    # "ring_sp_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000}, # old fig
+    # "ring_ppo_15net_invisible": {'seed1': 870400000, 'seed2': 870400000, 'seed3':870400000}, # old fig
+    # old data is deleted, so I want to use new data from another ckpt to match the lstm vs gpt curve
+    # otherwise two LSTM Ring (XP+SP) would be a bit different but the trend is the same
+    "ring_sp_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000}, # new fig
+    "ring_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000}, # new fig
                     }
 
 total_sr = {}
@@ -62,10 +66,10 @@ for model_name in checkpoints_dict.keys():
         ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
         combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
         
-        scores_path = f"../../logs/ring_pop/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
+        scores_path = f"../../logs/struct_pop/exp2/{model_name}/{combination_name}_seed{seed}/sim_scores.npz"
         
         scores = np.load(scores_path)
-        sr_list, ls_list, distance_list = compute_avg_sr_ls(scores['sr_mat'], scores['similarity_mat'])
+        sr_list, ls_list, distance_list = compute_avg_sr_ls(scores['sr_mat'], scores['ls_mat'])
         total_sr[model_name].append(sr_list)
         total_ls[model_name].append(ls_list)
     

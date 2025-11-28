@@ -139,12 +139,11 @@ if __name__ == "__main__":
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
 
             print(f"{model_name}/{combination_name}")
-            saved_fig_dir = f"plots/population/ring/sr_lang_sim"
+            saved_fig_dir = f"plots/population/gpt_torchenv_ring/sr_lang_sim"
             saved_score_dir = f"../../logs/ring_pop/torch_pickup_high_v1/{model_name}/{combination_name}_seed{seed}"
             saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_similarity.pdf")
             saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_sr.pdf")
             os.makedirs(saved_fig_dir, exist_ok=True)
-            os.makedirs(saved_score_dir, exist_ok=True)
             mode = "test"
             network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
             log_file_path = {}
@@ -179,7 +178,12 @@ if __name__ == "__main__":
             similarity_mat, avg_sim = get_similarity(message_data, num_networks)
             print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
             print(f"Interchangeability: {ic}")
-
+            # Save the variables
+            np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), 
+                                    ls_mat=similarity_mat, 
+                                    avg_sim=avg_sim, 
+                                    sr_mat=sr_mat,
+                                    ic=ic)
 
             avg_similarity_mat += similarity_mat
             avg_sr_mat += sr_mat

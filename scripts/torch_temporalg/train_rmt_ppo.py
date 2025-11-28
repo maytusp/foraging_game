@@ -15,7 +15,7 @@ from environments.torch_pickup_temporal import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOTransformerCommAgent  # <-- changed import
 
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_gpt_ppo
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_pickup.train_rmt_ppo
 @dataclass
 class Args:
     seed: int = 1
@@ -72,7 +72,7 @@ class Args:
     agent_visible = False
     time_pressure = True
     mode = "train"
-    model_name = f"gpt_200k_ppo_{num_networks}net"
+    model_name = f"rmt_200k_ppo_{num_networks}net"
     d_model = 64 # original is 128
 
     if not (agent_visible):
@@ -94,7 +94,7 @@ class Args:
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {
-            a: f"checkpoints/torch_pickup_temporal/project_mem/gpt_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10/seed1/agent_{a}_step_102400000.pt"
+            a: f"checkpoints/torch_pickup_temporal/project_mem/rmt_ppo_3net_invisible/grid5_img3_ni2_nw4_ms10/seed1/agent_{a}_step_102400000.pt"
             for a in range(num_networks)
         }
     visualize_loss = True

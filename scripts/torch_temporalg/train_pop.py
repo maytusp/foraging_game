@@ -31,9 +31,9 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 1024
+    num_envs: int = 128
     """the number of parallel game environments"""
-    num_steps: int = 16
+    num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -81,9 +81,9 @@ class Args:
     image_size = 5
     comm_field = 5
     N_i = 2
-    grid_size = 9
-    num_walls = 4
-    max_steps = 40
+    grid_size = 5
+    num_walls = 0
+    max_steps = 20
     freeze_dur = 6
 
     agent_visible = False

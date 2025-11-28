@@ -1,3 +1,4 @@
+# TODO Debug this, it does not converge
 # torch_temporalg_v1.py
 # TemporalG variant of ScoreG
 from __future__ import annotations

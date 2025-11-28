@@ -198,7 +198,7 @@ def main():
     plt.grid(True, alpha=0.3)
     plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig(os.path.join(saved_fig_dir, "repcom_vs_distance.pdf"))
+    plt.savefig(os.path.join(saved_fig_dir, "repcom_vs_distance.png"))
     plt.close()
 
 

@@ -22,7 +22,7 @@ class PPOLSTMCommAgent(nn.Module):
     Agent with communication
     Observations: [image, location, message]
     '''
-    def __init__(self, num_actions, grid_size=5, n_words=16, embedding_size=16, num_channels=1, image_size=3):
+    def __init__(self, num_actions, grid_size=5, n_words=16, embedding_size=16, num_channels=1, image_size=3, d_model=128):
         super().__init__()
         self.grid_size = grid_size
         self.n_words = n_words
@@ -47,15 +47,15 @@ class PPOLSTMCommAgent(nn.Module):
                                         )
 
         self.location_encoder = nn.Linear(2, self.loc_dim)
-        self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.embedding_size, 128)
+        self.lstm = nn.LSTM(self.image_feat_dim+self.loc_dim+self.embedding_size, d_model)
         for name, param in self.lstm.named_parameters():
             if "bias" in name:
                 nn.init.constant_(param, 0)
             elif "weight" in name:
                 nn.init.orthogonal_(param, 1.0)
-        self.actor = layer_init(nn.Linear(128, num_actions), std=0.01)
-        self.critic = layer_init(nn.Linear(128, 1), std=1)
-        self.message_head = layer_init(nn.Linear(128, n_words), std=0.01)
+        self.actor = layer_init(nn.Linear(d_model, num_actions), std=0.01)
+        self.critic = layer_init(nn.Linear(d_model, 1), std=1)
+        self.message_head = layer_init(nn.Linear(d_model, n_words), std=0.01)
 
     # [IL] reinit only actor & critic heads (keep encoders/LSTM/message head intact)
     def reset_actor_critic(self):
@@ -168,6 +168,7 @@ class PPOTransformerCommAgent(nn.Module):
     """
     PPO agent with communication, using a tiny GPT-style transformer
     as the recurrent core instead of an LSTM.
+    The architecture resmbles Recurrent Memory Transformer.
 
     Observations: [image, location, message]
     """
@@ -219,7 +220,7 @@ class PPOTransformerCommAgent(nn.Module):
         self.input_proj = nn.Linear(core_input_dim, d_model)
 
         # Memory token projection (so we can learn how to combine with obs)
-        self.memory_proj = nn.Linear(d_model, d_model)
+        self.memory_proj = nn.Linear(d_model, d_model, bias=False)
 
         # Tiny GPT-style stack over 2 tokens: [memory_token, obs_token]
         self.blocks = nn.ModuleList(
@@ -375,54 +376,14 @@ class PPOTransformerCommAgent(nn.Module):
         # Sample message if needed
         if message is None:
             message = message_probs.sample()
-
-        if pos_sig and not pos_lis:
-            return (
-                action,
-                action_probs.log_prob(action),
-                action_probs.entropy(),
-                message,
-                message_probs.log_prob(message),
-                message_probs.entropy(),
-                self.critic(hidden),
-                new_memory,
-                message_pmf,
-            )
-        elif pos_lis and not pos_sig:
-            return (
-                action,
-                action_probs.log_prob(action),
-                action_probs.entropy(),
-                message,
-                message_probs.log_prob(message),
-                message_probs.entropy(),
-                self.critic(hidden),
-                new_memory,
-                action_pmf,
-                action_cf_pmf,
-            )
-        elif pos_sig and pos_lis:
-            return (
-                action,
-                action_probs.log_prob(action),
-                action_probs.entropy(),
-                message,
-                message_probs.log_prob(message),
-                message_probs.entropy(),
-                self.critic(hidden),
-                new_memory,
-                action_pmf,
-                action_cf_pmf,
-                message_pmf,
-            )
-        else:
-            return (
-                action,
-                action_probs.log_prob(action),
-                action_probs.entropy(),
-                message,
-                message_probs.log_prob(message),
-                message_probs.entropy(),
-                self.critic(hidden),
-                new_memory,
-            )
+            
+        return (
+            action,
+            action_probs.log_prob(action),
+            action_probs.entropy(),
+            message,
+            message_probs.log_prob(message),
+            message_probs.entropy(),
+            self.critic(hidden),
+            new_memory,
+        )
