@@ -22,7 +22,7 @@ from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_lstm_67M
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
