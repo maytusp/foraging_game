@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_scale import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_pop
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_lstm_2k
 @dataclass
 class Args:
     seed: int = 1
@@ -33,7 +33,7 @@ class Args:
     """the learning rate of the optimizer"""
     num_envs: int = 512
     """the number of parallel game environments"""
-    num_steps: int = 32
+    num_steps: int = 30
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -81,14 +81,15 @@ class Args:
     image_size = 7
     comm_field = 7
     num_foods = 2
-    grid_size = 17
-    num_walls = grid_size*2
-    max_steps = 50
+    grid_size = 13
+    max_walls = grid_size
+    timesteps_per_wall = int(0.9 * (total_timesteps // max_walls)) # max_walls at 80% of the training time
+    max_steps = 30
 
     agent_visible = False
     time_pressure = False
     mode = "train"
-    model_name = f"lstm2k_ppo_{num_networks}net"
+    model_name = f"lstm2k_sp_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -105,7 +106,7 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{num_foods}_nw{n_words}_ms{max_steps}_nwall{num_walls}"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{num_foods}_nw{n_words}_ms{max_steps}_nwall{max_walls}"
     save_dir = f"checkpoints/torch_scoreg_scale/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
@@ -128,7 +129,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "torch_scoreg_scale"
+    wandb_project_name: str = "torch_scoreg_scale_curriculum"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -178,12 +179,13 @@ if __name__ == "__main__":
         comm_field=args.comm_field,
         num_agents=2,               # keep your setting
         num_foods=args.num_foods,
-        num_walls=args.num_walls,
+        num_walls=0, # start with zero wall
         max_steps=args.max_steps,
         agent_visible=args.agent_visible,
         mode=args.mode,
         seed=args.seed,
         time_pressure=args.time_pressure,
+        max_walls = args.max_walls,
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
     num_agents = cfg.num_agents
@@ -262,9 +264,27 @@ if __name__ == "__main__":
 
     episodes_since_log = 0
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
+    current_walls_cpu = cfg.num_walls # track current wall
     # Start training
     for iteration in range(1, args.num_iterations + 1):
-        # print("iteration", iteration)
+        # --- CURRICULUM UPDATE (After the step loop, inside iteration loop) ---
+        # Calculate target walls based on global_step
+        new_wall_count = (global_step // args.timesteps_per_wall) * 1
+        
+        # Clamp to max_walls
+        final_count = min(new_wall_count, cfg.max_walls)
+        
+        # Check against CPU variable (Instant, no GPU sync)
+        if final_count != current_walls_cpu:
+            envs.set_num_walls(final_count)
+            current_walls_cpu = final_count # Update CPU tracker
+            print(f"Global Step {global_step}: Difficulty UP -> {final_count} walls.")
+            
+            # Optional: Log to TensorBoard
+            if args.track:
+                writer.add_scalar("charts/num_walls", final_count, global_step)
+        # ----------------------------------------------------------------------
+
         if iteration % args.reset_iteration == 0:
             # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
             for i in range(num_agents):

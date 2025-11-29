@@ -1,4 +1,4 @@
-# torch_pickup_high_scale.py
+# torch_scoreg_scale.py
 # 28 Nov 2025
 from __future__ import annotations
 import math
@@ -16,7 +16,8 @@ class EnvConfig:
     num_channels: int = 2
     num_agents: int = 2
     num_foods: int = 2             # N_i
-    num_walls: int = 0
+    num_walls: int = 0 # initial active walls
+    max_walls: int = 20
     max_steps: int = grid_size**2
     agent_visible: bool = False    # show other agents in obs
     food_energy_fully_visible: bool = False
@@ -76,8 +77,9 @@ class TorchForagingEnv:
         self.target_food_id = torch.zeros(self.B, dtype=torch.long, device=self.device)
         self.score_visible_to_agent = torch.zeros(self.B, Fd, dtype=torch.long, device=self.device)  # which agent sees which food
         self.wall_pos = torch.empty(self.B, 0, 2, dtype=torch.long, device=self.device)  # (B, W, 2)
-        if cfg.num_walls > 0:
-            self.wall_pos = torch.zeros(self.B, cfg.num_walls, 2, dtype=torch.long, device=self.device)
+        if cfg.max_walls > 0:
+            self.wall_pos = torch.zeros(self.B, cfg.max_walls, 2, dtype=torch.long, device=self.device)
+        self.active_wall_count = torch.tensor([cfg.num_walls], device=self.device, dtype=torch.long)
 
         self.curr_steps = torch.zeros(self.B, dtype=torch.long, device=self.device)
         self.dones_batch = torch.zeros(self.B, dtype=torch.bool, device=self.device)
@@ -170,6 +172,11 @@ class TorchForagingEnv:
         """Flattened indices from (.., 2) coords (y,x)."""
         return (yx[...,0] * W + yx[...,1]).to(torch.long)
 
+    def set_num_walls(self, n: int):
+        """Change the number of walls in the environment to vary difficulty"""
+        n = min(n, self.cfg.max_walls)
+        self.active_wall_count.fill_(n)
+
     # ---------------------- Observation ----------------------
     def _make_occupancy_and_attr_maps(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -181,8 +188,19 @@ class TorchForagingEnv:
         occ = torch.zeros(B, G, G, dtype=torch.float32, device=self.device)
         # walls
         if self.wall_pos.numel() > 0:
-            idx_w = self._make_index(self.wall_pos, G)  # (B, W)
-            occ.view(B, -1).scatter_(1, idx_w, self._occ_wall.expand_as(idx_w).to(torch.float32))
+            # Mask: Only consider walls that are on-grid (>= 0)
+            valid_walls = (self.wall_pos[..., 0] >= 0)  # (B, W)
+            
+            # We clamp indices to 0 to prevent crashes in _make_index/scatter, 
+            # but we zero out the value using the mask so they don't appear.
+            safe_pos = self.wall_pos.clamp(min=0)
+            idx_w = self._make_index(safe_pos, G)  # (B, W)
+            
+            val_w = self._occ_wall.expand_as(idx_w).to(torch.float32)
+            val_w = val_w * valid_walls.float() # Zero out off-grid walls
+            
+            occ.view(B, -1).scatter_(1, idx_w, val_w)
+        
         # foods
         alive_food_mask = (~self.food_done)
         if alive_food_mask.any():
@@ -328,10 +346,9 @@ class TorchForagingEnv:
         # target food = argmax
         self.target_food_id[idxs] = torch.argmax(self.food_energy[idxs], dim=1)
 
-        # food: row positions sample unique (0,1,G-2,G-1)
+        #TODO This one is for Fd > 2 for future use
         # 1. Define the specific allowed Y rows
-        # shape: (4,)
-        valid_rows = torch.tensor([0, 1, G-2, G-1], device=self.device, dtype=torch.long)
+        valid_rows = torch.tensor([0, G-1], device=self.device, dtype=torch.long)
         row_indices = torch.multinomial(
             torch.ones(n, valid_rows.size(0), device=self.device), 
             Fd, 
@@ -379,81 +396,73 @@ class TorchForagingEnv:
         self.cum_rewards[idxs] = 0
         self.episode_len[idxs] = 0
 
-        # --- WALLS: SOME IN AGENT RF, SOME IN MIDDLE BAND ---
-        if cfg.num_walls > 0:
-            num_mid_walls = cfg.num_walls
-
-
+        # --- WALLS UPDATE ---
+        # Note: We rely on cfg.max_walls for allocation, but self.active_wall_count for logic
+        if self.cfg.max_walls > 0:
+            # We get the current integer count. 
+            # Since this part uses a Python loop over batch indices, .item() is acceptable here.
+            # (Note: Python loops in reset might cause graph breaks in JIT, 
+            # but that is inherent to the original code structure).
+            target_num_walls = self.active_wall_count.item()
+            max_buffer = self.cfg.max_walls
+            
             max_attempts = 200
 
             for b in idxs.tolist():
                 walls_b = []
-
+                
+                # Check function
                 def is_blocked(y, x):
                     cand = torch.tensor([y, x], device=self.device, dtype=torch.long)
-                    # avoid agents
-                    if (self.agent_pos[b] == cand).all(dim=-1).any():
-                        return True
-
-                    # avoid existing walls
+                    if (self.agent_pos[b] == cand).all(dim=-1).any(): return True
                     if len(walls_b) > 0:
                         wb = torch.stack(walls_b, dim=0)
-                        if (wb == cand).all(dim=-1).any():
-                            return True
+                        if (wb == cand).all(dim=-1).any(): return True
                     return False
 
                 placed_mid = 0
-                while placed_mid < num_mid_walls and len(walls_b) < cfg.num_walls:
+                
+                # Use target_num_walls instead of cfg.num_walls
+                while placed_mid < target_num_walls and len(walls_b) < target_num_walls:
+                    # ... [Placement logic same as original] ...
+                    # (Code omitted for brevity, logic is identical to your snippet)
+                    # Just ensure you loop until `len(walls_b) < target_num_walls`
+                    
+                    # --- COPY PASTE YOUR PLACEMENT LOGIC HERE ---
                     attempts = 0
                     placed = False
                     while (not placed) and (attempts < max_attempts):
                         attempts += 1
-                        # middle vertical band, away from top/bottom bands
-                        x = torch.randint(1, G - 1,
-                                          (1,), device=self.device,
-                                          generator=self.rng).item()
-                        y = torch.randint(3, G - 3,
-                                          (1,), device=self.device,
-                                          generator=self.rng).item()
-
-                        if is_blocked(y, x):
-                            continue
-
-                        walls_b.append(torch.tensor([y, x],
-                                                    device=self.device,
-                                                    dtype=torch.long))
+                        x = torch.randint(1, G - 1, (1,), device=self.device, generator=self.rng).item()
+                        y = torch.randint(2, G - 2, (1,), device=self.device, generator=self.rng).item()
+                        if is_blocked(y, x): continue
+                        walls_b.append(torch.tensor([y, x], device=self.device, dtype=torch.long))
                         placed = True
                         placed_mid += 1
-
                     if not placed:
-                        # geometry tight; relax and place anywhere free
+                        # Fallback logic
                         for _ in range(max_attempts):
-                            y = torch.randint(0, G, (1,), device=self.device,
-                                              generator=self.rng).item()
-                            x = torch.randint(0, G, (1,), device=self.device,
-                                              generator=self.rng).item()
+                            y = torch.randint(0, G, (1,), device=self.device, generator=self.rng).item()
+                            x = torch.randint(0, G, (1,), device=self.device, generator=self.rng).item()
                             if not is_blocked(y, x):
-                                walls_b.append(torch.tensor([y, x],
-                                                            device=self.device,
-                                                            dtype=torch.long))
+                                walls_b.append(torch.tensor([y, x], device=self.device, dtype=torch.long))
                                 placed_mid += 1
                                 break
-                        else:
-                            # still failed; break to avoid infinite loop
-                            break
+                        else: break
+                    # ---------------------------------------------
+                
+                # Create a buffer of shape (20, 2) filled with -2000
+                final_walls = torch.full((self.cfg.max_walls, 2), -2000, device=self.device, dtype=torch.long)
 
-                # If we somehow have fewer than cfg.num_walls, we can pad by duplicating
-                if len(walls_b) == 0:
-                    # degenerate fallback: put a single wall at (0,0)
-                    walls_b.append(torch.tensor([0, 0], device=self.device, dtype=torch.long))
+                if len(walls_b) > 0:
+                    # Stack what we have (11, 2)
+                    active_stack = torch.stack(walls_b, dim=0)
+                    # Overwrite the first 11 slots of the buffer
+                    final_walls[:len(walls_b)] = active_stack
 
-                if len(walls_b) < cfg.num_walls:
-                    # duplicate last wall to fill remaining slots (harmless)
-                    last = walls_b[-1]
-                    while len(walls_b) < cfg.num_walls:
-                        walls_b.append(last.clone())
+                # Assign the full buffer (20, 2)
+                self.wall_pos[b] = final_walls
 
-                self.wall_pos[b] = torch.stack(walls_b, dim=0)
 
     @torch.no_grad()
     def step(self, actions, auto_reset=True) -> Tuple[Dict[int, dict], Dict[int, float], Dict[int, bool], Dict[int, bool], Dict]:
@@ -496,9 +505,23 @@ class TorchForagingEnv:
         # walls occupancy
         occ_walls = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
         if self.wall_pos.numel() > 0:
-            idx_w = self._make_index(self.wall_pos, G)
+            # 1. Identify valid walls
+            valid_mask = (self.wall_pos[..., 0] >= 0)  # Shape: (B, max_walls)
+
+            # 2. Clamp dummy positions to (0,0) to avoid index errors
+            safe_pos = self.wall_pos.clamp(min=0)
+            idx_w = self._make_index(safe_pos, G)
+
+            # 3. Create batch indices SPECIFIC to walls (Renamed to b_idx_w)
             b_idx_w = torch.arange(self.B, device=self.device).unsqueeze(1).expand_as(idx_w)
-            occ_walls.view(self.B, -1)[b_idx_w[:,:idx_w.size(1)], idx_w] = True
+
+            # 4. Filter: Select ONLY the indices where valid_mask is True
+            valid_b = b_idx_w[valid_mask]
+            valid_idx = idx_w[valid_mask]
+
+            # 5. Assign True
+            if valid_idx.numel() > 0:
+                occ_walls.view(self.B, -1)[valid_b, valid_idx] = True
 
         # food occupancy
         occ_foods = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
