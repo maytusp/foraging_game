@@ -26,6 +26,9 @@ class EnvConfig:
     n_words: int = 10
     message_length: int = 1
     mode: Literal["train", "test"] = "train"
+
+    spawn_mode: int = 0  # 0: Easy, 1: Medium, 2: Hard # to make the training converge easier
+
     test_moderate_score: bool = False
     seed: int = 42
     # constants (match your code where possible)
@@ -80,6 +83,7 @@ class TorchForagingEnv:
         if cfg.max_walls > 0:
             self.wall_pos = torch.zeros(self.B, cfg.max_walls, 2, dtype=torch.long, device=self.device)
         self.active_wall_count = torch.tensor([cfg.num_walls], device=self.device, dtype=torch.long)
+        self.spawn_mode = torch.tensor([cfg.spawn_mode], device=self.device, dtype=torch.long)
 
         self.curr_steps = torch.zeros(self.B, dtype=torch.long, device=self.device)
         self.dones_batch = torch.zeros(self.B, dtype=torch.bool, device=self.device)
@@ -176,6 +180,16 @@ class TorchForagingEnv:
         """Change the number of walls in the environment to vary difficulty"""
         n = min(n, self.cfg.max_walls)
         self.active_wall_count.fill_(n)
+
+    def set_spawn_mode(self, mode: int):
+            """
+            Set food spawn difficulty.
+            0: Easy (Both same side, 0 or G-1)
+            1: Medium (One edge 0/G-1, One middle G//2)
+            2: Hard (Opposite sides, 0 and G-1)
+            """
+            assert mode in [0, 1, 2], "Mode must be 0, 1, or 2"
+            self.spawn_mode.fill_(mode)
 
     # ---------------------- Observation ----------------------
     def _make_occupancy_and_attr_maps(self) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -346,21 +360,43 @@ class TorchForagingEnv:
         # target food = argmax
         self.target_food_id[idxs] = torch.argmax(self.food_energy[idxs], dim=1)
 
-        #TODO This one is for Fd > 2 for future use
-        # 1. Define the specific allowed Y rows
-        valid_rows = torch.tensor([0, G-1], device=self.device, dtype=torch.long)
-        row_indices = torch.multinomial(
-            torch.ones(n, valid_rows.size(0), device=self.device), 
-            Fd, 
-            replacement=False, # <--- This ensures unique rows
-            generator=self.rng
-        )
-        
-        y = valid_rows[row_indices[:,:Fd]]
+        #TODO Implement spawn logic for Fd > 2 for future use
 
-        # # food: column positions
+        # 1. Define the specific allowed Y rows
+        # --- NEW LOGIC START ---
+        # 1. Generate random X for all foods
         x = torch.randint(0, G, (n, Fd), device=self.device, generator=self.rng)
-        self.food_pos[idxs] = torch.stack([y, x], dim=-1)
+        
+        # 2. Randomly pick "Top" (0) or "Bottom" (1) preference for Easy/Medium
+        #    False=Top (row 0), True=Bottom (row G-1)
+        side_rand = torch.randint(0, 2, (n, 1), device=self.device, generator=self.rng).bool()
+        
+        # --- MODE 0: EASY (All Top OR All Bottom) ---
+        y_easy = torch.zeros((n, Fd), dtype=torch.long, device=self.device)
+        y_easy = torch.where(side_rand, torch.tensor(G-1, device=self.device), y_easy)
+        
+        # --- MODE 1: MEDIUM (One Edge, Others Middle) ---
+        y_med = torch.zeros((n, Fd), dtype=torch.long, device=self.device)
+        # First food follows side preference (Edge)
+        y_med[:, 0] = torch.where(side_rand.squeeze(1), torch.tensor(G-1, device=self.device), torch.tensor(0, device=self.device))
+        # Subsequent foods go to middle (G//2)
+        if Fd > 1:
+            y_med[:, 1:] = G // 2
+
+        # --- MODE 2: HARD (Opposite sides) ---
+        # Even indices at 0, Odd indices at G-1
+        col_indices = torch.arange(Fd, device=self.device).expand(n, Fd)
+        y_hard = torch.where(col_indices % 2 == 1, torch.tensor(G-1, device=self.device), torch.tensor(0, device=self.device))
+        
+        # 3. SELECT based on self.spawn_mode
+        # Use torch.where to avoid Python if/else (Crucial for JIT)
+        mode = self.spawn_mode 
+        
+        # If mode==0 use easy, else check if mode==1...
+        y_final = torch.where(mode == 0, y_easy, 
+                        torch.where(mode == 1, y_med, y_hard))
+        
+        self.food_pos[idxs] = torch.stack([y_final, x], dim=-1)
         self.food_done[idxs] = False
 
 

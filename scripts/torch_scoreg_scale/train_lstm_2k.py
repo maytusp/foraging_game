@@ -22,12 +22,12 @@ from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_lstm_2k
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -84,6 +84,9 @@ class Args:
     grid_size = 13
     max_walls = grid_size
     timesteps_per_wall = int(0.9 * (total_timesteps // max_walls)) # max_walls at 80% of the training time
+    # Fraction of training (0.0 to 1.0) when the Easy Phase (Mode 0) ends
+    curriculum_easy_end: float = 0.10
+    curriculum_medium_end: float = 0.30
     max_steps = 30
 
     agent_visible = False
@@ -129,7 +132,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "torch_scoreg_scale_curriculum"
+    wandb_project_name: str = "scoreg_scale"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -265,9 +268,38 @@ if __name__ == "__main__":
     episodes_since_log = 0
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
     current_walls_cpu = cfg.num_walls # track current wall
+    current_spawn_mode_cpu = 0
     # Start training
     for iteration in range(1, args.num_iterations + 1):
         # --- CURRICULUM UPDATE (After the step loop, inside iteration loop) ---
+
+        # --- SPAWN CURRICULUM START ---
+        # Calculate progress (0.0 to 1.0)
+        progress = iteration / args.num_iterations
+        
+        # Determine Mode based on args
+        if progress < args.curriculum_easy_end:
+            target_mode = 0  # Easy
+            phase_name = "EASY"
+        elif progress < args.curriculum_medium_end:
+            target_mode = 1  # Medium
+            phase_name = "MEDIUM"
+        else:
+            target_mode = 2  # Hard
+            phase_name = "HARD"
+            
+        # Update Environment (only if changed)
+        if target_mode != current_spawn_mode_cpu:
+            envs.set_spawn_mode(target_mode)
+            current_spawn_mode_cpu = target_mode
+            print(f"Curriculum Update [Iter {iteration} | {progress:.2%}]: Switched to {phase_name} Spawn Mode ({target_mode})")
+            
+            if args.track:
+                # Log the mode change as a step function
+                writer.add_scalar("charts/spawn_mode", target_mode, global_step)
+        # --- SPAWN CURRICULUM END ---
+
+        # --- WALL CURRICULUM START ---
         # Calculate target walls based on global_step
         new_wall_count = (global_step // args.timesteps_per_wall) * 1
         
@@ -283,7 +315,7 @@ if __name__ == "__main__":
             # Optional: Log to TensorBoard
             if args.track:
                 writer.add_scalar("charts/num_walls", final_count, global_step)
-        # ----------------------------------------------------------------------
+        # --- WALL CURRICULUM END ---
 
         if iteration % args.reset_iteration == 0:
             # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
