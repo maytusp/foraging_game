@@ -19,15 +19,15 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_scale import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_lstm_2k
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_scale.train_lstm_2k
 @dataclass
 class Args:
-    seed: int = 3
+    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(1e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""

@@ -13,7 +13,7 @@ import torch._dynamo as dynamo
 class EnvConfig:
     grid_size: int = 13
     image_size: int = 7            # local obs crop (odd)
-    comm_field: int = 5
+    comm_field: int = 7
     num_channels: int = 1          # only occupancy channel in TemporalG
     num_agents: int = 2
     num_foods: int = 2             # N_i
@@ -750,7 +750,8 @@ class TorchTemporalEnv:
                     b0 = torch.nonzero(stage0, as_tuple=False).view(-1)
                     self.collection_stage[b0] = 1
                     self.current_target_food_id[b0] = self.spawn_order[b0, 1]
-
+                    rewards[b0] += 0.5
+                    
                 # stage 1 → success (both items collected in order)
                 stage1 = (stage == 1) & correct
                 if stage1.any():
@@ -760,7 +761,7 @@ class TorchTemporalEnv:
                         bonus = ((cfg.max_steps - self.curr_steps[b1]) / self._max_steps_f).clamp_min(0.0)
                     else:
                         bonus = torch.zeros_like(self.curr_steps[b1], dtype=torch.float32)
-                    rewards[b1] += (1.0 + bonus).unsqueeze(-1)
+                    rewards[b1] += (0.5 + bonus).unsqueeze(-1)
                     self.dones_batch[b1] = True
 
         # timeout

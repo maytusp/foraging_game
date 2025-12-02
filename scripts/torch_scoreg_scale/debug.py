@@ -19,10 +19,10 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_scale import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_lstm_67M
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_scale.debug
 @dataclass
 class Args:
-    seed: int = 2
+    seed: int = 1
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -76,23 +76,23 @@ class Args:
     """
 
     log_every = 32
-    d_model = 4096
+    d_model = 128
     n_words = 4
     image_size = 7
     comm_field = 7
     num_foods = 2
     grid_size = 13
     max_walls = grid_size
-    timesteps_per_wall = int(0.9 * (total_timesteps // max_walls)) # max_walls at 80% of the training time
+    timesteps_per_wall = 10000
     # Fraction of training (0.0 to 1.0) when the Easy Phase (Mode 0) ends
-    curriculum_easy_end: float = 0.10
-    curriculum_medium_end: float = 0.30
+    curriculum_easy_end: float = 1e-4
+    curriculum_medium_end: float = 2e-4
     max_steps = 30
 
     agent_visible = False
     time_pressure = False
     mode = "train"
-    model_name = f"lstm67M_sp_ppo_{num_networks}net"
+    model_name = f"lstm2k_sp_ppo_{num_networks}net"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -130,7 +130,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "scoreg_scale"
     """the wandb's project name"""
@@ -161,7 +161,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/scoreg_scale/{run_name}")
+    writer = SummaryWriter(f"runs/debugs/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),

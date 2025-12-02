@@ -16,13 +16,13 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_pickup_temporal import TorchTemporalEnv, EnvConfig
+from environments.torch_temporalg import TorchTemporalEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_temporalg.train_pop
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
@@ -31,9 +31,9 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 128
+    num_envs: int = 512
     """the number of parallel game environments"""
-    num_steps: int = 32
+    num_steps: int = 64
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -61,9 +61,9 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
     # Populations
-    num_networks = 3
+    num_networks = 2
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -78,12 +78,12 @@ class Args:
     log_every = 32
 
     n_words = 4
-    image_size = 5
-    comm_field = 5
+    image_size = 7
+    comm_field = 7
     N_i = 2
-    grid_size = 5
-    num_walls = 0
-    max_steps = 20
+    grid_size = 9
+    num_walls = 9
+    max_steps = 50
     freeze_dur = 6
 
     agent_visible = False
@@ -106,17 +106,18 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}"
-    save_dir = f"checkpoints/torch_pickup_temporal/{model_name}/{train_combination_name}/seed{seed}/"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_nwall{num_walls}"
+    save_dir = f"checkpoints/torch_temporalg/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
-    load_pretrained = False
+    load_pretrained = True
     if load_pretrained:
-        pretrained_global_step = 1177600000
+        pretrained_global_step = 665600000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
-        ckpt_path = {
-                    a: f"" for a in range(num_networks)
-                    }
+        ckpt_path = {}
+        for a in range(num_networks):
+            ckpt_path[a] = f"checkpoints/torch_temporalg/lstm_ppo_2net_invisible/grid9_img7_ni2_nw4_ms50_freeze_dur6/seed{seed}/agent_{a}_step_{pretrained_global_step}.pt"
+
     visualize_loss = True
     save_frequency = int(5e4)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -129,7 +130,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "torch_pickup_temporal"
+    wandb_project_name: str = "torch_temporalg"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -158,7 +159,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/{run_name}")
+    writer = SummaryWriter(f"runs/temporalg/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -176,6 +177,7 @@ if __name__ == "__main__":
     cfg = EnvConfig(
         grid_size=args.grid_size,
         image_size=args.image_size,
+        comm_field=args.comm_field,
         freeze_dur=args.freeze_dur,
         num_agents=2,               # keep your setting
         num_foods=args.N_i,
@@ -246,6 +248,8 @@ if __name__ == "__main__":
     
     start_time = time.time()
     global_step = 0
+    if args.load_pretrained:
+        global_step += args.pretrained_global_step
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
     selected_networks = [0,1]
@@ -320,7 +324,8 @@ if __name__ == "__main__":
             (next_obs, next_locs, msg_masks), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
            
             env_info = (all_rewards, all_terminations, all_truncations)
-
+            # if (all_rewards > 1).any():
+            #     print(all_rewards)
             for i in range(num_agents):
                 msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
                 #TODO Add mask during training
@@ -329,12 +334,9 @@ if __name__ == "__main__":
                 rewards[i][step] = all_rewards[:, i] # (B,A)
 
             # Save Model Checkpoints: loop over networks not agents
-            if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
+            if ((global_step-args.pretrained_global_step) // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
                 for network_id in range(args.num_networks):
-                    if args.load_pretrained:
-                        saved_step = global_step + args.pretrained_global_step
-                    else:
-                        saved_step = global_step
+                    saved_step = global_step
                     save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{saved_step}.pt")
                     torch.save(agents[network_id].state_dict(), save_path)
                     print(f"Model saved to {save_path}")
@@ -507,7 +509,8 @@ if __name__ == "__main__":
             explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
             # TRY NOT TO MODIFY: record rewards for plotting purposes
-            if args.visualize_loss and (global_step // args.num_envs) % args.log_every == 0:
+            SPS = int((global_step -args.pretrained_global_step) / (time.time() - start_time))
+            if args.visualize_loss and ((global_step-args.pretrained_global_step) // args.num_envs) % args.log_every == 0:
                 writer.add_scalar(f"agent{network_id}/charts/learning_rate", optimizers[network_id].param_groups[0]["lr"], global_step)
                 writer.add_scalar(f"agent{network_id}/losses/value_loss", v_loss.item(), global_step)
                 writer.add_scalar(f"agent{network_id}/losses/action_loss", pg_loss.item(), global_step)
@@ -521,12 +524,10 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{network_id}/losses/action_clipfrac", np.mean(action_clipfracs), global_step)
                 writer.add_scalar(f"agent{network_id}/losses/message__clipfrac", np.mean(message_clipfracs), global_step)
                 writer.add_scalar(f"agent{network_id}/losses/explained_variance", explained_var, global_step)
-                writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-                print("SPS:", int(global_step / (time.time() - start_time)))
-    if args.load_pretrained:
-        saved_step = global_step + args.pretrained_global_step
-    else:
-        saved_step = global_step
+                writer.add_scalar("charts/SPS", SPS, global_step)
+                print("SPS:", SPS)
+
+    saved_step = global_step
     for network_id in range(args.num_networks):
         final_save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{saved_step}.pt")
         torch.save(agents[network_id].state_dict(), final_save_path)
