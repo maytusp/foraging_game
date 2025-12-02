@@ -320,20 +320,10 @@ class TorchTemporalEnv:
         # --- WALLS: SOME IN AGENT RF, SOME IN MIDDLE BAND ---
         if cfg.num_walls > 0:
             rf_radius = (cfg.image_size - 1) // 2
+            num_mid_walls = cfg.num_walls
 
-            # Split total walls into RF-walls and middle-band walls
-            # - at most 1 RF wall per agent
-            # - ensure both types when num_walls >= 2
-            num_rf_walls = min(A, max(1, cfg.num_walls // 2))
-            num_mid_walls = max(0, cfg.num_walls - num_rf_walls)
-
-            # preferred vertical "middle" band, away from top/bottom bands
-            y_min_pref = rf_radius + 1
-            y_max_pref = G - 2 - rf_radius     # inclusive
-            if y_min_pref > y_max_pref:
-                # fallback: any row except borders
-                y_min_pref = 1
-                y_max_pref = G - 2
+            y_min_pref = 1
+            y_max_pref = G - 2
 
             max_attempts = 200
 
@@ -352,40 +342,6 @@ class TorchTemporalEnv:
                             return True
                     return False
 
-                # 1) RF DISTRACTOR WALLS (up to num_rf_walls)
-                # Choose which agents get RF walls: first num_rf_walls agents
-                agents_for_rf = min(A, num_rf_walls)
-                for a in range(agents_for_rf):
-                    if len(walls_b) >= cfg.num_walls:
-                        break
-
-                    ya = int(self.agent_pos[b, a, 0].item())
-                    xa = int(self.agent_pos[b, a, 1].item())
-
-                    y_min = max(0, ya - rf_radius)
-                    y_max = min(G - 1, ya + rf_radius)
-                    x_min = max(0, xa - rf_radius)
-                    x_max = min(G - 1, xa + rf_radius)
-
-                    placed = False
-                    attempts = 0
-                    while (not placed) and (attempts < max_attempts):
-                        attempts += 1
-                        y = torch.randint(y_min, y_max + 1,
-                                          (1,), device=self.device,
-                                          generator=self.rng).item()
-                        x = torch.randint(x_min, x_max + 1,
-                                          (1,), device=self.device,
-                                          generator=self.rng).item()
-
-                        if is_blocked(y, x):
-                            continue
-
-                        walls_b.append(torch.tensor([y, x],
-                                                    device=self.device,
-                                                    dtype=torch.long))
-                        placed = True
-                    # if not placed, we just skip this agent
 
                 # 2) MIDDLE-BAND WALLS (num_mid_walls)
                 placed_mid = 0
