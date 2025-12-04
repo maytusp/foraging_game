@@ -111,12 +111,12 @@ class Args:
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = True
     if load_pretrained:
-        pretrained_global_step = 665600000
+        pretrained_global_step = 1484800000
         learning_rate = 2e-4
         print(f"LOAD from {pretrained_global_step}")
         ckpt_path = {}
         for a in range(num_networks):
-            ckpt_path[a] = f"checkpoints/torch_temporalg/lstm_ppo_2net_invisible/grid9_img7_ni2_nw4_ms50_freeze_dur6/seed{seed}/agent_{a}_step_{pretrained_global_step}.pt"
+            ckpt_path[a] = f"checkpoints/torch_temporalg/lstm_ppo_2net_invisible/grid9_img7_ni2_nw4_ms50_freeze_dur6_nwall2/seed{seed}/agent_{a}_step_{pretrained_global_step}.pt"
 
     visualize_loss = True
     save_frequency = int(5e4)

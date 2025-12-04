@@ -83,7 +83,7 @@ class Args:
     num_foods = 2
     grid_size = 13
     max_walls = grid_size
-    timesteps_per_wall = int(0.9 * (total_timesteps // max_walls)) # max_walls at 80% of the training time
+    timesteps_per_wall = int(0.9 * (total_timesteps // max_walls)) # max_walls at 90% of the training time
     # Fraction of training (0.0 to 1.0) when the Easy Phase (Mode 0) ends
     curriculum_easy_end: float = 0.10
     curriculum_medium_end: float = 0.30

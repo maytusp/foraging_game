@@ -2,21 +2,53 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorboard.backend.event_processing import event_accumulator
+save_dir = "plots/lstm_vs_rmt_sp_15net/"
+runs_dir = "../../runs/"
+os.makedirs(save_dir, exist_ok=True)
+model_name_list = [
+                    # "lstm2k_sp_ppo_2net_invisible_wospeedrw", 
+                    # "lstm67M_sp_ppo_2net_invisible_wospeedrw",
+                    # "lstm_ppo_3net_invisible",
+                    # "gpt_ppo_3net_invisible",
+                    "lstm_ppo_15net_invisible",
+                    "gpt_ppo_3net_invisible",
+                    ]
 
-num_net_list = [3, 6, 9, 12, 15]
+name2config = {
+                "lstm2k_sp_ppo_2net_invisible_wospeedrw": "grid13_img7_ni2_nw4_ms30_nwall13",
+                "lstm67M_sp_ppo_2net_invisible_wospeedrw": "grid13_img7_ni2_nw4_ms30_nwall13",
+                "lstm_ppo_3net_invisible": "grid5_img3_ni2_nw4_ms10",
+                "gpt_ppo_3net_invisible": "grid5_img3_ni2_nw4_ms10",
+}
+
+name2legend = {
+                "lstm2k_sp_ppo_2net_invisible_wospeedrw": "200k",
+                "lstm67M_sp_ppo_2net_invisible_wospeedrw": "67M",
+                "lstm_ppo_3net_invisible" : "LSTM",
+                "gpt_ppo_3net_invisible" : "RMT",
+                }
 seed_list = [1, 2, 3]
+num_net = 2
 metrics = ['return', 'action_entropy', 'message_entropy']
-colors = ['blue', 'green', 'red', 'purple', 'orange']
-save_dir = "plots"
+colors = ['blue', 'green']
+
 def extract_scalars(path, num_net):
     ea = event_accumulator.EventAccumulator(
         path,
-        size_guidance={"scalars": 1000}  # 0 = load all scalars
+        size_guidance={"scalars": 500}  # 0 = load all scalars
     )
     ea.Reload()
-
+    # --- INSERT THIS TO INSPECT KEYS ---
+    print(f"File: {path}")
+    print("Available Scalar Keys:")
+    episodic_return_tag = ""
+    # ea.Tags() returns a dict with keys like 'images', 'scalars', 'histograms'
+    for tag in ea.Tags()['scalars']: 
+        if "episodic_return" in tag: # get either charts/episodic_return or charts/episodic_return/
+            episodic_return_tag = tag
+    # -----------------------------
     # Extract joint return
-    return_events = ea.Scalars("charts/episodic_return")
+    return_events = ea.Scalars(episodic_return_tag)
     steps = np.array([e.step for e in return_events])
     returns = np.array([e.value for e in return_events])
 
@@ -40,12 +72,13 @@ def extract_scalars(path, num_net):
 # Store all data per metric and num_net
 all_data = {metric: {} for metric in metrics}
 
-for num_net in num_net_list:
+for model_name in model_name_list:
     per_seed_data = {metric: [] for metric in metrics}
 
     for seed in seed_list:
         print(f"seed {seed}")
-        folder = f"../runs/pop_sp_ppo_{num_net}net_invisible/grid5_img3_ni2_nw4_ms10_seed{seed}/"
+        config_name = name2config[model_name]
+        folder = os.path.join(runs_dir, f"{model_name}/{config_name}_seed{seed}/")
         event_file = [f for f in os.listdir(folder) if f.startswith("events.out")][0]
         full_path = os.path.join(folder, event_file)
 
@@ -55,7 +88,7 @@ for num_net in num_net_list:
         per_seed_data['message_entropy'].append(m_entropy)
 
     for metric in metrics:
-        all_data[metric][num_net] = {
+        all_data[metric][model_name] = {
             'mean': np.mean(per_seed_data[metric], axis=0),
             'std': np.std(per_seed_data[metric], axis=0),
             'steps': steps
@@ -72,9 +105,9 @@ for metric in metrics:
         'legend.fontsize': 16
     })
     plt.figure(figsize=(10, 5))
-    for i, num_net in enumerate(num_net_list):
-        data = all_data[metric][num_net]
-        plt.plot(data['steps'], data['mean'], label=f"{num_net} agents", color=colors[i])
+    for i, model_name in enumerate(model_name_list):
+        data = all_data[metric][model_name]
+        plt.plot(data['steps'], data['mean'], label=name2legend[model_name], color=colors[i])
         plt.fill_between(data['steps'], data['mean'] - data['std'], data['mean'] + data['std'], color=colors[i], alpha=0.2)
 
     plt.title(f"")
@@ -83,6 +116,6 @@ for metric in metrics:
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    save_path = os.path.join(save_dir, f"{metric}_vs_steps.pdf")
+    save_path = os.path.join(save_dir, f"{metric}_vs_steps.png")
     plt.savefig(save_path)
     plt.close()
