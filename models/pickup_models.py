@@ -109,27 +109,79 @@ class PPOLSTMCommAgent(nn.Module):
         message_probs = Categorical(logits=message_logits)
         message_pmf = nn.Softmax(dim=1)(message_logits) # probability mass function of message
 
-        if pos_lis:
-            # create counterfactual case where message is zero
-            zero_message = torch.zeros_like(received_message).to(received_message.device)
-            hidden_cf, _ = self.get_states((image, location, zero_message), lstm_state, done, tracks)
-            action_cf_logits = self.actor(hidden_cf)
-            action_cf_pmf = nn.Softmax(dim=1)(action_cf_logits) 
         # For positive signalling and listening
         if message is None:
             message = message_probs.sample()
-        if pos_sig and not(pos_lis):
-            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, message_pmf
-        elif pos_lis and not(pos_sig):
-            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, action_pmf, action_cf_pmf
-        elif pos_sig and pos_lis: 
-            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state, action_pmf, action_cf_pmf, message_pmf
+
+        return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state
+
+
+class PPOLSTMCommAgentWithSilence(PPOLSTMCommAgent):
+    def __init__(self, num_actions, grid_size=5, n_words=16, embedding_size=16, num_channels=1, image_size=3, d_model=128):
+        # Initialize superclass
+        super().__init__(num_actions, grid_size, n_words, embedding_size, num_channels, image_size, d_model)
+        
+        # Requirement 1: Override message encoder to have n_words + 1 elements
+        # 0 is reserved for silence, 1 to n_words are actual words
+        self.message_encoder = nn.Sequential(
+            nn.Embedding(n_words + 1, embedding_size), 
+            nn.Linear(embedding_size, embedding_size), 
+            nn.ReLU(),
+        )
+
+    def get_action_and_value(self, input, lstm_state, done, action=None, message=None, tracks=None, pos_sig=False, pos_lis=False):
+        # Unpack input (image, location, received_message)
+        # Note: received_message in input is passed to get_states -> message_encoder. 
+        # Since message_encoder now has size n_words+1, it can handle inputs [0, n_words] directly.
+        image, location, received_message = input
+        hidden, lstm_state = self.get_states((image, location, received_message), lstm_state, done, tracks)
+
+        # --- Physical Action Logic (Same as Superclass) ---
+        action_logits = self.actor(hidden)
+        action_probs = Categorical(logits=action_logits)
+        
+        if action is None:
+            action = action_probs.sample()
+
+        # --- Communication Logic (Modified) ---
+        # The message_head outputs logits for 'n_words' (size 16), representing tokens [1...n_words]
+        message_logits = self.message_head(hidden)
+        message_probs = Categorical(logits=message_logits)
+        
+        # Requirement 2: Two modes based on whether message is None
+        if message is None:
+            # Mode 1: Inference (producing message)
+            # Sample raw logits in range [0, n_words-1]
+            raw_message = message_probs.sample()
+            
+            # Shift [0, n_words-1] -> [1, n_words]
+            # The model never produces 0 (silence) actively
+            message = raw_message + 1
+            
+            # Calculate log probs/entropy based on the raw distribution
+            msg_log_prob = message_probs.log_prob(raw_message)
+            msg_entropy = message_probs.entropy()
+            
         else:
-            return action, action_probs.log_prob(action), action_probs.entropy(), message, message_probs.log_prob(message), message_probs.entropy(), self.critic(hidden), lstm_state
+            # Mode 2: Training (evaluating message)
+            # 'message' input (from PPO buffer) is in range [0, n_words]
+            
+            # Shift [1, n_words] -> [0, n_words-1] to match logit dimensions
+            # Silence (0) becomes -1, so we clamp to 0. 
+            # (Silence entries are masked in the loss function, so value 0 here is a dummy placeholder)
+            shifted_message = (message - 1).clamp(min=0)
+            
+            msg_log_prob = message_probs.log_prob(shifted_message)
+            msg_entropy = message_probs.entropy()
 
-
-
-
+        return (action, 
+                action_probs.log_prob(action), 
+                action_probs.entropy(), 
+                message, 
+                msg_log_prob, 
+                msg_entropy, 
+                self.critic(hidden), 
+                lstm_state)
 
 class TransformerBlock(nn.Module):
     """
