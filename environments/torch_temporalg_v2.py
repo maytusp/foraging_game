@@ -274,11 +274,11 @@ class TorchTemporalEnv:
 
         curr_t = self.curr_steps.view(B, 1, 1).expand(B, A, A)
         just_met = (dist <= R) & (self.meet_step == -1) # (B,A,A)
-        
+
         self.meet_step = torch.where(just_met, curr_t, self.meet_step)
         time_since_meet = curr_t - self.meet_step
 
-        comm_mask = (time_since_meet < self.comm_steps) & (self.meet_step != -1) # (B,A,A)
+        comm_mask = (time_since_meet < self.cfg.comm_steps) & (self.meet_step != -1) # (B,A,A)
         eye = torch.eye(A, dtype=torch.bool, device=self.device).unsqueeze(0)
         comm_mask = comm_mask & (~eye)
 
