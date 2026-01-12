@@ -1,5 +1,4 @@
-# Created 25 Aug 2025
-# Note: This code only work for single environment. It doesn't support parallel environments.
+# TODO: Add mask
 import os
 import random
 import time

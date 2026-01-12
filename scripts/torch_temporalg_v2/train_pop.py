@@ -107,6 +107,7 @@ class Args:
     save_dir = f"checkpoints/torch_temporalg_v2/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
+    pretrained_global_step = 0
     if load_pretrained:
         pretrained_global_step = 1484800000
         learning_rate = 2e-4
@@ -209,7 +210,7 @@ if __name__ == "__main__":
     next_obs, next_locs, next_done, next_lstm_state = {}, {}, {}, {}
     # TRY NOT TO MODIFY: start the game
     next_obs, next_locs, msg_masks = envs._obs_core()
-    msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1).squeeze() 
+    msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1)
     next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64).to(device) # action: sent message
     
     swap_agent = {0:1, 1:0}
@@ -233,7 +234,7 @@ if __name__ == "__main__":
         r_messages[i] = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # obs: received message
         actions[i] = torch.zeros((args.num_steps, args.num_envs)).to(device) # action: physical action
         s_messages[i] = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # action: sent message
-        masks_stores[i] = torch.zeros((args.num_steps, 1), dtype=torch.int64).to(device)
+        masks_stores[i] = torch.zeros((args.num_steps, args.num_envs, 1), dtype=torch.int64).to(device)
         action_logprobs[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         message_logprobs[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         rewards[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -327,10 +328,9 @@ if __name__ == "__main__":
             env_info = (all_rewards, all_terminations, all_truncations)
             # if (all_rewards > 1).any():
             #     print(all_rewards)
+            msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
             for i in range(num_agents):
-                msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1).squeeze() # (B,1) mask if two agents can communicate
-                #TODO Add mask during training
-                next_r_messages[:,i] = msg_masks * s_message[swap_agent[i]] # (B,1) agent exchange msgs
+                next_r_messages[:,i] = msg_masks.squeeze() * s_message[swap_agent[i]] # (B,1) agent exchange msgs
                 next_done[i] = (all_terminations | all_truncations).float()
                 rewards[i][step] = all_rewards[:, i] # (B,A)
 
@@ -442,7 +442,7 @@ if __name__ == "__main__":
                     end = start + envsperbatch
                     mbenvinds = envinds[start:end]
                     mb_inds = flatinds[:, mbenvinds].ravel()  # be really careful about the index
-                    mb_masks = b_masks[mb_inds]
+                    mb_masks = b_masks[i][mb_inds]
 
                     _, new_action_logprob, action_entropy, _, new_message_logprob, message_entropy, newvalue, _ = agents[network_id].get_action_and_value(
                         (b_obs[i][mb_inds], b_locs[i][mb_inds], b_r_messages[i][mb_inds]),

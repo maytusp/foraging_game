@@ -31,7 +31,7 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 512
+    num_envs: int = 8
     """the number of parallel game environments"""
     num_steps: int = 64
     """the number of steps to run in each environment per policy rollout"""
@@ -128,7 +128,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "torch_temporalg"
     """the wandb's project name"""
@@ -326,9 +326,8 @@ if __name__ == "__main__":
             env_info = (all_rewards, all_terminations, all_truncations)
             # if (all_rewards > 1).any():
             #     print(all_rewards)
+            msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
             for i in range(num_agents):
-                msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
-                #TODO Add mask during training
                 next_r_messages[:,i] = msg_masks.squeeze() * s_message[swap_agent[i]] # (B,1) agent exchange msgs
                 next_done[i] = (all_terminations | all_truncations).float()
                 rewards[i][step] = all_rewards[:, i] # (B,A)
