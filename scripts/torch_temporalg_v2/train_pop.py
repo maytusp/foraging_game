@@ -28,7 +28,7 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 8
+    num_envs: int = 512
     """the number of parallel game environments"""
     num_steps: int = 64
     """the number of steps to run in each environment per policy rollout"""
@@ -78,7 +78,7 @@ class Args:
     image_size = 7
     comm_field = 7
     N_i = 2
-    grid_size = 9
+    grid_size = 5
     num_walls = 0
     max_steps = 50
     freeze_dur = 6
@@ -103,7 +103,7 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_nwall{num_walls}"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_nwall{num_walls}_nevns{num_envs}"
     save_dir = f"checkpoints/torch_temporalg_v2/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
