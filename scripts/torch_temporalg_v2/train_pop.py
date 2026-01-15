@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from environments.torch_temporalg_v2 import TorchTemporalEnv, EnvConfig
 from utils.process_data import *
-from models.pickup_models import PPOLSTMCommAgent
+from models.pickup_models import PPOLSTMCommAgentWithSilence as PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_temporalg_v2.train_pop
 @dataclass
 class Args:
@@ -75,13 +75,14 @@ class Args:
     log_every = 32
 
     n_words = 4
+    embedding_size = 64
     image_size = 7
     comm_field = 7
     N_i = 2
     grid_size = 5
     num_walls = 0
     max_steps = 50
-    freeze_dur = 6
+    freeze_dur = 12
 
     agent_visible = False
     time_pressure = True
@@ -103,7 +104,7 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}_freeze_dur{freeze_dur}_nwall{num_walls}_nevns{num_envs}"
+    train_combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_emb{embedding_size}_ms{max_steps}_freeze_dur{freeze_dur}"
     save_dir = f"checkpoints/torch_temporalg_v2/{model_name}/{train_combination_name}/seed{seed}/"
     os.makedirs(save_dir, exist_ok=True)
     load_pretrained = False
@@ -219,7 +220,7 @@ if __name__ == "__main__":
         agents[network_id] = PPOLSTMCommAgent(num_actions=num_actions, 
                                     grid_size=args.grid_size, 
                                     n_words=args.n_words, 
-                                    embedding_size=16, 
+                                    embedding_size=args.embedding_size, 
                                     num_channels=num_channels, 
                                     image_size=args.image_size).to(device)
         print(f"NUM PARAMS:", count_parameters(agents[network_id]))

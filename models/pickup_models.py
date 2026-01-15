@@ -117,7 +117,7 @@ class PPOLSTMCommAgent(nn.Module):
 
 
 class PPOLSTMCommAgentWithSilence(PPOLSTMCommAgent):
-    def __init__(self, num_actions, grid_size=5, n_words=16, embedding_size=16, num_channels=1, image_size=3, d_model=128):
+    def __init__(self, num_actions, grid_size=5, n_words=4, embedding_size=64, num_channels=1, image_size=3, d_model=128):
         # Initialize superclass
         super().__init__(num_actions, grid_size, n_words, embedding_size, num_channels, image_size, d_model)
         
