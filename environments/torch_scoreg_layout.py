@@ -11,6 +11,22 @@ from typing import Dict, Optional, Tuple, Literal
 import torch
 import torch.nn.functional as F
 
+warmup_layout_7x7 = """
+WWWWWWWWWWWWW
+WWWWWWWWWWWWW
+WWWWWWWWWWWWW
+WWW.......WWW
+WWW.......WWW
+WWW.......WWW
+WWW.......WWW
+WWW.......WWW
+WWW.......WWW
+WWW.......WWW
+WWWWWWWWWWWWW
+WWWWWWWWWWWWW
+WWWWWWWWWWWWW
+"""
+
 simple_layout_13x13 = """
 .............
 .............
@@ -32,7 +48,7 @@ class EnvConfig:
     grid_size: int = 5
     image_size: int = 7            # local obs crop (odd)
     comm_field: int = 7
-    communication_steps: int = 5
+    communication_steps: int = 6
     num_channels: int = 2
     num_agents: int = 2
     num_foods: int = 2             # N_i

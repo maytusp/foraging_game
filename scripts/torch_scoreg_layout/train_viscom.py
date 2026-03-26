@@ -16,10 +16,10 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_13x13
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_viscom
+# python -m scripts.torch_scoreg_layout.train_viscom
 @dataclass
 class Args:
     seed: int = 1
@@ -83,6 +83,11 @@ class Args:
     num_foods = 2
     grid_size = 13
     max_steps = 30
+    communication_steps = 6
+
+    # use for changing layout
+    warmup_steps: int = int(total_timesteps * 0.2)
+    reset_on_phase_change: bool = True
 
     agent_visible = True
     time_pressure = False
@@ -182,8 +187,14 @@ if __name__ == "__main__":
         mode=args.mode,
         seed=args.seed,
         time_pressure=args.time_pressure,
+        communication_steps=args.communication_steps,
+        ascii_layout=warmup_layout_7x7,
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
+    
+    layout_phase_switched = False
+    final_layout = simple_layout_13x13
+
     num_agents = cfg.num_agents
     num_channels = cfg.num_channels
 
@@ -281,6 +292,21 @@ if __name__ == "__main__":
                 lrnow = frac * args.learning_rate
                 optimizers[network_id].param_groups[0]["lr"] = lrnow
 
+        # Curriculum learning: switch to wall layout after warmup steps
+        if (not layout_phase_switched) and (global_step >= args.warmup_steps):
+            print(f"[Phase Switch] global_step={global_step}: switching to wall layout")
+            envs.set_layout(final_layout, reset_now=args.reset_on_phase_change)
+            layout_phase_switched = True
+
+            if args.reset_on_phase_change:
+                next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64, device=device)
+                for i in range(num_agents):
+                    next_done[i] = torch.zeros(args.num_envs, device=device)
+                    next_lstm_state[i] = (
+                        torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
+                        torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
+                    )
+                next_obs, next_locs, _ = envs._obs_core()
 
         for step in range(0, args.num_steps):
             global_step += args.num_envs
