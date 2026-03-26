@@ -10,7 +10,7 @@ from constants import *              # expects: cell_size, WHITE, BLACK, agent_i
 from keyboard_control import *       # expects: get_agent_action(events, agent_id)
 
 # If you placed the class in torch_foraging_env.py:
-from environments.torch_scoreg_scale import TorchForagingEnv, EnvConfig
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig
 
 # --------------------------- Pygame helpers ---------------------------
 
@@ -53,7 +53,8 @@ def visualize_torch_environment(env: TorchForagingEnv, step: int, screen, font, 
         for w in range(env.wall_pos.size(1)):
             wy = int(env.wall_pos[b, w, 0].item())
             wx = int(env.wall_pos[b, w, 1].item())
-            pygame.draw.rect(screen, (255, 0, 0), (wx * cell_size, wy * cell_size, cell_size, cell_size))
+            x, y = wx * cell_size, wy * cell_size
+            screen.blit(wall, (x, y))
 
     # Foods
     for f in range(Fd):
@@ -147,7 +148,7 @@ def run_human_play(
             # Step the env
             (obs, locs, masks), rew, done, trunc, info = env.step(acts_t)
             print(f"----STEP {step}-----")
-            print(obs[0,0])
+            print(masks)
             # (optional) debug prints like your CPU script
             # print(f"Agent0 occ channel:\n{obs[0]['image'][0]}")
             # if env.cfg.num_agents > 1: print(f"Agent1 occ channel:\n{obs[1]['image'][0]}")
@@ -175,7 +176,7 @@ if __name__ == "__main__":
         image_size=7,
         comm_field=7,
         num_agents=2,
-        num_foods=4,
+        num_foods=2,
         num_walls=20,
         max_steps=50,
         agent_visible=True,

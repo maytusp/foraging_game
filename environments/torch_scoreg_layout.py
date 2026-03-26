@@ -1,5 +1,8 @@
-# torch_pickup_high_v1.py
-# 22 Aug 2025
+# torch_scoreg_layout.py
+# 26 March 2026
+# Add layout structure to the foraging game (default size would be 13x13)
+# Limit Communication Range
+# Limit Communication Step as the agents take so many steps and communication is hard to optimise
 from __future__ import annotations
 import math
 from dataclasses import dataclass
@@ -8,15 +11,35 @@ from typing import Dict, Optional, Tuple, Literal
 import torch
 import torch.nn.functional as F
 
+simple_layout_13x13 = """
+.............
+.............
+.............
+.......WWWWWW
+.............
+.............
+WW....WW...WW
+.............
+.............
+WWWWWW.......
+.............
+.............
+.............
+"""
+
+
 @dataclass
 class EnvConfig:
     grid_size: int = 5
-    image_size: int = 3            # local obs crop (odd)
+    image_size: int = 7            # local obs crop (odd)
+    comm_field: int = 7
+    communication_steps: int = 5
     num_channels: int = 2
     num_agents: int = 2
     num_foods: int = 2             # N_i
-    num_walls: int = 0
-    max_steps: int = 10
+    num_walls: int = 0 # initial active walls
+    max_walls: int = 20
+    max_steps: int = grid_size**2
     agent_visible: bool = False    # show other agents in obs
     food_energy_fully_visible: bool = False
     identical_item_obs: bool = False
@@ -24,6 +47,9 @@ class EnvConfig:
     n_words: int = 10
     message_length: int = 1
     mode: Literal["train", "test"] = "train"
+
+    spawn_mode: int = 0  # 0: Easy, 1: Medium, 2: Hard # to make the training converge easier
+
     test_moderate_score: bool = False
     seed: int = 42
     # constants (match your code where possible)
@@ -34,6 +60,7 @@ class EnvConfig:
     reward_scale: float = 1.0
     use_compile: bool = True
 
+    ascii_layout: Optional[str] = simple_layout_13x13
 class TorchForagingEnv:
     """
     Batched GPU-native reimplementation of your env.
@@ -66,6 +93,14 @@ class TorchForagingEnv:
         g.manual_seed(cfg.seed)
         self._cpu_gen = g  # for random init on CPU then move to device
 
+        # --- fixed layout from ASCII ---
+        self._wall_mask_2d = self._parse_ascii_layout(cfg.ascii_layout)   # (G, G), bool
+        self._free_cells_flat = torch.nonzero(~self._wall_mask_2d.view(-1), as_tuple=False).view(-1)
+
+        # fixed wall coordinates as (W, 2)
+        fixed_wall_coords = torch.nonzero(self._wall_mask_2d, as_tuple=False).long()  # (W, 2)
+        self.fixed_num_walls = fixed_wall_coords.size(0)
+
         # --- persistent tensors (allocated on device)
         self.agent_pos = torch.zeros(self.B, A, 2, dtype=torch.long, device=self.device)  # (y,x)
         self.agent_energy = torch.full((self.B, A), 20, dtype=torch.float32, device=self.device)
@@ -74,14 +109,24 @@ class TorchForagingEnv:
         self.food_energy = torch.zeros(self.B, Fd, dtype=torch.float32, device=self.device)
         self.target_food_id = torch.zeros(self.B, dtype=torch.long, device=self.device)
         self.score_visible_to_agent = torch.zeros(self.B, Fd, dtype=torch.long, device=self.device)  # which agent sees which food
-        self.wall_pos = torch.empty(self.B, 0, 2, dtype=torch.long, device=self.device)  # (B, W, 2)
-        if cfg.num_walls > 0:
-            self.wall_pos = torch.zeros(self.B, cfg.num_walls, 2, dtype=torch.long, device=self.device)
+
+        # wall positions are fixed from layout, same for every env in batch
+        if self.fixed_num_walls > 0:
+            self.wall_pos = fixed_wall_coords.unsqueeze(0).expand(self.B, -1, -1).clone()
+        else:
+            self.wall_pos = torch.empty(self.B, 0, 2, dtype=torch.long, device=self.device)
+
+        self.active_wall_count = torch.tensor([self.fixed_num_walls], device=self.device, dtype=torch.long)
+        
+        self.spawn_mode = torch.tensor([cfg.spawn_mode], device=self.device, dtype=torch.long)
 
         self.curr_steps = torch.zeros(self.B, dtype=torch.long, device=self.device)
         self.dones_batch = torch.zeros(self.B, dtype=torch.bool, device=self.device)
         self.trunc_batch = torch.zeros(self.B, dtype=torch.bool, device=self.device)
         self.total_bump = torch.zeros(self.B, dtype=torch.long, device=self.device)
+
+        self.comm_started = torch.zeros(self.B, dtype=torch.bool, device=self.device)
+        self.comm_steps_used = torch.zeros(self.B, dtype=torch.long, device=self.device)
 
         # book-keeping per-agent (scalar env stats)
         self.cum_rewards = torch.zeros(self.B, A, dtype=torch.float32, device=self.device)
@@ -169,6 +214,17 @@ class TorchForagingEnv:
         """Flattened indices from (.., 2) coords (y,x)."""
         return (yx[...,0] * W + yx[...,1]).to(torch.long)
 
+
+    def set_spawn_mode(self, mode: int):
+            """
+            Set food spawn difficulty.
+            0: Easy (Both same side, 0 or G-1)
+            1: Medium (One edge 0/G-1, One middle G//2)
+            2: Hard (Opposite sides, 0 and G-1)
+            """
+            assert mode in [0, 1, 2], "Mode must be 0, 1, or 2"
+            self.spawn_mode.fill_(mode)
+
     # ---------------------- Observation ----------------------
     def _make_occupancy_and_attr_maps(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -180,8 +236,10 @@ class TorchForagingEnv:
         occ = torch.zeros(B, G, G, dtype=torch.float32, device=self.device)
         # walls
         if self.wall_pos.numel() > 0:
-            idx_w = self._make_index(self.wall_pos, G)  # (B, W)
-            occ.view(B, -1).scatter_(1, idx_w, self._occ_wall.expand_as(idx_w).to(torch.float32))
+            idx_w = self._make_index(self.wall_pos, G)
+            val_w = self._occ_wall.expand_as(idx_w).to(torch.float32)
+            occ.view(B, -1).scatter_(1, idx_w, val_w)
+                
         # foods
         alive_food_mask = (~self.food_done)
         if alive_food_mask.any():
@@ -209,6 +267,58 @@ class TorchForagingEnv:
             attr0 = attr[..., 0].contiguous().view(B, -1)
             attr0.scatter_(1, idx_flat, en * (~self.food_done).to(en.dtype))
         return occ, attr
+        
+    def _parse_ascii_layout(self, ascii_layout: Optional[str]) -> torch.Tensor:
+        """
+        Returns wall mask of shape (G, G), dtype=bool
+        True = wall
+        """
+        G = self.cfg.grid_size
+
+        if ascii_layout is None:
+            return torch.zeros(G, G, dtype=torch.bool, device=self.device)
+
+        rows = [row.strip() for row in ascii_layout.strip().splitlines() if row.strip()]
+        if len(rows) != G:
+            raise ValueError(f"ascii_layout must have exactly {G} rows, got {len(rows)}")
+
+        for i, row in enumerate(rows):
+            if len(row) != G:
+                raise ValueError(f"ascii_layout row {i} must have length {G}, got {len(row)}")
+
+        mask = torch.zeros(G, G, dtype=torch.bool, device=self.device)
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch == "W":
+                    mask[y, x] = True
+                elif ch == ".":
+                    pass
+                else:
+                    raise ValueError(f"Unsupported layout char '{ch}' at ({y}, {x}); use only 'W' or '.'")
+        return mask
+
+
+    def _sample_distinct_free_cells(self, n_envs: int, count: int) -> torch.Tensor:
+        """
+        Sample `count` distinct positions per env from free cells.
+        Returns: (n_envs, count, 2) as (y, x)
+        """
+        num_free = self._free_cells_flat.numel()
+        if count > num_free:
+            raise ValueError(
+                f"Not enough free cells for sampling: need {count}, have {num_free}. "
+                f"Reduce num_agents/num_foods or use a less dense wall layout."
+            )
+
+        # Random permutation per env, take first `count`
+        noise = torch.rand(n_envs, num_free, device=self.device, generator=self.rng)
+        perm = noise.argsort(dim=1)[:, :count]                          # (n_envs, count)
+        chosen_flat = self._free_cells_flat.unsqueeze(0).expand(n_envs, -1).gather(1, perm)
+
+        G = self.cfg.grid_size
+        y = chosen_flat // G
+        x = chosen_flat % G
+        return torch.stack([y, x], dim=-1).long()
 
     def _crop_around(self, grid, centers, pad_val: float):
         # grid: (B,H,W) or (B,H,W,C); centers: (B,A,2); return (B,A,C,K,K)
@@ -288,8 +398,35 @@ class TorchForagingEnv:
         img = torch.cat([occ_crops, attr_crops], dim=2)  # (B,A,C,K,K)
         pos = self.agent_pos.to(torch.float32)             # (B,A,2)
 
-        return img, pos
 
+        comm_inrange = self._compute_comm_inrange()  # (B,A,A)
+
+        # communication is active only after first meeting, and only for limited steps
+        comm_active = self.comm_started & (self.comm_steps_used <= self.cfg.communication_steps)  # (B,)
+        comm_mask = comm_inrange & comm_active.view(B, 1, 1)
+
+        return img, pos, comm_mask
+
+    def _compute_comm_inrange(self) -> torch.Tensor:
+        """
+        Returns raw pairwise communication range mask of shape (B, A, A),
+        based only on distance and excluding self-communication.
+        """
+        A = self.cfg.num_agents
+
+        ay = self.agent_pos[..., 0].unsqueeze(2)  # (B,A,1)
+        ax = self.agent_pos[..., 1].unsqueeze(2)
+        by = self.agent_pos[..., 0].unsqueeze(1)  # (B,1,A)
+        bx = self.agent_pos[..., 1].unsqueeze(1)
+
+        cheb = torch.maximum((ay - by).abs(), (ax - bx).abs())  # (B,A,A)
+
+        R = (self.cfg.comm_field - 1) // 2
+        comm_inrange = (cheb <= R)
+
+        eye = torch.eye(A, dtype=torch.bool, device=self.device).unsqueeze(0)
+        comm_inrange = comm_inrange & (~eye)
+        return comm_inrange
 
     def _reset_indices(self, mask: torch.Tensor):
         cfg, B, A, Fd, G, nb = self.cfg, self.B, self.cfg.num_agents, self.cfg.num_foods, self.cfg.grid_size, self.num_neigh
@@ -314,37 +451,14 @@ class TorchForagingEnv:
         # target food = argmax
         self.target_food_id[idxs] = torch.argmax(self.food_energy[idxs], dim=1)
 
-        # foods alternate top/bottom rows + random x
-        y = torch.zeros(n, Fd, dtype=torch.long, device=self.device) # (n, Fd)
-        y[:, 1::2] = G - 1 # transform y from [0,0,0,0,...] to [0,G-1,0,G-1,...]
-        x = torch.randint(0, G, (n, Fd), device=self.device, generator=self.rng)
-        self.food_pos[idxs] = torch.stack([y, x], dim=-1)
+
+        # fixed walls already exist from ASCII layout; only place foods/agents on free cells
+        total_needed = Fd + A
+        sampled = self._sample_distinct_free_cells(n, total_needed)   # (n, Fd+A, 2)
+
+        self.food_pos[idxs] = sampled[:, :Fd]
         self.food_done[idxs] = False
-
-
-        # spawn agents near a food they "see" (no Python loops)
-        # pick visible food id per (env, agent); fallback to random if none
-        # Example: suppose n = 1 (only one environment) and A = 2 (two agents)
-        # vis (1,2) = [0,1] means the first item is seen by agent0 and the second is seen by agent1
-        # mark_vis = [[1,0],[0,1]]. The value indicates whether item #col_id is seen by agent #row_id or not.
-        vis = self.score_visible_to_agent[idxs]                 # (n, Fd) in [0..A-1]
-        mask_vis = vis.unsqueeze(1).eq(torch.arange(A, device=self.device).view(1,A,1)) # (n,A,Fd)
-        food_idx = mask_vis.float().argmax(-1)                 # (n,A)
-
-        # gather base food positions for each agent
-        base = self.food_pos[idxs].gather(1, food_idx.unsqueeze(-1).expand(n, A, 2))     # (n,A,2)
-        p_flat = (base[...,0] * G + base[...,1]).to(torch.long) # (n,A)
-        all_neighs = self._packed_neighbors.index_select(0, p_flat.view(-1)).view(n, A, nb) # (n,A,nb)
-        counts = self._valid_counts.index_select(0, p_flat.view(-1)).view(n, A).to(torch.float32) # (n,A)
-        
-        # randomly select neighbours given food positions
-        u = torch.rand(n, A, device=self.device, generator=self.rng)            # ~ U[0,1)
-        c = counts.to(torch.float32)                                            # (n,A)
-        r = (u * c).floor().to(torch.long)                                      # (n,A)
-        chosen_flat = all_neighs.gather(2, r.unsqueeze(-1)).squeeze(-1)                     # (n, A)
-        chosen_pos = torch.stack([chosen_flat // G, chosen_flat % G], dim=-1) # (n,A,2)
-
-        self.agent_pos[idxs] = chosen_pos
+        self.agent_pos[idxs] = sampled[:, Fd:Fd + A]
 
         self.agent_energy[idxs] = 20.0
         self.curr_steps[idxs] = 0
@@ -353,6 +467,9 @@ class TorchForagingEnv:
         self.total_bump[idxs] = 0
         self.cum_rewards[idxs] = 0
         self.episode_len[idxs] = 0
+
+        self.comm_started[idxs] = False
+        self.comm_steps_used[idxs] = 0
 
     @torch.no_grad()
     def step(self, actions, auto_reset=True) -> Tuple[Dict[int, dict], Dict[int, float], Dict[int, bool], Dict[int, bool], Dict]:
@@ -395,9 +512,23 @@ class TorchForagingEnv:
         # walls occupancy
         occ_walls = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
         if self.wall_pos.numel() > 0:
-            idx_w = self._make_index(self.wall_pos, G)
+            # 1. Identify valid walls
+            valid_mask = (self.wall_pos[..., 0] >= 0)  # Shape: (B, max_walls)
+
+            # 2. Clamp dummy positions to (0,0) to avoid index errors
+            safe_pos = self.wall_pos.clamp(min=0)
+            idx_w = self._make_index(safe_pos, G)
+
+            # 3. Create batch indices SPECIFIC to walls (Renamed to b_idx_w)
             b_idx_w = torch.arange(self.B, device=self.device).unsqueeze(1).expand_as(idx_w)
-            occ_walls.view(self.B, -1)[b_idx_w[:,:idx_w.size(1)], idx_w] = True
+
+            # 4. Filter: Select ONLY the indices where valid_mask is True
+            valid_b = b_idx_w[valid_mask]
+            valid_idx = idx_w[valid_mask]
+
+            # 5. Assign True
+            if valid_idx.numel() > 0:
+                occ_walls.view(self.B, -1)[valid_b, valid_idx] = True
 
         # food occupancy
         occ_foods = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
@@ -423,6 +554,17 @@ class TorchForagingEnv:
 
         # apply movement
         self.agent_pos = torch.where(can_move.unsqueeze(-1), proposed, self.agent_pos)
+
+        # ---------------- Communication logic ----------------
+        comm_inrange = self._compute_comm_inrange()          # (B,A,A)
+        met_now = comm_inrange.any(dim=(1, 2))                   # (B,)
+
+        # start communication when agents first meet
+        newly_started = (~self.comm_started) & met_now
+        self.comm_started = self.comm_started | newly_started
+
+        # once started, consume one communication step per env step
+        self.comm_steps_used[self.comm_started] += 1
 
         # pickup phase (action==4), within l2<=sqrt(2)
         pick_mask = (a == 4)

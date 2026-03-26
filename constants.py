@@ -1,6 +1,6 @@
 import pygame
 
-cell_size = 70  # Size of each grid cell in pixels
+cell_size = 36  # Size of each grid cell in pixels
 
 
 
@@ -28,5 +28,7 @@ strawberry =  pygame.transform.scale(pygame.image.load("./figs/foods/strawberry.
 chicken =  pygame.transform.scale(pygame.image.load("./figs/foods/chicken.png"), (cell_size, cell_size))
 pig =  pygame.transform.scale(pygame.image.load("./figs/foods/pig.png"), (cell_size, cell_size))
 cattle =  pygame.transform.scale(pygame.image.load("./figs/foods/cattle.png"), (cell_size, cell_size))
+wall = pygame.transform.scale(pygame.image.load("./figs/wall.png"), (cell_size, cell_size))  
+
 
 food_images = [spinach, watermelon, strawberry, chicken, pig, cattle]

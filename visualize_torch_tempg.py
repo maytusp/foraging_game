@@ -10,7 +10,7 @@ from constants import *              # expects: cell_size, WHITE, BLACK, agent_i
 from keyboard_control import *       # expects: get_agent_action(events, agent_id)
 
 # Import TemporalG env
-from environments.torch_pickup_temporal import TorchTemporalEnv, EnvConfig
+from environments.torch_temporalg_v2 import TorchTemporalEnv, EnvConfig
 
 # --------------------------- Pygame helpers ---------------------------
 
@@ -157,8 +157,8 @@ def run_human_play(
 
             # Step the TemporalG env
             (imgs, locs, masks), rew, done, trunc, info = env.step(acts_t)
-            print(f"Image \n  {imgs[0,0]}")
-            print(f"Location \n  {locs[0]}")
+            # print(f"Image \n  {imgs[0,0]}")
+            # print(f"Location \n  {locs[0]}")
             print(f"masks \n  {masks[0]}")
             # Optionally inspect reward / stage
             if done.any() or trunc.any():
