@@ -1,7 +1,5 @@
-# Created: 24 Aug 2025
-# The code is for training agents with separated networks during training and execution (no parameter sharing)
-# Fully Decentralise Training and Decentralise Execution
-# docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
+# 26 March 2026
+# Training large population > 30 with simple grid (no obstacle)
 import os
 import random
 import time
@@ -16,18 +14,18 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_scale import TorchForagingEnv, EnvConfig
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_scale.train_lstm_2ks2
+# python -m scripts.torch_scoreg_layout.train
 @dataclass
 class Args:
-    seed: int = 2
+    seed: int = 4
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -60,8 +58,9 @@ class Args:
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
+    
     # Populations
-    num_networks = 2
+    num_networks: int = 30
     reset_iteration: int = 1
     self_play_option: bool = True
     
@@ -75,31 +74,25 @@ class Args:
     episode3: we pick [n1, n1]
     """
 
-    log_every = 32
-    d_model = 128
-    n_words = 4
-    image_size = 7
-    comm_field = 7
-    num_foods = 2
-    grid_size = 13
-    max_walls = grid_size
-    timesteps_per_wall = int(0.9 * (total_timesteps // max_walls)) # max_walls at 80% of the training time
-    # Fraction of training (0.0 to 1.0) when the Easy Phase (Mode 0) ends
-    curriculum_easy_end: float = 0.10
-    curriculum_medium_end: float = 0.30
-    max_steps = 30
+    log_every: int = 32
+    d_model: int = 128
+    n_words: int = 4
+    image_size: int = 3
+    comm_field: int = 5
+    num_foods: int = 2
+    grid_size: int = 5
+    max_steps: int = 30
+    communication_steps: int= 6
 
-    agent_visible = False
-    time_pressure = False
-    mode = "train"
-    model_name = f"lstm2k_sp_ppo_{num_networks}net"
-    
-    if not(agent_visible):
-        model_name+= "_invisible"
+    # use for changing layout
+    use_curriculum: bool = False
+    warmup_steps: int = int(total_timesteps * 0.2)
+    reset_on_phase_change: bool = True
 
-    if not(time_pressure):
-        model_name+= "_wospeedrw"
-    
+    agent_visible: bool = True
+    time_pressure: bool = True
+    ablate_message: bool = False
+    mode: str = "train"
 
     """train or test (different attribute combinations)"""
     # to be filled in runtime
@@ -109,9 +102,7 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    train_combination_name = f"grid{grid_size}_img{image_size}_ni{num_foods}_nw{n_words}_ms{max_steps}_nwall{max_walls}"
-    save_dir = f"checkpoints/torch_scoreg_scale/{model_name}/{train_combination_name}/seed{seed}/"
-    os.makedirs(save_dir, exist_ok=True)
+
     load_pretrained = False
     if load_pretrained:
         pretrained_global_step = 1177600000
@@ -121,10 +112,9 @@ class Args:
                     a: f"" for a in range(num_networks)
                     }
     visualize_loss = True
-    save_frequency = int(5e4)
+    save_frequency = int(2e5)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
     
-    exp_name = f"{model_name}/{train_combination_name}_seed{seed}"
     """the name of this experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -132,7 +122,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "scoreg_scale"
+    wandb_project_name: str = "scoreg_layout"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -142,13 +132,34 @@ class Args:
 
 
 
-
 if __name__ == "__main__":
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    run_name = args.exp_name
+
+
+    model_name = f"ppo_{args.num_networks}net"
+    if not args.agent_visible:
+        model_name += "_invisible"
+    if not args.time_pressure:
+        model_name += "_wospeedrw"
+    if args.ablate_message:
+        model_name += "_nocom"
+
+    train_combination_name = (
+        f"grid{args.grid_size}_img{args.image_size}_ni{args.num_foods}"
+        f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
+    )
+
+    save_dir = f"checkpoints/torch_scoreg_layout/{model_name}/{train_combination_name}/seed{args.seed}/"
+    os.makedirs(save_dir, exist_ok=True)
+
+    run_name = f"{model_name}/{train_combination_name}_seed{args.seed}"
+
+    print("parsed seed:", args.seed)
+    print("run_name:", run_name)
+    print("save_dir:", save_dir)
     if args.track:
         import wandb
 
@@ -161,7 +172,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/scoreg_scale/{run_name}")
+    writer = SummaryWriter(f"runs/scoreg_layout/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -188,9 +199,12 @@ if __name__ == "__main__":
         mode=args.mode,
         seed=args.seed,
         time_pressure=args.time_pressure,
-        max_walls = args.max_walls,
+        communication_steps=args.communication_steps,
+        ascii_layout=None,
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
+    
+
     num_agents = cfg.num_agents
     num_channels = cfg.num_channels
 
@@ -254,7 +268,9 @@ if __name__ == "__main__":
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    selected_networks = [0,1]
+    possible_pairs = [[i,(i+1) % args.num_networks] for i in range(args.num_networks)]
+    if args.self_play_option:
+        possible_pairs += [[a,a] for a in range(args.num_networks)]
     
     # --- log performance ---
     episodes_since_log = 0
@@ -267,56 +283,8 @@ if __name__ == "__main__":
 
     episodes_since_log = 0
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
-    current_walls_cpu = cfg.num_walls # track current wall
-    current_spawn_mode_cpu = 0
     # Start training
     for iteration in range(1, args.num_iterations + 1):
-        # --- CURRICULUM UPDATE (After the step loop, inside iteration loop) ---
-
-        # --- SPAWN CURRICULUM START ---
-        # Calculate progress (0.0 to 1.0)
-        progress = iteration / args.num_iterations
-        
-        # Determine Mode based on args
-        if progress < args.curriculum_easy_end:
-            target_mode = 0  # Easy
-            phase_name = "EASY"
-        elif progress < args.curriculum_medium_end:
-            target_mode = 1  # Medium
-            phase_name = "MEDIUM"
-        else:
-            target_mode = 2  # Hard
-            phase_name = "HARD"
-            
-        # Update Environment (only if changed)
-        if target_mode != current_spawn_mode_cpu:
-            envs.set_spawn_mode(target_mode)
-            current_spawn_mode_cpu = target_mode
-            print(f"Curriculum Update [Iter {iteration} | {progress:.2%}]: Switched to {phase_name} Spawn Mode ({target_mode})")
-            
-            if args.track:
-                # Log the mode change as a step function
-                writer.add_scalar("charts/spawn_mode", target_mode, global_step)
-        # --- SPAWN CURRICULUM END ---
-
-        # --- WALL CURRICULUM START ---
-        # Calculate target walls based on global_step
-        new_wall_count = (global_step // args.timesteps_per_wall) * 1
-        
-        # Clamp to max_walls
-        final_count = min(new_wall_count, cfg.max_walls)
-        
-        # Check against CPU variable (Instant, no GPU sync)
-        if final_count != current_walls_cpu:
-            envs.set_num_walls(final_count)
-            current_walls_cpu = final_count # Update CPU tracker
-            print(f"Global Step {global_step}: Difficulty UP -> {final_count} walls.")
-            
-            # Optional: Log to TensorBoard
-            if args.track:
-                writer.add_scalar("charts/num_walls", final_count, global_step)
-        # --- WALL CURRICULUM END ---
-
         if iteration % args.reset_iteration == 0:
             # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
             for i in range(num_agents):
@@ -324,7 +292,7 @@ if __name__ == "__main__":
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                 )
-            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
+            selected_networks = random.sample(possible_pairs, 1)[0]
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
@@ -335,6 +303,7 @@ if __name__ == "__main__":
                 frac = 1.0 - (iteration - 1.0) / args.num_iterations
                 lrnow = frac * args.learning_rate
                 optimizers[network_id].param_groups[0]["lr"] = lrnow
+
 
 
         for step in range(0, args.num_steps):
@@ -373,7 +342,8 @@ if __name__ == "__main__":
             (next_obs, next_locs, msg_masks), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
            
             env_info = (all_rewards, all_terminations, all_truncations)
-
+            if args.ablate_message:
+                msg_masks = torch.zeros_like(msg_masks, dtype=torch.bool)
             for i in range(num_agents):
                 msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
                 #TODO Add mask during training
@@ -388,7 +358,7 @@ if __name__ == "__main__":
                         saved_step = global_step + args.pretrained_global_step
                     else:
                         saved_step = global_step
-                    save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{saved_step}.pt")
+                    save_path = os.path.join(save_dir, f"agent_{network_id}_step_{saved_step}.pt")
                     torch.save(agents[network_id].state_dict(), save_path)
                     print(f"Model saved to {save_path}")
 
@@ -581,7 +551,7 @@ if __name__ == "__main__":
     else:
         saved_step = global_step
     for network_id in range(args.num_networks):
-        final_save_path = os.path.join(args.save_dir, f"agent_{network_id}_step_{saved_step}.pt")
+        final_save_path = os.path.join(save_dir, f"agent_{network_id}_step_{saved_step}.pt")
         torch.save(agents[network_id].state_dict(), final_save_path)
         print(f"Final model of network {network_id} saved to {final_save_path}")
 

@@ -74,8 +74,7 @@ class EnvConfig:
     food_strength_required: int = 6
     reward_scale: float = 1.0
     use_compile: bool = True
-
-    ascii_layout: Optional[str] = simple_layout_13x13
+    ascii_layout: Optional[str] = None
 
 class TorchForagingEnv:
     """
