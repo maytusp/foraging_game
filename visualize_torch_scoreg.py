@@ -10,7 +10,7 @@ from constants import *              # expects: cell_size, WHITE, BLACK, agent_i
 from keyboard_control import *       # expects: get_agent_action(events, agent_id)
 
 # If you placed the class in torch_foraging_env.py:
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_13x13
 
 # --------------------------- Pygame helpers ---------------------------
 
@@ -105,11 +105,15 @@ def run_human_play(
 
     screen, font = init_pygame(env.cfg.grid_size)
     clock = pygame.time.Clock()
-
+    layout_phase_switched = False
+    final_layout = simple_layout_13x13
     for ep in range(num_episodes):
         frames = []
         running = True
-
+        if (not layout_phase_switched) and (ep >= 3):
+            print(f"[Phase Switch]")
+            env.set_layout(final_layout, reset_now=True)
+            layout_phase_switched = True
         for step in range(max_steps):
             if not running:
                 break
@@ -183,6 +187,7 @@ if __name__ == "__main__":
         food_energy_fully_visible=False,
         mode="train",
         seed=42,
+        ascii_layout=None,
     )
     # num_envs=1 for interactive play
     env = TorchForagingEnv(cfg, device=device, num_envs=1)

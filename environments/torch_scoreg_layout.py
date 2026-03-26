@@ -27,7 +27,6 @@ WWWWWW.......
 .............
 """
 
-
 @dataclass
 class EnvConfig:
     grid_size: int = 5
@@ -61,6 +60,7 @@ class EnvConfig:
     use_compile: bool = True
 
     ascii_layout: Optional[str] = simple_layout_13x13
+
 class TorchForagingEnv:
     """
     Batched GPU-native reimplementation of your env.
@@ -93,13 +93,11 @@ class TorchForagingEnv:
         g.manual_seed(cfg.seed)
         self._cpu_gen = g  # for random init on CPU then move to device
 
-        # --- fixed layout from ASCII ---
-        self._wall_mask_2d = self._parse_ascii_layout(cfg.ascii_layout)   # (G, G), bool
-        self._free_cells_flat = torch.nonzero(~self._wall_mask_2d.view(-1), as_tuple=False).view(-1)
+        # active wall count tensor
+        self.active_wall_count = torch.zeros(1, device=self.device, dtype=torch.long)
 
-        # fixed wall coordinates as (W, 2)
-        fixed_wall_coords = torch.nonzero(self._wall_mask_2d, as_tuple=False).long()  # (W, 2)
-        self.fixed_num_walls = fixed_wall_coords.size(0)
+        # initialize current layout
+        self._set_layout(cfg.ascii_layout)
 
         # --- persistent tensors (allocated on device)
         self.agent_pos = torch.zeros(self.B, A, 2, dtype=torch.long, device=self.device)  # (y,x)
@@ -110,13 +108,7 @@ class TorchForagingEnv:
         self.target_food_id = torch.zeros(self.B, dtype=torch.long, device=self.device)
         self.score_visible_to_agent = torch.zeros(self.B, Fd, dtype=torch.long, device=self.device)  # which agent sees which food
 
-        # wall positions are fixed from layout, same for every env in batch
-        if self.fixed_num_walls > 0:
-            self.wall_pos = fixed_wall_coords.unsqueeze(0).expand(self.B, -1, -1).clone()
-        else:
-            self.wall_pos = torch.empty(self.B, 0, 2, dtype=torch.long, device=self.device)
 
-        self.active_wall_count = torch.tensor([self.fixed_num_walls], device=self.device, dtype=torch.long)
         
         self.spawn_mode = torch.tensor([cfg.spawn_mode], device=self.device, dtype=torch.long)
 
@@ -234,12 +226,11 @@ class TorchForagingEnv:
         """
         B, G, Fd, A, cfg = self.B, self.cfg.grid_size, self.cfg.num_foods, self.cfg.num_agents, self.cfg
         occ = torch.zeros(B, G, G, dtype=torch.float32, device=self.device)
+        
         # walls
-        if self.wall_pos.numel() > 0:
-            idx_w = self._make_index(self.wall_pos, G)
-            val_w = self._occ_wall.expand_as(idx_w).to(torch.float32)
-            occ.view(B, -1).scatter_(1, idx_w, val_w)
-                
+        if self._wall_mask_2d.any():
+            occ += self._wall_mask_2d.unsqueeze(0).to(torch.float32) * self._occ_wall
+
         # foods
         alive_food_mask = (~self.food_done)
         if alive_food_mask.any():
@@ -319,6 +310,40 @@ class TorchForagingEnv:
         y = chosen_flat // G
         x = chosen_flat % G
         return torch.stack([y, x], dim=-1).long()
+
+    def _set_layout(self, ascii_layout: Optional[str]):
+        """
+        Update the active wall layout for all environments.
+        This does not reset episodes by itself.
+        """
+        G = self.cfg.grid_size
+
+        # 2D wall mask used by stepping/observations
+        self._wall_mask_2d = self._parse_ascii_layout(ascii_layout)   # (G, G), bool
+        self._free_cells_flat = torch.nonzero(~self._wall_mask_2d.view(-1), as_tuple=False).view(-1)
+
+        # keep wall_pos only for visualization / compatibility
+        fixed_wall_coords = torch.nonzero(self._wall_mask_2d, as_tuple=False).long()  # (W, 2)
+        self.fixed_num_walls = fixed_wall_coords.size(0)
+        self.active_wall_count.fill_(self.fixed_num_walls)
+
+        if self.fixed_num_walls > 0:
+            self.wall_pos = fixed_wall_coords.unsqueeze(0).expand(self.B, -1, -1).clone()
+        else:
+            self.wall_pos = torch.empty(self.B, 0, 2, dtype=torch.long, device=self.device)
+
+
+    def set_layout(self, ascii_layout: Optional[str], reset_now: bool = False):
+        """
+        Public API for training code.
+        ascii_layout=None means no walls.
+        """
+        self.cfg.ascii_layout = ascii_layout
+        self._set_layout(ascii_layout)
+
+        if reset_now:
+            full_mask = torch.ones((self.B,), dtype=torch.bool, device=self.device)
+            self._reset_indices(full_mask)
 
     def _crop_around(self, grid, centers, pad_val: float):
         # grid: (B,H,W) or (B,H,W,C); centers: (B,A,2); return (B,A,C,K,K)
@@ -510,25 +535,7 @@ class TorchForagingEnv:
         occ_agents_now.view(self.B, -1)[b_idx, idx_flat] = torch.arange(A, device=self.device).unsqueeze(0).expand_as(idx_flat)
 
         # walls occupancy
-        occ_walls = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
-        if self.wall_pos.numel() > 0:
-            # 1. Identify valid walls
-            valid_mask = (self.wall_pos[..., 0] >= 0)  # Shape: (B, max_walls)
-
-            # 2. Clamp dummy positions to (0,0) to avoid index errors
-            safe_pos = self.wall_pos.clamp(min=0)
-            idx_w = self._make_index(safe_pos, G)
-
-            # 3. Create batch indices SPECIFIC to walls (Renamed to b_idx_w)
-            b_idx_w = torch.arange(self.B, device=self.device).unsqueeze(1).expand_as(idx_w)
-
-            # 4. Filter: Select ONLY the indices where valid_mask is True
-            valid_b = b_idx_w[valid_mask]
-            valid_idx = idx_w[valid_mask]
-
-            # 5. Assign True
-            if valid_idx.numel() > 0:
-                occ_walls.view(self.B, -1)[valid_b, valid_idx] = True
+        occ_walls = self._wall_mask_2d.unsqueeze(0).expand(self.B, -1, -1)  # (B,G,G)
 
         # food occupancy
         occ_foods = torch.zeros(self.B, G, G, dtype=torch.bool, device=self.device)
