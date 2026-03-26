@@ -2,7 +2,7 @@ import os
 import random
 import time
 from dataclasses import dataclass
-
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.pickup_high_v1.train_comm_ppo
 import gymnasium as gym
 import numpy as np
 import torch
@@ -21,12 +21,12 @@ from models.pickup_models import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-    seed: int = 1
+    seed: int = 3
     """seed of the experiment"""
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2e9)
+    total_timesteps: int = int(3e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -66,11 +66,11 @@ class Args:
     image_size = 3
     N_i = 2
     grid_size = 5
-    max_steps=10
+    max_steps = 10
     fully_visible_score = False
     agent_visible = False
     mode = "train"
-    model_name = "ps_ppo"
+    model_name = "ippo"
     
     if not(agent_visible):
         model_name+= "_invisible"
@@ -102,7 +102,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "pickup_high_v1"
     """the wandb's project name"""
