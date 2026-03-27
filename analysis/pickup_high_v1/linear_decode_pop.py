@@ -103,17 +103,19 @@ if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
     label_list = ['score', 'vertical position', 'horizontal position']
     model_name = "pop_ppo_3net_invisible"
-    log_dir = "../../logs/pickup_high_v7/5k_test_eps/"
-    saved_dir_prefix = "reports/pickup_high_v7/"
+    log_dir = "../../logs/vary_n_pop/"
+    saved_dir_prefix = "reports/viscom_vs_invcom/"
     checkpoints_dict = {
-                    "pop_ppo_3net_invisible": {'seed1': 614400000, 'seed2': 614400000, 'seed3':614400000},
+                    "pop_ppo_3net_invisible": {'seed1': 256000000, 'seed2': 256000000, 'seed3':256000000}, # inv-com
+                    "pop_ppo_3net": {'seed1': 256000000, 'seed2': 256000000, 'seed3':256000000}, # vis-com
     }
+
     avg_accuracy_dict = {k:[] for k in label_list}
     decoding_mode = "embedding_decoding" # ["embedding_decoding", "token_decoding"]
     for seed in range(1,4):
         model_step = checkpoints_dict[model_name][f"seed{seed}"]
-        # combination_name = f"grid5_img3_ni2_nw4_ms10_{model_step}" 
-        combination_name = f"grid5_img5_ni2_nw4_ms10_{model_step}"  # for generalization across positions
+        combination_name = f"grid5_img3_ni2_nw4_ms10_{model_step}" 
+        # combination_name = f"grid5_img5_ni2_nw4_ms10_{model_step}"  # for generalization across positions
         
         for i in range(3):
             for j in range(i+1):
@@ -164,3 +166,16 @@ if __name__ == "__main__":
                     save_classification_report_csv(report, pred_acc, report_path)
 
     print(avg_accuracy_dict)
+    for key, values in avg_accuracy_dict.items():
+        data = np.array(values)
+        n = len(data)
+        
+        # Calculate Mean
+        mean_val = np.mean(data)
+        
+        # Calculate SEM: std / sqrt(n)
+        # ddof=1 is used for the "sample" standard deviation (unbiased)
+        std_val = np.std(data, ddof=1)
+        sem_val = std_val / np.sqrt(n)
+        
+        print(f"{key}: {mean_val:.4f} ± {sem_val:.4f}")

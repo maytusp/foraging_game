@@ -121,7 +121,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = True
+    track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "scoreg_layout"
     """the wandb's project name"""
@@ -359,12 +359,14 @@ if __name__ == "__main__":
             env_info = (all_rewards, all_terminations, all_truncations)
             if args.ablate_message:
                 msg_masks = torch.zeros_like(msg_masks, dtype=torch.bool)
+                print("ABLATE MESSAGES")
             for i in range(num_agents):
                 msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
                 #TODO Add mask during training
                 next_r_messages[:,i] = msg_masks.squeeze() * s_message[swap_agent[i]] # (B,1) agent exchange msgs
                 next_done[i] = (all_terminations | all_truncations).float()
                 rewards[i][step] = all_rewards[:, i] # (B,A)
+            print(f"next_r_messages {next_r_messages}")
 
             # Save Model Checkpoints: loop over networks not agents
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed

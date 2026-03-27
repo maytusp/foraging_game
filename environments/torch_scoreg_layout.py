@@ -579,7 +579,7 @@ class TorchForagingEnv:
 
         # ---------------- Communication logic ----------------
         comm_inrange = self._compute_comm_inrange()          # (B,A,A)
-        met_now = comm_inrange.any(dim=(1, 2))                   # (B,)
+        met_now = comm_inrange.flatten(start_dim=1).any(dim=1)                   # (B,)
 
         # start communication when agents first meet
         newly_started = (~self.comm_started) & met_now

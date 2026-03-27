@@ -156,6 +156,11 @@ def save_prequential_datasets(
 
 if __name__ == "__main__":
     checkpoints_dict = {
+        "pop_ppo_3net": {
+            "seed1": 256000000,
+            "seed2": 256000000,
+            "seed3": 256000000,
+        },
         # "dec_ppo_invisible": {
         #     "seed1": 204800000,
         #     "seed2": 204800000,
@@ -219,7 +224,8 @@ if __name__ == "__main__":
     }
     model2numnet = {
         "dec_ppo_invisible": 2,
-        "pop_ppo_3net_invisible": 3,
+        "pop_ppo_3net_invisible": 3, # Inv-Com condition
+        "pop_ppo_3net": 3, # Vis-Com condition
         "pop_ppo_6net_invisible": 6,
         "pop_ppo_9net_invisible": 9,
         "pop_ppo_12net_invisible": 12,

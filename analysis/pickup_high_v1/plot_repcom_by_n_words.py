@@ -74,7 +74,7 @@ def main():
     for n_words in n_words_list:
         combination_name = f"grid5_img3_ni2_nw{n_words}_ms10_{ckpt_name}"
         xp_mean, xp_std = collect_CZ_for_model(root_dir, model_name, ckpt_name, combination_name, num_networks)
-        print(f"Vocab Size = {n_words}, repcom = {xp_mean} +- {xp_std}")
+        print(f"Vocab Size = {n_words}, repcom = {xp_mean} ± {xp_std}")
         xp_means.append(xp_mean)
         xp_stds.append(xp_std)
 

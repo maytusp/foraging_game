@@ -125,7 +125,8 @@ results_dict = {}  # Store metrics for each model
 if __name__ == "__main__":
     checkpoints_dict = {#"dec_ppo_invisible" : {"seed1":307200000, "seed2":307200000, "seed3":307200000},
                         # "hybrid_ppo_invisible": {"seed1":307200000, "seed2":307200000, "seed3":307200000},
-                        "pop_ppo_3net_invisible": {'seed1': 332800000, 'seed2': 332800000, 'seed3':332800000},
+                        "pop_ppo_3net_invisible": {'seed1': 256000000, 'seed2': 256000000, 'seed3':256000000},
+                        "pop_ppo_3net": {'seed1': 256000000, 'seed2': 256000000, 'seed3':256000000},
                         }
     use_noise = "normal" # "normal" or "noise" normal does not apply noise
     for model_name in checkpoints_dict.keys():
@@ -142,7 +143,7 @@ if __name__ == "__main__":
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"figs/population"
-            saved_score_dir = f"../../logs/pickup_high_v1/exp2/{model_name}/{combination_name}_seed{seed}"
+            saved_score_dir = f"../../logs/vary_n_pop/{model_name}/{combination_name}_seed{seed}"
             saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
             saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
             os.makedirs(saved_fig_dir, exist_ok=True)
@@ -165,8 +166,8 @@ if __name__ == "__main__":
                 row, col = pair.split("-")
                 row, col = int(row), int(col)
                 print(f"loading network pair {pair}")
-                log_file_path[pair] =  f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{use_noise}/trajectory.pkl"
-                sr_dict[pair] = load_score(f"../../logs/pickup_high_v1/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{use_noise}/score.txt")
+                log_file_path[pair] =  f"../../logs/vary_n_pop/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{use_noise}/trajectory.pkl"
+                sr_dict[pair] = load_score(f"../../logs/vary_n_pop/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/{use_noise}/score.txt")
                 sr_mat[row, col] = sr_dict[pair]["Success Rate"]
                 if row == col:
                     ic_numerator.append(sr_dict[pair]["Success Rate"])

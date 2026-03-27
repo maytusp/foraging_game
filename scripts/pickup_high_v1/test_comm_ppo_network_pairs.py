@@ -24,7 +24,6 @@ from models.pickup_models import PPOLSTMCommAgent
 
 @dataclass
 class Args:
-
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     torch_deterministic: bool = True
     cuda: bool = True
@@ -36,7 +35,6 @@ class Args:
     save_trajectory = True
     ablate_message = False
     ablate_type = "noise" # zero, noise
-    agent_visible = True
     fully_visible_score = False
     identical_item_obs = False
     zero_memory = False
@@ -44,7 +42,7 @@ class Args:
     
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
-    total_episodes: int = 1000
+    total_episodes: int = 2000
     n_words = 4
     """vocab size"""
     image_size = 3
@@ -59,7 +57,9 @@ class Args:
     max_steps = 10
     """grid size"""
     mode = "test"
-    agent_visible = False
+    agent_visible = False 
+    # model_name = "pop_ppo_3net"
+    model_name = "pop_ppo_3net_invisible"
     # model_name = "ring_ppo_15net_invisible"
     # model_name = "ring_sp_ppo_15net_invisible"
     # model_name = "ccnet_ppo_15net_invisible"
@@ -67,15 +67,16 @@ class Args:
     # model_name = "optk2e30_ppo_15net_invisible"
     # model_name = "optk2e30_sp_ppo_15net_invisible"
     # model_name = "wsk4p02_ppo_15net_invisible"    
-    model_name = "wsk4p02_sp_ppo_15net_invisible"
-    num_networks = 15
+    # model_name = "wsk4p02_sp_ppo_15net_invisible"
+
+    num_networks = 3
     
-    model_step = "819200000"
+    model_step = "256000000"
     combination_name = f"grid{grid_size}_img{image_size}_ni{N_i}_nw{n_words}_ms{max_steps}"
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
-    for seed in [1,2]:
+    for seed in [1,2,3]:
         args.seed = seed
         # Loop over all network pair combinations (0-0, 0-1, …, 2-2)
         for i in range(args.num_networks):
@@ -85,7 +86,7 @@ if __name__ == "__main__":
                 selected_networks = network_pairs.split("-")
                 args.ckpt_path = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[0]}_step_{args.model_step}.pt"
                 args.ckpt_path2 = f"checkpoints/pickup_high_v1/{args.model_name}/{args.combination_name}/seed{args.seed}/agent_{selected_networks[1]}_step_{args.model_step}.pt"
-                args.saved_dir = f"logs/population/pickup_high_v1/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
+                args.saved_dir = f"logs/vary_n_pop/{args.model_name}/{network_pairs}/{args.combination_name}_{args.model_step}/seed{args.seed}/mode_{args.mode}"
                 if args.ablate_message:
                     args.saved_dir = os.path.join(args.saved_dir, args.ablate_type)
                 else:

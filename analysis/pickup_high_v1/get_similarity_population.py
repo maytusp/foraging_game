@@ -86,6 +86,8 @@ def get_comp_scores(message_data, attribute_data, num_networks):
     receiver = 0
     avg_topsim = 0
     avg_posdis = 0
+    topsim_list = []
+    posdis_list = []
     max_eval_episodes=1000
     if num_networks > 2:
         for sender in sender_list:
@@ -112,11 +114,13 @@ def get_comp_scores(message_data, attribute_data, num_networks):
         posdis = Disent.posdis(torch_attributes, torch_messages)
         avg_topsim += topsim
         avg_posdis += posdis
+        topsim_list.append(topsim)
+        posdis_list.append(posdis)
         print(f"agent_id {agent_id} has topsim {topsim}, posdis {posdis}")
     avg_topsim /= num_networks
     avg_posdis /= num_networks
 
-    return avg_topsim, avg_posdis
+    return avg_topsim, avg_posdis, topsim_list, posdis_list
 
 def get_similarity(message_data, num_networks):
     sender_list = [i for i in range(num_networks)]
@@ -187,22 +191,24 @@ if __name__ == "__main__":
 
 
     checkpoints_dict = {
-                        "dec_ppo_invisible" : {"seed1":204800000, "seed2":204800000, "seed3":204800000},
-                        "pop_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-                        "pop_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-                        "pop_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
-                        "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
-                        "pop_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
-                        "dec_sp_ppo_invisible" : {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-                        "pop_sp_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-                        "pop_sp_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-                        "pop_sp_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
-                        "pop_sp_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
-                        "pop_sp_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
+                        # "dec_ppo_invisible" : {"seed1":204800000, "seed2":204800000, "seed3":204800000},
+                        "pop_ppo_3net": {"seed1": 256000000, "seed2": 256000000, "seed3": 256000000}, # vis-com condition
+                        "pop_ppo_3net_invisible": {'seed1': 256000000, 'seed2': 256000000, 'seed3':256000000},
+                        # "pop_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
+                        # "pop_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
+                        # "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
+                        # "pop_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
+                        # "dec_sp_ppo_invisible" : {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
+                        # "pop_sp_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
+                        # "pop_sp_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
+                        # "pop_sp_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
+                        # "pop_sp_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
+                        # "pop_sp_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
                         }
     model2numnet = {
         "dec_ppo_invisible": 2,
         "pop_ppo_3net_invisible": 3,
+        "pop_ppo_3net": 3, # vis-com condition
         "pop_ppo_6net_invisible": 6,
         "pop_ppo_9net_invisible": 9,
         "pop_ppo_12net_invisible": 12,
@@ -220,6 +226,8 @@ if __name__ == "__main__":
         num_networks = model2numnet[model_name]
         avg_similarity_mat = np.zeros((num_networks,num_networks))
         avg_sr_mat = np.zeros((num_networks,num_networks))
+        per_agent_topsim = []
+        per_agent_posdis = []
         for seed in range(1,4):
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
             combination_name = f"grid5_img3_ni2_nw4_ms10_{ckpt_name}"
@@ -272,20 +280,23 @@ if __name__ == "__main__":
             # plot_heatmap(sr_mat, saved_fig_path_sr)
             
             if compute_topsim:
-                avg_topsim, avg_posdis = get_comp_scores(message_data, attribute_data, num_networks)
-                print(f"avg topsim = {avg_topsim}")
-                print(f"avg posdis = {avg_posdis}")
-
+                avg_topsim, avg_posdis, topsim_list, posdis_list = get_comp_scores(message_data, attribute_data, num_networks)
+                # print(f"avg topsim = {avg_topsim}")
+                # print(f"avg posdis = {avg_posdis}")
+                per_agent_topsim += topsim_list
+                per_agent_posdis += posdis_list
                 # Save the variables
                 np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
                                                                         avg_sim=avg_sim, 
                                                                         avg_topsim=avg_topsim, 
                                                                         avg_posdis=avg_posdis,
+                                                                        per_agent_topsim=per_agent_topsim,
+                                                                        per_agent_posdis=per_agent_posdis,
                                                                         sr_mat=sr_mat,
                                                                         ic=ic)
             avg_similarity_mat += similarity_mat
             avg_sr_mat += sr_mat
-
+        print(f"Average topsim across all agents: {np.mean(per_agent_topsim)}, SE: {np.std(per_agent_topsim) / np.sqrt(len(per_agent_topsim))}")
         avg_similarity_mat /= 3 # 3 seeds
         avg_sr_mat /= 3 # 3 seeds
         np.savez(os.path.join(saved_fig_dir, "avg_sim_sr_mat.npz"), 

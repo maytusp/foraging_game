@@ -164,7 +164,7 @@ def main():
 
         xp_mean, xp_std = collect_CZ_for_model(xp_model)
         xp_sp_mean, xp_sp_std = collect_CZ_for_model(xp_sp_model)
-
+        print(f"Pop Size = {pop_size}, repcom = {xp_mean} ± {xp_std}")
         xp_means.append(xp_mean)
         xp_stds.append(xp_std)
         xp_sp_means.append(xp_sp_mean)
