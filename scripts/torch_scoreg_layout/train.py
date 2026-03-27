@@ -361,23 +361,14 @@ if __name__ == "__main__":
             env_info = (all_rewards, all_terminations, all_truncations)
             if args.ablate_message:
                 msg_masks = torch.zeros_like(msg_masks, dtype=torch.bool)
-<<<<<<< HEAD
-                print("ABLATE MESSAGES")
-=======
 
             pair_msg_mask = msg_masks.flatten(1).any(dim=1).to(torch.float32)
 
->>>>>>> b14a3d70fbe2e6cd68cb14110b0dc66a99f3331c
             for i in range(num_agents):
                 message_masks[i][step] = pair_msg_mask
                 next_r_messages[:, i] = (pair_msg_mask.to(torch.int64) * s_message[swap_agent[i]])
                 next_done[i] = (all_terminations | all_truncations).float()
-<<<<<<< HEAD
-                rewards[i][step] = all_rewards[:, i] # (B,A)
-            print(f"next_r_messages {next_r_messages}")
-=======
                 rewards[i][step] = all_rewards[:, i]
->>>>>>> b14a3d70fbe2e6cd68cb14110b0dc66a99f3331c
 
             # Save Model Checkpoints: loop over networks not agents
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
