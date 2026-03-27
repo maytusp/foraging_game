@@ -13,8 +13,8 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 # python -m scripts.torch_scoreg_layout.train
@@ -84,10 +84,6 @@ class Args:
     max_steps: int = 30
     communication_steps: int= 6
 
-    # use for changing layout
-    use_curriculum: bool = False
-    warmup_steps: int = int(total_timesteps * 0.2)
-    reset_on_phase_change: bool = True
 
     agent_visible: bool = True
     time_pressure: bool = True
@@ -200,7 +196,7 @@ if __name__ == "__main__":
         seed=args.seed,
         time_pressure=args.time_pressure,
         communication_steps=args.communication_steps,
-        ascii_layout=None,
+        ascii_layout=simple_layout_5x5,
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
     
