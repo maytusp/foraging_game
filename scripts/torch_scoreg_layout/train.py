@@ -2,6 +2,7 @@
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
+# Add communication masks
 import os
 import random
 import time
@@ -16,7 +17,7 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_13x13
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_9x9
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 # python -m scripts.torch_scoreg_layout.train
@@ -27,7 +28,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -62,9 +63,9 @@ class Args:
     target_kl: float = None
     
     # Populations
-    num_networks: int = 3
+    num_networks: int = 2
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -79,16 +80,18 @@ class Args:
     log_every: int = 32
     d_model: int = 128
     n_words: int = 4
-    image_size: int = 7
-    comm_field: int = 7
+    image_size: int = 5
+    comm_field: int = 13
     num_foods: int = 2
-    grid_size: int = 13
+    grid_size: int = 9
     max_steps: int = 30
-    communication_steps: int= 6
+    communication_steps: int= 8
 
     # use for changing layout
-    warmup_steps: int = int(total_timesteps * 0.2)
+    warmup_steps: int = int(total_timesteps * 0.1)
     reset_on_phase_change: bool = True
+    first_layout = warmup_layout_7x7
+    final_layout = simple_layout_9x9
 
     agent_visible: bool = True
     time_pressure: bool = True
@@ -201,12 +204,11 @@ if __name__ == "__main__":
         seed=args.seed,
         time_pressure=args.time_pressure,
         communication_steps=args.communication_steps,
-        ascii_layout=warmup_layout_7x7,
+        ascii_layout=args.first_layout,
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
     
     layout_phase_switched = False
-    final_layout = simple_layout_13x13
 
     num_agents = cfg.num_agents
     num_channels = cfg.num_channels
@@ -226,6 +228,7 @@ if __name__ == "__main__":
     rewards = {}
     dones = {}
     values = {}
+    message_masks = {}
 
     next_obs, next_locs, next_done, next_lstm_state = {}, {}, {}, {}
     # TRY NOT TO MODIFY: start the game
@@ -257,6 +260,7 @@ if __name__ == "__main__":
         s_messages[i] = torch.zeros((args.num_steps, args.num_envs), dtype=torch.int64).to(device) # action: sent message
         action_logprobs[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         message_logprobs[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
+        message_masks[i] = torch.zeros((args.num_steps, args.num_envs), dtype=torch.float32).to(device)
         rewards[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         dones[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
         values[i] = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -265,8 +269,7 @@ if __name__ == "__main__":
         next_lstm_state[i] = (
             torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
             torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
-        )  # hidden and cell states (see https://youtu.be/8HyCNIVRbSU)
-    
+        )
     start_time = time.time()
     global_step = 0
     initial_lstm_state = {}
@@ -306,20 +309,19 @@ if __name__ == "__main__":
                 optimizers[network_id].param_groups[0]["lr"] = lrnow
 
         # Curriculum learning: switch to wall layout after warmup steps
-        if (not layout_phase_switched) and (global_step >= args.warmup_steps):
+        if args.reset_on_phase_change and (not layout_phase_switched) and (global_step >= args.warmup_steps):
             print(f"[Phase Switch] global_step={global_step}: switching to wall layout")
-            envs.set_layout(final_layout, reset_now=args.reset_on_phase_change)
+            envs.set_layout(args.final_layout, reset_now=args.reset_on_phase_change)
             layout_phase_switched = True
 
-            if args.reset_on_phase_change:
-                next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64, device=device)
-                for i in range(num_agents):
-                    next_done[i] = torch.zeros(args.num_envs, device=device)
-                    next_lstm_state[i] = (
-                        torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
-                        torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
-                    )
-                next_obs, next_locs, _ = envs._obs_core()
+            next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64, device=device)
+            for i in range(num_agents):
+                next_done[i] = torch.zeros(args.num_envs, device=device)
+                next_lstm_state[i] = (
+                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
+                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
+                )
+            next_obs, next_locs, _ = envs._obs_core()
 
         for step in range(0, args.num_steps):
             global_step += args.num_envs
@@ -359,14 +361,23 @@ if __name__ == "__main__":
             env_info = (all_rewards, all_terminations, all_truncations)
             if args.ablate_message:
                 msg_masks = torch.zeros_like(msg_masks, dtype=torch.bool)
+<<<<<<< HEAD
                 print("ABLATE MESSAGES")
+=======
+
+            pair_msg_mask = msg_masks.flatten(1).any(dim=1).to(torch.float32)
+
+>>>>>>> b14a3d70fbe2e6cd68cb14110b0dc66a99f3331c
             for i in range(num_agents):
-                msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
-                #TODO Add mask during training
-                next_r_messages[:,i] = msg_masks.squeeze() * s_message[swap_agent[i]] # (B,1) agent exchange msgs
+                message_masks[i][step] = pair_msg_mask
+                next_r_messages[:, i] = (pair_msg_mask.to(torch.int64) * s_message[swap_agent[i]])
                 next_done[i] = (all_terminations | all_truncations).float()
+<<<<<<< HEAD
                 rewards[i][step] = all_rewards[:, i] # (B,A)
             print(f"next_r_messages {next_r_messages}")
+=======
+                rewards[i][step] = all_rewards[:, i]
+>>>>>>> b14a3d70fbe2e6cd68cb14110b0dc66a99f3331c
 
             # Save Model Checkpoints: loop over networks not agents
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
@@ -419,6 +430,7 @@ if __name__ == "__main__":
         b_action_logprobs = {}
         b_s_messages = {}
         b_message_logprobs = {}
+        b_message_masks = {}
         b_actions = {}
         b_dones = {}
         b_advantages = {}
@@ -456,6 +468,7 @@ if __name__ == "__main__":
             b_action_logprobs[i] = action_logprobs[i].reshape(-1)
             b_s_messages[i] = s_messages[i].reshape(-1)
             b_message_logprobs[i] = message_logprobs[i].reshape(-1)
+            b_message_masks[i] = message_masks[i].reshape(-1)
             b_actions[i] = actions[i].reshape((-1))
             b_dones[i] = dones[i].reshape(-1)
             b_advantages[i] = advantages[i].reshape(-1)
@@ -497,10 +510,6 @@ if __name__ == "__main__":
                         action_approx_kl = ((action_ratio - 1) - action_logratio).mean()
                         action_clipfracs += [((action_ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
 
-                        old_message_approx_kl = (-message_logratio).mean()
-                        message_approx_kl = ((message_ratio - 1) - message_logratio).mean()
-                        message_clipfracs += [((message_ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
-
                     mb_advantages = b_advantages[i][mb_inds]
                     if args.norm_adv:
                         mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
@@ -510,10 +519,21 @@ if __name__ == "__main__":
                     pg_loss2 = -mb_advantages * torch.clamp(action_ratio, 1 - args.clip_coef, 1 + args.clip_coef)
                     pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
-                    # Message loss
+                    # Message loss: only update where message mask == 1
+                    mb_message_mask = b_message_masks[i][mb_inds]  # (MB,)
                     mg_loss1 = -mb_advantages * message_ratio
                     mg_loss2 = -mb_advantages * torch.clamp(message_ratio, 1 - args.clip_coef, 1 + args.clip_coef)
-                    mg_loss = torch.max(mg_loss1, mg_loss2).mean()
+                    mg_loss_elem = torch.max(mg_loss1, mg_loss2)
+
+                    valid_msg_count = mb_message_mask.sum().clamp_min(1.0)
+                    mg_loss = (mg_loss_elem * mb_message_mask).sum() / valid_msg_count
+                    
+                    with torch.no_grad():
+                        old_message_approx_kl = ((-message_logratio) * mb_message_mask).sum() / valid_msg_count
+                        message_approx_kl = (((message_ratio - 1) - message_logratio) * mb_message_mask).sum() / valid_msg_count
+
+                        msg_clip = ((message_ratio - 1.0).abs() > args.clip_coef).float()
+                        message_clipfracs += [((msg_clip * mb_message_mask).sum() / valid_msg_count).item()]
 
                     # Value loss
                     newvalue = newvalue.view(-1)
@@ -531,7 +551,7 @@ if __name__ == "__main__":
                         v_loss = 0.5 * ((newvalue - b_returns[i][mb_inds]) ** 2).mean()
 
                     action_entropy_loss = action_entropy.mean()
-                    message_entropy_loss = message_entropy.mean()
+                    message_entropy_loss = (message_entropy * mb_message_mask).sum() / valid_msg_count
                     loss = pg_loss + mg_loss - (args.ent_coef * action_entropy_loss) - (args.m_ent_coef * message_entropy_loss) + v_loss * args.vf_coef
 
                     optimizers[network_id].zero_grad()

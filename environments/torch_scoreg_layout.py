@@ -10,38 +10,39 @@ from typing import Dict, Optional, Tuple, Literal
 
 import torch
 import torch.nn.functional as F
+simple_layout_5x5 = """
+AAAAA
+FFFFF
+.....
+FFFFF
+AAAAA
+"""
+
 
 warmup_layout_7x7 = """
-WWWWWWWWWWWWW
-WWWWWWWWWWWWW
-WWWWWWWWWWWWW
-WWW.......WWW
-WWW.......WWW
-WWW.......WWW
-WWW.......WWW
-WWW.......WWW
-WWW.......WWW
-WWW.......WWW
-WWWWWWWWWWWWW
-WWWWWWWWWWWWW
-WWWWWWWWWWWWW
+WWWWWWWWW
+WAAAAAAAW
+WFFFFFFFW
+WFFFFFFFW
+W.......W
+WFFFFFFFW
+WFFFFFFFW
+WAAAAAAAW
+WWWWWWWWW
 """
 
-simple_layout_13x13 = """
-.............
-.............
-.............
-.......WWWWWW
-.............
-.............
-WW....WW...WW
-.............
-.............
-WWWWWW.......
-.............
-.............
-.............
+simple_layout_9x9 = """
+AAAAAAAAA
+FFFFFFFFF
+...WWW...
+.........
+WW.....WW
+.........
+...WWW...
+FFFFFFFFF
+AAAAAAAAA
 """
+
 
 @dataclass
 class EnvConfig:
@@ -278,11 +279,31 @@ class TorchForagingEnv:
         """
         Returns wall mask of shape (G, G), dtype=bool
         True = wall
+
+        Also builds:
+        self._agent_spawn_flat
+        self._food_spawn_flat
+        self._agent_spawn_top_flat
+        self._agent_spawn_bottom_flat
         """
         G = self.cfg.grid_size
 
         if ascii_layout is None:
-            return torch.zeros(G, G, dtype=torch.bool, device=self.device)
+            mask = torch.zeros(G, G, dtype=torch.bool, device=self.device)
+
+            all_cells = torch.arange(G * G, device=self.device, dtype=torch.long)
+            self._agent_spawn_flat = all_cells
+            self._food_spawn_flat = all_cells
+
+            ys = all_cells // G
+            self._agent_spawn_top_flat = all_cells[ys < (G // 2)]
+            self._agent_spawn_bottom_flat = all_cells[ys > (G // 2)]
+            if self._agent_spawn_top_flat.numel() == 0:
+                self._agent_spawn_top_flat = all_cells
+            if self._agent_spawn_bottom_flat.numel() == 0:
+                self._agent_spawn_bottom_flat = all_cells
+
+            return mask
 
         rows = [row.strip() for row in ascii_layout.strip().splitlines() if row.strip()]
         if len(rows) != G:
@@ -293,16 +314,79 @@ class TorchForagingEnv:
                 raise ValueError(f"ascii_layout row {i} must have length {G}, got {len(row)}")
 
         mask = torch.zeros(G, G, dtype=torch.bool, device=self.device)
+        agent_spawn = torch.zeros(G, G, dtype=torch.bool, device=self.device)
+        food_spawn = torch.zeros(G, G, dtype=torch.bool, device=self.device)
+
         for y, row in enumerate(rows):
             for x, ch in enumerate(row):
                 if ch == "W":
                     mask[y, x] = True
                 elif ch == ".":
                     pass
+                elif ch == "A":
+                    agent_spawn[y, x] = True
+                elif ch == "F":
+                    food_spawn[y, x] = True
                 else:
-                    raise ValueError(f"Unsupported layout char '{ch}' at ({y}, {x}); use only 'W' or '.'")
+                    raise ValueError(
+                        f"Unsupported layout char '{ch}' at ({y}, {x}); use only 'W', '.', 'A', or 'F'"
+                    )
+
+        self._agent_spawn_flat = torch.nonzero(agent_spawn.view(-1), as_tuple=False).view(-1)
+        self._food_spawn_flat = torch.nonzero(food_spawn.view(-1), as_tuple=False).view(-1)
+
+        food_ys = self._food_spawn_flat // G
+        self._food_spawn_top_flat = self._food_spawn_flat[food_ys < (G // 2)]
+        self._food_spawn_bottom_flat = self._food_spawn_flat[food_ys > (G // 2)]
+
+        # fall back to generic empty cells if A/F are not provided
+        free_flat = torch.nonzero(~mask.view(-1), as_tuple=False).view(-1)
+        if self._agent_spawn_flat.numel() == 0:
+            self._agent_spawn_flat = free_flat
+        if self._food_spawn_flat.numel() == 0:
+            self._food_spawn_flat = free_flat
+
+        if self._food_spawn_flat.numel() > 0:
+            food_ys = self._food_spawn_flat // G
+            self._food_spawn_top_flat = self._food_spawn_flat[food_ys < (G // 2)]
+            self._food_spawn_bottom_flat = self._food_spawn_flat[food_ys > (G // 2)]
+
+            if self._food_spawn_top_flat.numel() == 0:
+                self._food_spawn_top_flat = self._food_spawn_flat
+            if self._food_spawn_bottom_flat.numel() == 0:
+                self._food_spawn_bottom_flat = self._food_spawn_flat
+
+        agent_ys = self._agent_spawn_flat // G
+        self._agent_spawn_top_flat = self._agent_spawn_flat[agent_ys < (G // 2)]
+        self._agent_spawn_bottom_flat = self._agent_spawn_flat[agent_ys > (G // 2)]
+
+        # fallback if one side is empty
+        if self._agent_spawn_top_flat.numel() == 0:
+            self._agent_spawn_top_flat = self._agent_spawn_flat
+        if self._agent_spawn_bottom_flat.numel() == 0:
+            self._agent_spawn_bottom_flat = self._agent_spawn_flat
+
         return mask
 
+    def _sample_distinct_from_pool(self, pool_flat: torch.Tensor, n_envs: int, count: int) -> torch.Tensor:
+        """
+        Sample `count` distinct cells per env from a provided flat-index pool.
+        Returns (n_envs, count, 2) as (y, x)
+        """
+        num_pool = pool_flat.numel()
+        if count > num_pool:
+            raise ValueError(
+                f"Not enough cells in spawn pool: need {count}, have {num_pool}."
+            )
+
+        noise = torch.rand(n_envs, num_pool, device=self.device, generator=self.rng)
+        perm = noise.argsort(dim=1)[:, :count]
+        chosen_flat = pool_flat.unsqueeze(0).expand(n_envs, -1).gather(1, perm)
+
+        G = self.cfg.grid_size
+        y = chosen_flat // G
+        x = chosen_flat % G
+        return torch.stack([y, x], dim=-1).long()
 
     def _sample_distinct_free_cells(self, n_envs: int, count: int) -> torch.Tensor:
         """
@@ -491,14 +575,47 @@ class TorchForagingEnv:
         # target food = argmax
         self.target_food_id[idxs] = torch.argmax(self.food_energy[idxs], dim=1)
 
+        # ------------------------------
+        # Agent spawn: only on A cells, and opposite sides
+        # agent 0 / agent 1 swap top-bottom randomly per env
+        # ------------------------------
+        if A != 2:
+            raise ValueError("Current opposite-side A spawning assumes num_agents == 2")
 
-        # fixed walls already exist from ASCII layout; only place foods/agents on free cells
-        total_needed = Fd + A
-        sampled = self._sample_distinct_free_cells(n, total_needed)   # (n, Fd+A, 2)
+        top_pos = self._sample_distinct_from_pool(self._agent_spawn_top_flat, n, 1).squeeze(1)       # (n,2)
+        bottom_pos = self._sample_distinct_from_pool(self._agent_spawn_bottom_flat, n, 1).squeeze(1) # (n,2)
 
-        self.food_pos[idxs] = sampled[:, :Fd]
+        top_first = torch.randint(0, 2, (n,), device=self.device, generator=self.rng).bool()
+
+        agent0 = torch.where(top_first.unsqueeze(-1), top_pos, bottom_pos)
+        agent1 = torch.where(top_first.unsqueeze(-1), bottom_pos, top_pos)
+
+        self.agent_pos[idxs, 0] = agent0
+        self.agent_pos[idxs, 1] = agent1
+
+        # ------------------------------
+        # Food spawn: on same side as the agent that sees it
+        # ------------------------------
+        top_food_pool = self._sample_distinct_from_pool(self._food_spawn_top_flat, n, Fd)        # (n,Fd,2)
+        bottom_food_pool = self._sample_distinct_from_pool(self._food_spawn_bottom_flat, n, Fd)   # (n,Fd,2)
+
+        # Which global agent id is on top for each env?
+        # if top_first=True => top agent id is 0, else top agent id is 1
+        top_agent_id = torch.where(
+            top_first,
+            torch.zeros(n, dtype=torch.long, device=self.device),
+            torch.ones(n, dtype=torch.long, device=self.device),
+        )  # (n,)
+
+        owners = self.score_visible_to_agent[idxs]   # (n, Fd)
+        food_on_top = owners.eq(top_agent_id.unsqueeze(1))  # (n, Fd)
+
+        self.food_pos[idxs] = torch.where(
+            food_on_top.unsqueeze(-1),
+            top_food_pool,
+            bottom_food_pool,
+        )
         self.food_done[idxs] = False
-        self.agent_pos[idxs] = sampled[:, Fd:Fd + A]
 
         self.agent_energy[idxs] = 20.0
         self.curr_steps[idxs] = 0
