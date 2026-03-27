@@ -135,7 +135,7 @@ if __name__ == "__main__":
     args.num_iterations = args.total_timesteps // args.batch_size
 
 
-    model_name = f"ring_ppo_{args.num_networks}net"
+    model_name = f"fc_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -264,9 +264,7 @@ if __name__ == "__main__":
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    possible_pairs = [[i,(i+1) % args.num_networks] for i in range(args.num_networks)]
-    if args.self_play_option:
-        possible_pairs += [[a,a] for a in range(args.num_networks)]
+    selected_networks = [0,1]
     
     # --- log performance ---
     episodes_since_log = 0
@@ -288,7 +286,7 @@ if __name__ == "__main__":
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                 )
-            selected_networks = random.sample(possible_pairs, 1)[0]
+            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())

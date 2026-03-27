@@ -20,5 +20,5 @@ source activate habitat
 
 
 python -m scripts.torch_scoreg_layout.train --seed 1 --ablate-message
-python -m scripts.torch_scoreg_layout.train --seed 2 --ablate-message
-python -m scripts.torch_scoreg_layout.train --seed 3 --ablate-message
+# python -m scripts.torch_scoreg_layout.train --seed 2 --ablate-message
+# python -m scripts.torch_scoreg_layout.train --seed 3 --ablate-message
