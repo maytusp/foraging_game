@@ -2,7 +2,7 @@
 import os
 import random
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import torch
@@ -16,6 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_7x7, simple_layout_9x9, simple_layout_13x13, simple_layout_17x17
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_curriculum --seed 1 --comm_field 100 --num_networks 100 --agent-visible
 
 @dataclass
 class Args:
@@ -24,7 +25,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(3e9)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -57,91 +58,118 @@ class Args:
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
     target_kl: float = None
-    
+
     # Populations
-    num_networks: int = 2
+    num_networks: int = 100
     reset_iteration: int = 1
     self_play_option: bool = True
-    
-    """
-    By default, agent0 and agent1 uses network0 and network1
-    However, agent0 will speak the language that itself cannot understand
-    so we have to randomnly picked networks for agent0 and agent1
-    For example,
-    episode1: we pick [n0, n1]
-    episode2: we pick [n0, n0]
-    episode3: we pick [n1, n1]
-    """
 
     log_every: int = 32
     d_model: int = 128
-    n_words: int = 5
-    image_size: int = 5
+    n_words: int = 4
+    image_size: int = 3
     comm_field: int = 100
     num_foods: int = 2
     grid_size: int = 7
     max_steps: int = 30
-    communication_steps: int= 6
+    communication_steps: int = 6
 
-    # use for changing layout
-    warmup_steps: int = int(total_timesteps * 0.1)
-    reset_on_phase_change: bool = False
-    first_layout = simple_layout_7x7
-    final_layout = simple_layout_7x7
+    # curriculum
+    reset_on_phase_change: bool = True
+    curriculum_layouts: tuple = (
+        simple_layout_7x7,
+        simple_layout_9x9,
+        simple_layout_13x13,
+        simple_layout_17x17,
+    )
+    curriculum_steps: tuple = (
+        int(200e6),
+        int(200e6),
+        int(600e6),
+        int(1e9),
+    )
+
 
     agent_visible: bool = True
     time_pressure: bool = True
     ablate_message: bool = False
     mode: str = "train"
 
-    """train or test (different attribute combinations)"""
-    # to be filled in runtime
     batch_size: int = 0
-    """the batch size (computed in runtime)"""
     minibatch_size: int = 0
-    """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
-    """the number of iterations (computed in runtime)"""
 
-    load_pretrained = True
-    if load_pretrained:
-        learning_rate = 2e-4
-        ckpt_path = {}
-        for a in range(args.num_networks):
-            ckpt_path[a] = f"./checkpoints/torch_scoreg_layout_no_gradmask/sp_pop_ppo_100net_invisible/grid5_img3_ni2_nw4_ms30_comm_field5/seed1/agent_{a}_step_2048000000.pt"
-    
-    visualize_loss = True
-    save_frequency = int(5e4)
-    # exp_name: str = os.path.basename(__file__)[: -len(".py")]
-    
-    """the name of this experiment"""
+    load_pretrained: bool = True
+    ckpt_path: dict = field(default_factory=dict)
+
+    visualize_loss: bool = True
+    save_frequency: int = int(5e4)
+
     torch_deterministic: bool = True
-    """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
-    """if toggled, cuda will be enabled by default"""
     track: bool = True
-    """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "scoreg_layout"
-    """the wandb's project name"""
     wandb_entity: str = "maytusp"
-    """the entity (team) of wandb's project"""
     capture_video: bool = False
-    """whether to capture videos of the agent performances (check out `videos` folder)"""
 
+def layout_to_grid_size(layout_str: str) -> int:
+    rows = [row.strip() for row in layout_str.strip().splitlines() if row.strip()]
+    h = len(rows)
+    w = len(rows[0])
+    assert all(len(r) == w for r in rows), "Layout must be rectangular"
+    assert h == w, "Layout must be square"
+    return h
 
-
+def make_env(layout_str):
+    grid_size = layout_to_grid_size(layout_str)
+    cfg = EnvConfig(
+        grid_size=grid_size,
+        image_size=args.image_size,
+        comm_field=args.comm_field,
+        num_agents=2,
+        num_foods=args.num_foods,
+        num_walls=0,
+        max_steps=grid_size ** 2,
+        agent_visible=args.agent_visible,
+        mode=args.mode,
+        seed=args.seed,
+        time_pressure=args.time_pressure,
+        communication_steps=args.communication_steps,
+        ascii_layout=layout_str,
+    )
+    return TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
+    
+    if args.load_pretrained and not args.ckpt_path:
+        args.learning_rate = 2e-4
+        args.ckpt_path = {
+            a: f"./checkpoints/torch_scoreg_layout_no_gradmask/"
+               f"sp_pop_ppo_100net_invisible/grid5_img3_ni2_nw4_ms30_comm_field5/"
+               f"seed1/agent_{a}_step_2048000000.pt"
+            for a in range(args.num_networks)
+        }
 
+    assert len(args.curriculum_layouts) == len(args.curriculum_steps), \
+        "curriculum_layouts and curriculum_steps must have the same length"
+    max_grid_size = max(layout_to_grid_size(x) for x in args.curriculum_layouts)
+    curriculum_total = sum(args.curriculum_steps)
+    if curriculum_total != args.total_timesteps:
+        print(
+            f"[Warning] total_timesteps={args.total_timesteps:,} but curriculum sums to "
+            f"{curriculum_total:,}. The last curriculum stage will continue until training ends."
+        )
+
+    curriculum_boundaries = np.cumsum(args.curriculum_steps)  # end step of each stage
     if args.self_play_option:
         sp_prefix = "sp_"
     else:
         sp_prefix = ""
-    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -189,24 +217,25 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
 
+    initial_grid_size = layout_to_grid_size(args.curriculum_layouts[0])
     cfg = EnvConfig(
-        grid_size=args.grid_size,
+        grid_size=initial_grid_size,
         image_size=args.image_size,
         comm_field=args.comm_field,
-        num_agents=2,               # keep your setting
+        num_agents=2,
         num_foods=args.num_foods,
-        num_walls=0, # start with zero wall
+        num_walls=0,
         max_steps=args.max_steps,
         agent_visible=args.agent_visible,
         mode=args.mode,
         seed=args.seed,
         time_pressure=args.time_pressure,
         communication_steps=args.communication_steps,
-        ascii_layout=args.first_layout,
+        ascii_layout=args.curriculum_layouts[0],
     )
     envs = TorchForagingEnv(cfg, device=device, num_envs=args.num_envs)
     
-    layout_phase_switched = False
+    curriculum_phase_idx = 0
 
     num_agents = cfg.num_agents
     num_channels = cfg.num_channels
@@ -239,7 +268,7 @@ if __name__ == "__main__":
         agents[network_id] = PPOLSTMCommAgent(
                                     d_model=args.d_model,
                                     num_actions=num_actions, 
-                                    grid_size=args.grid_size, 
+                                    grid_size=max_grid_size, 
                                     n_words=args.n_words, 
                                     embedding_size=16, 
                                     num_channels=num_channels, 
@@ -285,6 +314,7 @@ if __name__ == "__main__":
 
     episodes_since_log = 0
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
+
     # Start training
     for iteration in range(1, args.num_iterations + 1):
         if iteration % args.reset_iteration == 0:
@@ -306,22 +336,58 @@ if __name__ == "__main__":
                 lrnow = frac * args.learning_rate
                 optimizers[network_id].param_groups[0]["lr"] = lrnow
 
-        # Curriculum learning: switch to wall layout after warmup steps
-        if args.reset_on_phase_change and (not layout_phase_switched) and (global_step >= args.warmup_steps):
-            print(f"[Phase Switch] global_step={global_step}: switching to wall layout")
-            envs.set_layout(args.final_layout, reset_now=args.reset_on_phase_change)
-            layout_phase_switched = True
-
-            next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64, device=device)
-            for i in range(num_agents):
-                next_done[i] = torch.zeros(args.num_envs, device=device)
-                next_lstm_state[i] = (
-                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
-                    torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size, device=device),
-                )
-            next_obs, next_locs, _ = envs._obs_core()
 
         for step in range(0, args.num_steps):
+            # Multi-stage curriculum switching
+            while (
+                curriculum_phase_idx + 1 < len(args.curriculum_layouts)
+                and global_step >= curriculum_boundaries[curriculum_phase_idx]
+            ):
+
+                curriculum_phase_idx += 1
+                new_layout = args.curriculum_layouts[curriculum_phase_idx]
+
+                print(
+                    f"[Curriculum Switch] global_step={global_step}: "
+                    f"switching to phase {curriculum_phase_idx} / layout "
+                    f"{[7, 9, 13, 17][curriculum_phase_idx]}x{[7, 9, 13, 17][curriculum_phase_idx]}"
+                )
+
+
+                if args.visualize_loss:
+                    new_grid_size = layout_to_grid_size(new_layout)
+                    writer.add_scalar("charts/curriculum_phase", curriculum_phase_idx, global_step)
+                    writer.add_scalar("charts/grid_size", new_grid_size, global_step)
+                if args.reset_on_phase_change:
+                    next_r_messages = torch.zeros((args.num_envs, num_agents), dtype=torch.int64, device=device)
+
+                    for i in range(num_agents):
+                        next_done[i] = torch.zeros(args.num_envs, device=device)
+                        next_lstm_state[i] = (
+                            torch.zeros(
+                                agents[0].lstm.num_layers,
+                                args.num_envs,
+                                agents[0].lstm.hidden_size,
+                                device=device,
+                            ),
+                            torch.zeros(
+                                agents[0].lstm.num_layers,
+                                args.num_envs,
+                                agents[0].lstm.hidden_size,
+                                device=device,
+                            ),
+                        )
+
+                    envs.close()
+                    envs = make_env(new_layout)
+                    next_obs, next_locs, _ = envs._obs_core()
+                    
+                    ep_ret.zero_()
+                    ep_len.zero_()
+                    sum_return_since_log = 0.0
+                    sum_length_since_log = 0.0
+                    episodes_since_log = 0
+
             global_step += args.num_envs
 
             action = {}

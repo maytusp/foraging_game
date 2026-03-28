@@ -148,7 +148,7 @@ if __name__ == "__main__":
     else:
         sp_prefix = ""
 
-    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}ring_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
