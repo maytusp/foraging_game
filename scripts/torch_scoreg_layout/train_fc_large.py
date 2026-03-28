@@ -17,10 +17,10 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_7x7, simple_layout_9x9
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 15 --no-agent-visible
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_fc_large --seed 1 --comm_field 100 --num_networks 100 --no-agent-visible
 
 # TODO Train 100 nets on curriculum simple_layout_7x7 --> simple_layout_9x9 --> simple_layout_13x13 initialise from pretrained on 92 workstation
 # TODO Train 100 nets with masked gradient
@@ -83,18 +83,18 @@ class Args:
     log_every: int = 32
     d_model: int = 128
     n_words: int = 5
-    image_size: int = 5
+    image_size: int = 3
     comm_field: int = 100
     num_foods: int = 2
-    grid_size: int = 7
+    grid_size: int = 5
     max_steps: int = 30
     communication_steps: int= 6
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
     reset_on_phase_change: bool = False
-    first_layout = simple_layout_7x7
-    final_layout = simple_layout_7x7
+    first_layout = simple_layout_5x5
+    final_layout = simple_layout_5x5
 
     agent_visible: bool = True
     time_pressure: bool = True

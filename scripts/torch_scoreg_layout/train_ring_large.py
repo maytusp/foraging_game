@@ -17,13 +17,11 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_7x7, simple_layout_9x9
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 15 --no-agent-visible
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring_large --seed 1 --comm_field 100 --num_networks 100 --no-agent-visible
 
-# TODO Train 100 nets on curriculum simple_layout_7x7 --> simple_layout_9x9 --> simple_layout_13x13 initialise from pretrained on 92 workstation
-# TODO Train 100 nets with masked gradient
 @dataclass
 class Args:
     seed: int = 4
@@ -68,7 +66,7 @@ class Args:
     # Populations
     num_networks: int = 2
     reset_iteration: int = 1
-    self_play_option: bool = True
+    self_play_option: bool = False
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -83,18 +81,18 @@ class Args:
     log_every: int = 32
     d_model: int = 128
     n_words: int = 5
-    image_size: int = 5
+    image_size: int = 3
     comm_field: int = 100
     num_foods: int = 2
-    grid_size: int = 7
+    grid_size: int = 5
     max_steps: int = 30
     communication_steps: int= 6
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
     reset_on_phase_change: bool = False
-    first_layout = simple_layout_7x7
-    final_layout = simple_layout_7x7
+    first_layout = simple_layout_5x5
+    final_layout = simple_layout_5x5
 
     agent_visible: bool = True
     time_pressure: bool = True
@@ -145,8 +143,12 @@ if __name__ == "__main__":
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
 
+    if args.self_play_option:
+        sp_prefix = "selfplay_"
+    else:
+        sp_prefix = ""
 
-    model_name = f"sp_pop_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -277,7 +279,11 @@ if __name__ == "__main__":
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    selected_networks = [0,1]
+    possible_pairs = [[i,(i+1) % args.num_networks] for i in range(args.num_networks)]
+    if args.self_play_option:
+        print("ADD SELF PAIRS")
+        possible_pairs += [[a,a] for a in range(args.num_networks)]
+
     
     # --- log performance ---
     episodes_since_log = 0
@@ -299,7 +305,8 @@ if __name__ == "__main__":
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                     torch.zeros(agents[0].lstm.num_layers, args.num_envs, agents[0].lstm.hidden_size).to(device),
                 )
-            selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
+            # selected_networks = np.random.choice(possible_networks, num_agents, replace=args.self_play_option)
+            selected_networks = random.sample(possible_pairs, 1)[0]
 
         for i in range(num_agents):
             initial_lstm_state[i] = (next_lstm_state[i][0].clone(), next_lstm_state[i][1].clone())
