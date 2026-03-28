@@ -31,14 +31,24 @@ WAAAAAAAW
 WWWWWWWWW
 """
 
+
+simple_layout_7x7 = """
+AAAAAAA
+FFFFFFF
+W.....W
+W..W..W
+W.....W
+FFFFFFF
+AAAAAAA
+"""
 simple_layout_9x9 = """
 AAAAAAAAA
 FFFFFFFFF
-...WWW...
+FFFWWWFFF
 .........
 WW.....WW
 .........
-...WWW...
+FFFWWWFFF
 FFFFFFFFF
 AAAAAAAAA
 """
