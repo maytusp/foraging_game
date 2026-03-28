@@ -20,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_7x7, simple_layout_9x9
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 100
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 15 --no-agent-visible
 @dataclass
 class Args:
     seed: int = 4
@@ -34,7 +34,7 @@ class Args:
     """the learning rate of the optimizer"""
     num_envs: int = 512
     """the number of parallel game environments"""
-    num_steps: int = 100
+    num_steps: int = 30
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -65,7 +65,7 @@ class Args:
     # Populations
     num_networks: int = 2
     reset_iteration: int = 1
-    self_play_option: bool = False
+    self_play_option: bool = True
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -84,7 +84,7 @@ class Args:
     comm_field: int = 100
     num_foods: int = 2
     grid_size: int = 7
-    max_steps: int = 100
+    max_steps: int = 30
     communication_steps: int= 6
 
     # use for changing layout
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     args.num_iterations = args.total_timesteps // args.batch_size
 
 
-    model_name = f"pop_ppo_{args.num_networks}net"
+    model_name = f"sp_pop_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
