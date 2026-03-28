@@ -17,7 +17,7 @@ from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple
 
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# python -m scripts.torch_scoreg_layout.train
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_large_pop_fc --no-agent-visible --num-networks 100 --seed 1
 @dataclass
 class Args:
     seed: int = 4
@@ -524,7 +524,7 @@ if __name__ == "__main__":
             explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
             # TRY NOT TO MODIFY: record rewards for plotting purposes
-            if args.visualize_loss and (global_step // args.num_envs) % args.log_every == 0:
+            if args.visualize_loss and (global_step // args.num_envs) % args.log_every == 0 and network_id < 30: # we only visualise some agents, 100 seems to be too much
                 writer.add_scalar(f"agent{network_id}/charts/learning_rate", optimizers[network_id].param_groups[0]["lr"], global_step)
                 writer.add_scalar(f"agent{network_id}/losses/value_loss", v_loss.item(), global_step)
                 writer.add_scalar(f"agent{network_id}/losses/action_loss", pg_loss.item(), global_step)
