@@ -1,8 +1,4 @@
-# Created: 24 Aug 2025
-# The code is for training agents with separated networks during training and execution (no parameter sharing)
-# Fully Decentralise Training and Decentralise Execution
-# docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
-# Add communication masks
+# curriculum simple_layout_7x7 --> simple_layout_9x9 --> simple_layout_13x13 --> simple_layout_17x17 initialise from 5x5 
 import os
 import random
 import time
@@ -17,13 +13,10 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_7x7, simple_layout_9x9, simple_layout_13x13, simple_layout_17x17
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_fc_large --seed 1 --comm_field 100 --num_networks 100 --no-agent-visible
 
-# TODO Train 100 nets on curriculum simple_layout_7x7 --> simple_layout_9x9 --> simple_layout_13x13 initialise from pretrained on 92 workstation
-# TODO Train 100 nets with masked gradient
 @dataclass
 class Args:
     seed: int = 4
@@ -83,18 +76,18 @@ class Args:
     log_every: int = 32
     d_model: int = 128
     n_words: int = 5
-    image_size: int = 3
+    image_size: int = 5
     comm_field: int = 100
     num_foods: int = 2
-    grid_size: int = 5
+    grid_size: int = 7
     max_steps: int = 30
     communication_steps: int= 6
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
     reset_on_phase_change: bool = False
-    first_layout = simple_layout_5x5
-    final_layout = simple_layout_5x5
+    first_layout = simple_layout_7x7
+    final_layout = simple_layout_7x7
 
     agent_visible: bool = True
     time_pressure: bool = True
@@ -110,14 +103,13 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
 
-    load_pretrained = False
+    load_pretrained = True
     if load_pretrained:
-        pretrained_global_step = 1177600000
         learning_rate = 2e-4
-        print(f"LOAD from {pretrained_global_step}")
-        ckpt_path = {
-                    a: f"" for a in range(num_networks)
-                    }
+        ckpt_path = {}
+        for a in range(args.num_networks):
+            ckpt_path[a] = f"./checkpoints/torch_scoreg_layout_no_gradmask/sp_pop_ppo_100net_invisible/grid5_img3_ni2_nw4_ms30_comm_field5/seed1/agent_{a}_step_2048000000.pt"
+    
     visualize_loss = True
     save_frequency = int(5e4)
     # exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -149,7 +141,6 @@ if __name__ == "__main__":
         sp_prefix = "sp_"
     else:
         sp_prefix = ""
-
     model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
@@ -380,10 +371,7 @@ if __name__ == "__main__":
             # Save Model Checkpoints: loop over networks not agents
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
                 for network_id in range(args.num_networks):
-                    if args.load_pretrained:
-                        saved_step = global_step + args.pretrained_global_step
-                    else:
-                        saved_step = global_step
+                    saved_step = global_step
                     save_path = os.path.join(save_dir, f"agent_{network_id}_step_{saved_step}.pt")
                     torch.save(agents[network_id].state_dict(), save_path)
                     print(f"Model saved to {save_path}")
@@ -581,10 +569,8 @@ if __name__ == "__main__":
                 writer.add_scalar(f"agent{network_id}/losses/explained_variance", explained_var, global_step)
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
                 print("SPS:", int(global_step / (time.time() - start_time)))
-    if args.load_pretrained:
-        saved_step = global_step + args.pretrained_global_step
-    else:
-        saved_step = global_step
+
+    saved_step = global_step
     for network_id in range(args.num_networks):
         final_save_path = os.path.join(save_dir, f"agent_{network_id}_step_{saved_step}.pt")
         torch.save(agents[network_id].state_dict(), final_save_path)

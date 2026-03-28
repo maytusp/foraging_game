@@ -144,7 +144,7 @@ if __name__ == "__main__":
     args.num_iterations = args.total_timesteps // args.batch_size
 
     if args.self_play_option:
-        sp_prefix = "selfplay_"
+        sp_prefix = "sp_"
     else:
         sp_prefix = ""
 

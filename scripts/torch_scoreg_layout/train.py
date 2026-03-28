@@ -145,8 +145,12 @@ if __name__ == "__main__":
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
 
+    if args.self_play_option:
+        sp_prefix = "sp_"
+    else:
+        sp_prefix = ""
 
-    model_name = f"sp_pop_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
