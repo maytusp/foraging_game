@@ -1,7 +1,6 @@
-# 26 March 2026
-# Training large population > 30 with simple grid (no obstacle)
+# Training large population = 100
+# Remove message mask to see if it converges much slower than the previous one
 # TODO: Note that this one doesn't have mask grad for message policy, diffefrent from train.py
-import os
 import random
 import time
 from dataclasses import dataclass
@@ -18,7 +17,7 @@ from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple
 
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_large_pop_fc --no-agent-visible --num-networks 100 --seed 1
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_large_pop_fc_nomask --no-agent-visible --num-networks 100 --seed 1
 @dataclass
 class Args:
     seed: int = 4
@@ -79,11 +78,11 @@ class Args:
     d_model: int = 128
     n_words: int = 4
     image_size: int = 3
-    comm_field: int = 5
+    comm_field: int = 100
     num_foods: int = 2
     grid_size: int = 5
-    max_steps: int = 30
-    communication_steps: int= 6
+    max_steps: int = 10
+    communication_steps: int= 10
 
 
     agent_visible: bool = True
@@ -136,7 +135,7 @@ if __name__ == "__main__":
     args.num_iterations = args.total_timesteps // args.batch_size
 
 
-    model_name = f"fc_ppo_{args.num_networks}net"
+    model_name = f"pop_ppo_{args.num_networks}net_nomask"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -334,17 +333,15 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             # --- build [B,A] tensors and step env ONCE on GPU ---
             acts_BA = torch.stack([action[i].long().to(device)    for i in range(num_agents)], dim=1)  # [B,A]
-            (next_obs, next_locs, msg_masks), all_rewards, all_terminations, all_truncations, infos =  envs._step_core(acts_BA)
            
+            (next_obs, next_locs, _), all_rewards, all_terminations, all_truncations, infos = envs._step_core(acts_BA)
+
             env_info = (all_rewards, all_terminations, all_truncations)
-            if args.ablate_message:
-                msg_masks = torch.zeros_like(msg_masks, dtype=torch.bool)
+
             for i in range(num_agents):
-                msg_masks = msg_masks.unsqueeze(-1).sum((1,2)).clamp(max=1) # (B,1) mask if two agents can communicate
-                #TODO Add mask during training
-                next_r_messages[:,i] = msg_masks.squeeze() * s_message[swap_agent[i]] # (B,1) agent exchange msgs
+                next_r_messages[:, i] = s_message[swap_agent[i]]
                 next_done[i] = (all_terminations | all_truncations).float()
-                rewards[i][step] = all_rewards[:, i] # (B,A)
+                rewards[i][step] = all_rewards[:, i]
 
             # Save Model Checkpoints: loop over networks not agents
             if (global_step // args.num_envs) % args.save_frequency == 0:  # Adjust `save_frequency` as needed
