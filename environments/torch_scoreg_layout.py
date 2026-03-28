@@ -31,14 +31,24 @@ WAAAAAAAW
 WWWWWWWWW
 """
 
+
+simple_layout_7x7 = """
+AAAAAAA
+FFFFFFF
+FFFFFFF
+W..W..W
+FFFFFFF
+FFFFFFF
+AAAAAAA
+"""
 simple_layout_9x9 = """
 AAAAAAAAA
 FFFFFFFFF
-...WWW...
+FFFWWWFFF
 .........
 WW.....WW
 .........
-...WWW...
+FFFWWWFFF
 FFFFFFFFF
 AAAAAAAAA
 """
@@ -594,27 +604,68 @@ class TorchForagingEnv:
         self.agent_pos[idxs, 1] = agent1
 
         # ------------------------------
-        # Food spawn: on same side as the agent that sees it
+        # Food spawn: for A=2, foods are split across top/bottom according to
+        # which agent can see them. With num_foods=4 this gives 2 top + 2 bottom.
+        # Also avoids spawning foods on top of agents.
         # ------------------------------
-        top_food_pool = self._sample_distinct_from_pool(self._food_spawn_top_flat, n, Fd)        # (n,Fd,2)
-        bottom_food_pool = self._sample_distinct_from_pool(self._food_spawn_bottom_flat, n, Fd)   # (n,Fd,2)
-
-        # Which global agent id is on top for each env?
-        # if top_first=True => top agent id is 0, else top agent id is 1
         top_agent_id = torch.where(
             top_first,
             torch.zeros(n, dtype=torch.long, device=self.device),
             torch.ones(n, dtype=torch.long, device=self.device),
         )  # (n,)
 
-        owners = self.score_visible_to_agent[idxs]   # (n, Fd)
-        food_on_top = owners.eq(top_agent_id.unsqueeze(1))  # (n, Fd)
+        owners = self.score_visible_to_agent[idxs]                  # (n, Fd)
+        food_on_top = owners.eq(top_agent_id.unsqueeze(1))          # (n, Fd) bool
 
-        self.food_pos[idxs] = torch.where(
-            food_on_top.unsqueeze(-1),
-            top_food_pool,
-            bottom_food_pool,
-        )
+        food_pos = torch.empty(n, Fd, 2, dtype=torch.long, device=self.device)
+
+        G = self.cfg.grid_size
+        top_flat_all = self._food_spawn_top_flat
+        bottom_flat_all = self._food_spawn_bottom_flat
+
+        for e in range(n):
+            # How many foods should go to each side in this env?
+            top_mask_e = food_on_top[e]                             # (Fd,)
+            n_top = int(top_mask_e.sum().item())
+            n_bottom = Fd - n_top
+
+            # Agent cells to exclude
+            agent0_flat = self.agent_pos[idxs[e], 0, 0] * G + self.agent_pos[idxs[e], 0, 1]
+            agent1_flat = self.agent_pos[idxs[e], 1, 0] * G + self.agent_pos[idxs[e], 1, 1]
+
+            top_pool = top_flat_all[(top_flat_all != agent0_flat) & (top_flat_all != agent1_flat)]
+            bottom_pool = bottom_flat_all[(bottom_flat_all != agent0_flat) & (bottom_flat_all != agent1_flat)]
+
+            if n_top > top_pool.numel():
+                raise ValueError(
+                    f"Not enough top food spawn cells for num_foods={Fd}. "
+                    f"Need {n_top}, have {top_pool.numel()}."
+                )
+            if n_bottom > bottom_pool.numel():
+                raise ValueError(
+                    f"Not enough bottom food spawn cells for num_foods={Fd}. "
+                    f"Need {n_bottom}, have {bottom_pool.numel()}."
+                )
+
+            # Sample distinct top positions
+            if n_top > 0:
+                perm_top = torch.randperm(top_pool.numel(), device=self.device, generator=self.rng)[:n_top]
+                chosen_top = top_pool[perm_top]
+                top_y = chosen_top // G
+                top_x = chosen_top % G
+                top_pos_e = torch.stack([top_y, top_x], dim=-1).long()
+                food_pos[e, top_mask_e] = top_pos_e
+
+            # Sample distinct bottom positions
+            if n_bottom > 0:
+                perm_bottom = torch.randperm(bottom_pool.numel(), device=self.device, generator=self.rng)[:n_bottom]
+                chosen_bottom = bottom_pool[perm_bottom]
+                bottom_y = chosen_bottom // G
+                bottom_x = chosen_bottom % G
+                bottom_pos_e = torch.stack([bottom_y, bottom_x], dim=-1).long()
+                food_pos[e, ~top_mask_e] = bottom_pos_e
+
+        self.food_pos[idxs] = food_pos
         self.food_done[idxs] = False
 
         self.agent_energy[idxs] = 20.0

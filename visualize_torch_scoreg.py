@@ -10,7 +10,7 @@ from constants import *              # expects: cell_size, WHITE, BLACK, agent_i
 from keyboard_control import *       # expects: get_agent_action(events, agent_id)
 
 # If you placed the class in torch_foraging_env.py:
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5, warmup_layout_7x7, simple_layout_9x9
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5, warmup_layout_7x7, simple_layout_7x7, simple_layout_9x9
 
 # --------------------------- Pygame helpers ---------------------------
 
@@ -106,7 +106,7 @@ def run_human_play(
     screen, font = init_pygame(env.cfg.grid_size)
     clock = pygame.time.Clock()
     layout_phase_switched = False
-    final_layout = simple_layout_9x9
+    final_layout = simple_layout_7x7
     for ep in range(num_episodes):
         frames = []
         running = True
@@ -176,18 +176,18 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     cfg = EnvConfig(
-        grid_size=5,
+        grid_size=7,
         image_size=5,
         comm_field=5,
         num_agents=2,
-        num_foods=2,
+        num_foods=4,
         num_walls=20,
         max_steps=50,
         agent_visible=True,
         food_energy_fully_visible=False,
         mode="train",
         seed=42,
-        ascii_layout=simple_layout_5x5,
+        ascii_layout=simple_layout_7x7,
     )
     # num_envs=1 for interactive play
     env = TorchForagingEnv(cfg, device=device, num_envs=1)

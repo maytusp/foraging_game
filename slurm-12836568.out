@@ -1,0 +1,7 @@
+Job is using 1 GPU(s) with ID(s) 0 and 12 CPU core(s)
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `target-kl` is annotated with type `<class 'float'>`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+parsed seed: 1
+run_name: ppo_2net/grid9_img5_ni2_nw4_ms30_comm_field3_seed1
+save_dir: checkpoints/torch_scoreg_layout/ppo_2net/grid9_img5_ni2_nw4_ms30_comm_field3/seed1/
+[2026-03-28T02:39:19.961] error: *** JOB 12836568 ON node885 CANCELLED AT 2026-03-28T02:39:19 DUE to SIGNAL Terminated ***

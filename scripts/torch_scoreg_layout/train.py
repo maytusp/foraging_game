@@ -17,7 +17,7 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_9x9
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup_layout_7x7, simple_layout_7x7
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 # python -m scripts.torch_scoreg_layout.train
@@ -83,15 +83,15 @@ class Args:
     image_size: int = 5
     comm_field: int = 13
     num_foods: int = 2
-    grid_size: int = 9
+    grid_size: int = 7
     max_steps: int = 30
-    communication_steps: int= 8
+    communication_steps: int= 5
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
-    reset_on_phase_change: bool = True
-    first_layout = warmup_layout_7x7
-    final_layout = simple_layout_9x9
+    reset_on_phase_change: bool = False
+    first_layout = simple_layout_7x7
+    final_layout = simple_layout_7x7
 
     agent_visible: bool = True
     time_pressure: bool = True
@@ -124,7 +124,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "scoreg_layout"
     """the wandb's project name"""
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     args.num_iterations = args.total_timesteps // args.batch_size
 
 
-    model_name = f"ppo_{args.num_networks}net"
+    model_name = f"ppo_{args.num_networks}net_nowarmup"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:

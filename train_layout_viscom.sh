@@ -1,5 +1,5 @@
 #!/bin/bash --login
-#SBATCH -p gpuA               # A100 GPUs
+#SBATCH -p gpuL               # A100 GPUs
 #SBATCH -G 1                  # 1 GPU
 #SBATCH -t 4-0                # Wallclock limit (1-0 is 1 day, 4-0 is the max permitted)
 #SBATCH -n 1                  # One Slurm task
@@ -19,9 +19,6 @@ echo "Job is using $SLURM_GPUS GPU(s) with ID(s) $CUDA_VISIBLE_DEVICES and $SLUR
 source activate habitat
 
 
-python -m scripts.torch_scoreg_layout.train --seed 1
-python -m scripts.torch_scoreg_layout.train --seed 1 --no-agent-visible
-python -m scripts.torch_scoreg_layout.train --seed 1 --ablate-message
-
-# python -m scripts.torch_scoreg_layout.train --seed 2
-# python -m scripts.torch_scoreg_layout.train --seed 3
+python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 5
+# python -m scripts.torch_scoreg_layout.train --seed 2 --comm_field 5
+# python -m scripts.torch_scoreg_layout.train --seed 3 --comm_field 5
