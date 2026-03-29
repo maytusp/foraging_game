@@ -2,13 +2,14 @@ Job is using 1 GPU(s) with ID(s) 0 and 12 CPU core(s)
 /mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `target-kl` is annotated with type `<class 'float'>`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
   warnings.warn(message)
 wandb: Currently logged in as: maytusp to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: setting up run fy88mxkp
+wandb: setting up run d1fspa9a
 wandb: Tracking run with wandb version 0.23.1
-wandb: Run data is saved locally in /net/scratch/n70579mp/emergent_language/foraging_game/wandb/run-20260328_105341-fy88mxkp
+wandb: Run data is saved locally in /net/scratch/n70579mp/emergent_language/foraging_game/wandb/run-20260329_033236-d1fspa9a
 wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run sp_pop_ppo_15net_invisible/grid7_img5_ni2_nw5_ms30_comm_field100_seed1
+wandb: Syncing run sp_ring_ppo_100net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100_seed1
 wandb: ⭐️ View project at https://wandb.ai/maytusp/scoreg_layout
-wandb: 🚀 View run at https://wandb.ai/maytusp/scoreg_layout/runs/fy88mxkp
+wandb: 🚀 View run at https://wandb.ai/maytusp/scoreg_layout/runs/d1fspa9a
 parsed seed: 1
-run_name: sp_pop_ppo_15net_invisible/grid7_img5_ni2_nw5_ms30_comm_field100_seed1
-save_dir: checkpoints/torch_scoreg_layout/sp_pop_ppo_15net_invisible/grid7_img5_ni2_nw5_ms30_comm_field100/seed1/
+run_name: sp_ring_ppo_100net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100_seed1
+save_dir: checkpoints/torch_scoreg_layout/sp_ring_ppo_100net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/
+[2026-03-29T07:07:08.949] error: *** JOB 12890897 ON node874 CANCELLED AT 2026-03-29T07:07:08 DUE to SIGNAL Terminated ***
