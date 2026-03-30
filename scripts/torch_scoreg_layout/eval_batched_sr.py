@@ -3,6 +3,11 @@
 # Example:
 # CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.eval_batched_sr --num-networks 100 --model-name pop_ppo_100net_invisible --seed 1 --all-pairs --batch-num-envs 1024
 
+# Compare Vis-Com, Inv-Com, Vis-NoCom using 15net on 7x7 with 4 items
+# python -m scripts.torch_scoreg_layout.eval_batched_sr --num-networks 15 --model-name sp_pop_ppo_15net --model-step 691200000 --seed 1 --all-pairs --batch-num-envs 1024 --grid-size 7 --image-size 5 --N-i 2 --ascii_layout_name simple_layout_7x7 --agent-visible
+
+# python -m scripts.torch_scoreg_layout.eval_batched_sr --num-networks 15 --model-name sp_pop_ppo_15net_invisible --model-step 691200000 --seed 1 --all-pairs --batch-num-envs 1024 --grid-size 7 --image-size 5 --N-i 2 --ascii_layout_name simple_layout_7x7 --no-agent-visible
+
 from __future__ import annotations
 import os
 import time
@@ -16,6 +21,11 @@ from environments.torch_scoreg_layout import (
     EnvConfig,
     TorchForagingEnv,
     simple_layout_5x5,
+    simple_layout_7x7,
+    simple_layout_9x9,
+    simple_layout_13x13,
+    simple_layout_17x17,
+    
 )
 from models.pickup_models import PPOLSTMCommAgent
 
@@ -109,6 +119,10 @@ def resolve_model_name(args: Args) -> str:
 def resolve_layout(args: Args):
     layout_map = {
         "simple_layout_5x5": simple_layout_5x5,
+        "simple_layout_7x7": simple_layout_7x7,
+        "simple_layout_9x9": simple_layout_9x9,
+        "simple_layout_13x13": simple_layout_13x13,
+        "simple_layout_17x17": simple_layout_17x17,
     }
     if args.ascii_layout_name not in layout_map:
         raise ValueError(f"Unknown ascii_layout_name: {args.ascii_layout_name}")

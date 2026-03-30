@@ -22,8 +22,6 @@ from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 15 --no-agent-visible
 
-# TODO Train 100 nets on curriculum simple_layout_7x7 --> simple_layout_9x9 --> simple_layout_13x13 initialise from pretrained on 92 workstation
-# TODO Train 100 nets with masked gradient
 @dataclass
 class Args:
     seed: int = 4
