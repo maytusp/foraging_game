@@ -8,7 +8,6 @@ import os
 import time
 import random
 from dataclasses import dataclass
-
 import numpy as np
 import torch
 import tyro

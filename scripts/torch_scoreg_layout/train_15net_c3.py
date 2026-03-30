@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_7x7, simple_layout_9x9, simple_layout_13x13, simple_layout_17x17
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_curriculum --seed 1 --comm_field 100 --num_networks 100 --agent-visible
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_15net_c3 --seed 1 --comm_field 100 --num_networks 15 --agent-visible
 
 @dataclass
 class Args:
@@ -25,13 +25,13 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(2.5e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
     num_envs: int = 512
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = 30
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -60,16 +60,16 @@ class Args:
     target_kl: float = None
 
     # Populations
-    num_networks: int = 100
-    reset_iteration: int = 1
+    num_networks: int = 15
+    reset_iteration: int = 2
     self_play_option: bool = True
 
     log_every: int = 32
     d_model: int = 128
-    n_words: int = 4
-    image_size: int = 3
+    n_words: int = 5
+    image_size: int = 5
     comm_field: int = 100
-    num_foods: int = 2
+    num_foods: int = 4
     grid_size: int = 7
     max_steps: int = 30
     communication_steps: int = 6
@@ -77,16 +77,12 @@ class Args:
     # curriculum
     reset_on_phase_change: bool = True
     curriculum_layouts: tuple = (
-        simple_layout_7x7,
         simple_layout_9x9,
         simple_layout_13x13,
-        simple_layout_17x17,
     )
     curriculum_steps: tuple = (
-        int(200e6),
-        int(200e6),
-        int(600e6),
         int(1e9),
+        int(2e9),
     )
 
 
@@ -122,6 +118,7 @@ def layout_to_grid_size(layout_str: str) -> int:
 
 def make_env(layout_str):
     grid_size = layout_to_grid_size(layout_str)
+    gridsize2maxsteps = {9:30, 13:60, 17:120}
     cfg = EnvConfig(
         grid_size=grid_size,
         image_size=args.image_size,
@@ -129,7 +126,7 @@ def make_env(layout_str):
         num_agents=2,
         num_foods=args.num_foods,
         num_walls=0,
-        max_steps=grid_size ** 2,
+        max_steps=gridsize2maxsteps[grid_size],
         agent_visible=args.agent_visible,
         mode=args.mode,
         seed=args.seed,
@@ -148,9 +145,9 @@ if __name__ == "__main__":
     if args.load_pretrained and not args.ckpt_path:
         args.learning_rate = 2e-4
         args.ckpt_path = {
-            a: f"./checkpoints/torch_scoreg_layout_no_gradmask/"
-               f"sp_pop_ppo_100net_invisible/grid5_img3_ni2_nw4_ms30_comm_field5/"
-               f"seed1/agent_{a}_step_2048000000.pt"
+            a: f"./checkpoints/torch_scoreg_layout/"
+               f"sp_pop_ppo_15net/grid7_img5_ni2_nw5_ms30_comm_field100/"
+               f"seed1/agent_{a}_step_691200000.pt"
             for a in range(args.num_networks)
         }
 
@@ -169,7 +166,7 @@ if __name__ == "__main__":
         sp_prefix = "sp_"
     else:
         sp_prefix = ""
-    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum"
+    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum3"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:

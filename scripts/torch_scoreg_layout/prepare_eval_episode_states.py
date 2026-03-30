@@ -2,8 +2,7 @@
 # Record a fixed bank of initial episode conditions for langsim / topsim evaluation
 #
 # Example:
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.prepare_eval_episode_states \
-#   --num-episodes 1000 --seed 1 --save-path logs/init_bank/grid5_test_seed1.npz
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.prepare_eval_episode_states --num-episodes 1000 --seed 1 --save-path logs/init_bank/grid5_test_seed1.npz
 
 from __future__ import annotations
 import os
