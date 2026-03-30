@@ -18,4 +18,5 @@ echo "Job is using $SLURM_GPUS GPU(s) with ID(s) $CUDA_VISIBLE_DEVICES and $SLUR
 
 source activate habitat
 
-python -m scripts.torch_scoreg_layout.train_15net_c1 --seed 1 --comm_field 100 --num_networks 15 --agent-visible
+python -m scripts.torch_scoreg_layout.train_c5 --seed 1 --comm_field 100 --num_networks 3 --agent-visible
+

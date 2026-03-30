@@ -2,7 +2,7 @@
 # Record a fixed bank of initial episode conditions for langsim / topsim evaluation
 #
 # Example:
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.record_init_bank \
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.prepare_eval_episode_states \
 #   --num-episodes 1000 --seed 1 --save-path logs/init_bank/grid5_test_seed1.npz
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ class Args:
     # env config
     grid_size: int = 5
     image_size: int = 3
-    comm_field: int = 5
+    comm_field: int = 100
     num_foods: int = 2
     max_steps: int = 30
     communication_steps: int = 6

@@ -1,7 +1,7 @@
 # Batched success-rate evaluation for population agents
 # Updated to match train_large_pop_fc.py
 # Example:
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.eval_batched_sr --num-networks 100 --model-name fc_ppo_100net_invisible --seed 1 --all-pairs --batch-num-envs 1024
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.eval_batched_sr --num-networks 100 --model-name pop_ppo_100net_invisible --seed 1 --all-pairs --batch-num-envs 1024
 
 from __future__ import annotations
 import os
@@ -29,7 +29,7 @@ class Args:
 
     # population / checkpoints
     num_networks: int = 100
-    model_name: str = "fc_ppo_100net_invisible"
+    model_name: str = "pop_ppo_100net_invisible"
     model_step: int | None = None
     auto_model_name: bool = False
 
@@ -38,10 +38,10 @@ class Args:
     batch_num_envs: int = 256
     grid_size: int = 5
     image_size: int = 3
-    comm_field: int = 5
+    comm_field: int = 100
     N_i: int = 2
     max_steps: int = 30
-    n_words: int = 4
+    n_words: int = 5
     d_model: int = 128
     communication_steps: int = 6
 
@@ -79,7 +79,7 @@ class Args:
                 9: 512000000,
                 12: 768000000,
                 15: 819200000,
-                100: 2048000000,
+                100: 1382400000,
             }
         if self.model_step is None:
             self.model_step = self.num_nets_to_model_step[self.num_networks]

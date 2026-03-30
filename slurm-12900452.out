@@ -1,0 +1,2 @@
+Job is using 1 GPU(s) with ID(s) 0 and 12 CPU core(s)
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/bin/python: No module named scripts.torch_scoreg_layout.train_15net_c3

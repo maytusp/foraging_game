@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_7x7, simple_layout_9x9, simple_layout_13x13, simple_layout_17x17
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_15net_c2 --seed 1 --comm_field 100 --num_networks 15 --agent-visible
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_15net_c3 --seed 1 --comm_field 100 --num_networks 3 --agent-visible
 
 @dataclass
 class Args:
@@ -25,7 +25,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1.6e9)
+    total_timesteps: int = int(3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -60,8 +60,8 @@ class Args:
     target_kl: float = None
 
     # Populations
-    num_networks: int = 15
-    reset_iteration: int = 1
+    num_networks: int = 3
+    reset_iteration: int = 2
     self_play_option: bool = True
 
     log_every: int = 32
@@ -71,19 +71,20 @@ class Args:
     comm_field: int = 100
     num_foods: int = 4
     grid_size: int = 7
-    max_steps: int = 100
+    max_steps: int = 30
     communication_steps: int = 6
 
     # curriculum
     reset_on_phase_change: bool = True
     curriculum_layouts: tuple = (
+        simple_layout_9x9,
         simple_layout_13x13,
-        simple_layout_17x17,
     )
     curriculum_steps: tuple = (
-        int(600e6),
         int(1e9),
+        int(2e9),
     )
+
 
     agent_visible: bool = True
     time_pressure: bool = True
@@ -117,7 +118,7 @@ def layout_to_grid_size(layout_str: str) -> int:
 
 def make_env(layout_str):
     grid_size = layout_to_grid_size(layout_str)
-    gridsize2maxsteps = {7:30, 9:50, 13:100, 17:200}
+    gridsize2maxsteps = {9:30, 13:60, 17:120}
     cfg = EnvConfig(
         grid_size=grid_size,
         image_size=args.image_size,
@@ -165,7 +166,7 @@ if __name__ == "__main__":
         sp_prefix = "sp_"
     else:
         sp_prefix = ""
-    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum2"
+    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum3"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -345,7 +346,8 @@ if __name__ == "__main__":
 
                 print(
                     f"[Curriculum Switch] global_step={global_step}: "
-                    f"switching to phase {curriculum_phase_idx} "
+                    f"switching to phase {curriculum_phase_idx} / layout "
+                    f"{[7, 9, 13, 17][curriculum_phase_idx]}x{[7, 9, 13, 17][curriculum_phase_idx]}"
                 )
 
 

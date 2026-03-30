@@ -13,10 +13,10 @@ from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
 
-from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_7x7, simple_layout_9x9, simple_layout_13x13, simple_layout_17x17
+from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_7x7, simple_layout_9x9, simple_layout_13x13, simple_layout_17x17, simple_layout_21x21
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_15net_c1 --seed 1 --comm_field 100 --num_networks 15 --agent-visible
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_c4 --seed 1 --comm_field 100 --num_networks 3 --agent-visible
 
 @dataclass
 class Args:
@@ -25,7 +25,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(1.6e9)
+    total_timesteps: int = int(2.3e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -60,8 +60,8 @@ class Args:
     target_kl: float = None
 
     # Populations
-    num_networks: int = 15
-    reset_iteration: int = 1
+    num_networks: int = 3
+    reset_iteration: int = 4
     self_play_option: bool = True
 
     log_every: int = 32
@@ -80,12 +80,15 @@ class Args:
         simple_layout_9x9,
         simple_layout_13x13,
         simple_layout_17x17,
+        simple_layout_21x21,
     )
     curriculum_steps: tuple = (
-        int(200e6),
-        int(400e6),
+        int(3e8),
+        int(4e8),
+        int(6e8),
         int(1e9),
     )
+
 
 
     agent_visible: bool = True
@@ -120,6 +123,7 @@ def layout_to_grid_size(layout_str: str) -> int:
 
 def make_env(layout_str):
     grid_size = layout_to_grid_size(layout_str)
+    gridsize2maxsteps = {9:30, 13:60, 17:90, 21:120}
     cfg = EnvConfig(
         grid_size=grid_size,
         image_size=args.image_size,
@@ -127,7 +131,7 @@ def make_env(layout_str):
         num_agents=2,
         num_foods=args.num_foods,
         num_walls=0,
-        max_steps=grid_size ** 2,
+        max_steps=gridsize2maxsteps[grid_size],
         agent_visible=args.agent_visible,
         mode=args.mode,
         seed=args.seed,
@@ -167,7 +171,7 @@ if __name__ == "__main__":
         sp_prefix = "sp_"
     else:
         sp_prefix = ""
-    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum1"
+    model_name = f"{sp_prefix}pop_ppo_{args.num_networks}net_curriculum4"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
