@@ -10,111 +10,24 @@ from typing import Dict, Optional, Tuple, Literal
 
 import torch
 import torch.nn.functional as F
+
 simple_layout_5x5 = """
 AAAAA
 FFFFF
-.....
+W.W.W
 FFFFF
 AAAAA
-"""
-
-
-warmup_layout_7x7 = """
-WWWWWWWWW
-WAAAAAAAW
-WFFFFFFFW
-WFFFFFFFW
-W.......W
-WFFFFFFFW
-WFFFFFFFW
-WAAAAAAAW
-WWWWWWWWW
 """
 
 
 simple_layout_7x7 = """
 AAAAAAA
 FFFFFFF
-FFFFFFF
-W..W..W
-FFFFFFF
+.......
+W.W.W.W
+.......
 FFFFFFF
 AAAAAAA
-"""
-
-simple_layout_9x9 = """
-WWAAAAAWW
-FFFFFFFFF
-FFFFFFFFF
-WW..W..WW
-WW..W..WW
-WW..W..WW
-FFFFFFFFF
-FFFFFFFFF
-WWAAAAAWW
-"""
-
-
-
-simple_layout_13x13 = """
-AAAAAAAAAAAAA
-FFFFFFFFFFFFF
-FFFFFWWWFFFFF
-.............
-.............
-.............
-WW.........WW
-.............
-.............
-.............
-FFFFFWWWFFFFF
-FFFFFFFFFFFFF
-AAAAAAAAAAAAA
-"""
-
-
-simple_layout_17x17 = """
-AAAAAAAAAAAAAAAAA
-FFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFF
-.................
-.................
-......WWWWW......
-.................
-.................
-WWWW.........WWWW
-.................
-.................
-......WWWWW......
-.................
-.................
-FFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFF
-AAAAAAAAAAAAAAAAA
-"""
-
-simple_layout_21x21 = """
-AAAAAAAAAAAAAAAAAAAAA
-FFFFFFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFFFFFF
-WWWWWW.........WWWWWW
-.....................
-.....................
-......WWWWWWWWW......
-.....................
-.....................
-WWWWWW.........WWWWWW
-.....................
-.....................
-......WWWWWWWWW......
-.....................
-WWWWWW.........WWWWWW
-.....................
-FFFFFFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFFFFFF
-AAAAAAAAAAAAAAAAAAAAA
 """
 
 @dataclass
