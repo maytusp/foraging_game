@@ -14,7 +14,7 @@ import torch.nn.functional as F
 simple_layout_5x5 = """
 AAAAA
 FFFFF
-W.W.W
+.....
 FFFFF
 AAAAA
 """
