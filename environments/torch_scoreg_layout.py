@@ -397,7 +397,10 @@ class TorchForagingEnv:
                 elif ch == ".":
                     pass
                 elif ch == "A":
+                    # `A` marks agent spawn cells, but foods may also use those
+                    # cells as long as the cell is not currently occupied.
                     agent_spawn[y, x] = True
+                    food_spawn[y, x] = True
                 elif ch == "F":
                     food_spawn[y, x] = True
                 else:
@@ -669,7 +672,8 @@ class TorchForagingEnv:
         # ------------------------------
         # Food spawn: for A=2, foods are split across top/bottom according to
         # which agent can see them. With num_foods=4 this gives 2 top + 2 bottom.
-        # Also avoids spawning foods on top of agents.
+        # `A` cells are allowed in the food pool, but the currently occupied
+        # agent cells are still excluded below.
         # ------------------------------
         top_agent_id = torch.where(
             top_first,
