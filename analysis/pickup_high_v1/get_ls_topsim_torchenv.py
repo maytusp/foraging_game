@@ -247,7 +247,8 @@ if __name__ == "__main__":
                         # "pop_sp_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
                         # "pop_sp_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
                         # "pop_sp_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
-                        "fc_ppo_100net_invisible": {'seed1': None, 'seed2': None, 'seed3':None},
+                        # "fc_ppo_100net_invisible": {'seed1': None, 'seed2': None, 'seed3':None},
+                        "pop_mappo_2net_invisible": {'seed1': None, 'seed2': None, 'seed3':None},
                         }
     model2numnet = {
         "dec_ppo_invisible": 2,
@@ -264,6 +265,7 @@ if __name__ == "__main__":
         "pop_sp_ppo_12net_invisible": 12,
         "pop_sp_ppo_15net_invisible": 15,
         "fc_ppo_100net_invisible": 100,
+        "pop_mappo_2net_invisible": 2,
     }
     compute_topsim = True
     cbar = False
@@ -275,7 +277,7 @@ if __name__ == "__main__":
         per_agent_posdis = []
         for seed in range(1,2):
             ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
-            combination_name = "grid5_img3_ni2_nw4_ms30_comm_field5"
+            combination_name = "grid5_img3_ni2_nw5_ms30_comm_field100"
             if ckpt_name is not None:
                 combination_name += f"_{ckpt_name}"
 
@@ -287,12 +289,7 @@ if __name__ == "__main__":
             os.makedirs(saved_fig_dir, exist_ok=True)
             os.makedirs(saved_score_dir, exist_ok=True)
             mode = "test"
-            if num_networks <= 2:
-                network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(num_networks)]
-            elif num_networks == 100:
-                network_pairs = [f"{i}-0" for i in range(num_networks)]
-            else:
-                network_pairs = [f"{i}-{j}" for i in range(num_networks) for j in range(i+1)]
+            network_pairs = [f"{i}-0" for i in range(num_networks)]
 
             log_file_path = {}
             sr_dict = {}

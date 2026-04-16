@@ -1,8 +1,3 @@
-# Created: 24 Aug 2025
-# The code is for training agents with separated networks during training and execution (no parameter sharing)
-# Fully Decentralise Training and Decentralise Execution
-# docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
-# Add communication masks
 import os
 import random
 import time
@@ -21,7 +16,7 @@ from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, warmup
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 15 --no-agent-visible
-
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train --seed 1 --comm_field 100 --num_networks 3 --no-agent-visible
 @dataclass
 class Args:
     seed: int = 4
@@ -29,7 +24,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(3e9)
+    total_timesteps: int = int(5e8)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -84,15 +79,15 @@ class Args:
     image_size: int = 5
     comm_field: int = 100
     num_foods: int = 2
-    grid_size: int = 7
-    max_steps: int = 30
+    grid_size: int = 9
+    max_steps: int = 50
     communication_steps: int= 6
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
     reset_on_phase_change: bool = False
-    first_layout = simple_layout_7x7
-    final_layout = simple_layout_7x7
+    first_layout = simple_layout_9x9
+    final_layout = simple_layout_9x9
 
     agent_visible: bool = True
     time_pressure: bool = True

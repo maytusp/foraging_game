@@ -439,3 +439,213 @@ class PPOTransformerCommAgent(nn.Module):
             self.critic(hidden),
             new_memory,
         )
+
+# Below is the architecutre for MAPPO with non-parameter sharing setting
+# Actors have unique parameters and share the same critic.
+class PPOLSTMCommActor(nn.Module):
+    """
+    Decentralized recurrent actor with communication.
+    Observations: [image, location, received_message]
+    """
+    def __init__(
+        self,
+        num_actions,
+        grid_size=5,
+        n_words=16,
+        embedding_size=16,
+        num_channels=1,
+        image_size=3,
+        d_model=128,
+    ):
+        super().__init__()
+        self.grid_size = grid_size
+        self.n_words = n_words
+        self.embedding_size = embedding_size
+        self.image_feat_dim = 16
+        self.loc_dim = 4
+        self.num_channels = num_channels
+        self.d_model = d_model
+
+        self.visual_encoder = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(image_size * image_size * num_channels, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, self.image_feat_dim),
+            nn.ReLU(),
+        )
+
+        self.message_encoder = nn.Sequential(
+            nn.Embedding(n_words, embedding_size),
+            nn.Linear(embedding_size, embedding_size),
+            nn.ReLU(),
+        )
+
+        self.location_encoder = nn.Linear(2, self.loc_dim)
+
+        self.lstm = nn.LSTM(self.image_feat_dim + self.loc_dim + self.embedding_size, d_model)
+        for name, param in self.lstm.named_parameters():
+            if "bias" in name:
+                nn.init.constant_(param, 0)
+            elif "weight" in name:
+                nn.init.orthogonal_(param, 1.0)
+
+        self.actor = layer_init(nn.Linear(d_model, num_actions), std=0.01)
+        self.message_head = layer_init(nn.Linear(d_model, n_words), std=0.01)
+
+    def reset_actor(self):
+        layer_init(self.actor, std=0.01)
+        layer_init(self.message_head, std=0.01)
+
+    def encode_inputs(self, image, location, message):
+        image_feat = self.visual_encoder(image / 255.0)
+        location = location / self.grid_size
+        location_feat = self.location_encoder(location)
+
+        message_feat = self.message_encoder(message.long())
+        message_feat = message_feat.view(-1, self.embedding_size)
+
+        hidden = torch.cat((image_feat, location_feat, message_feat), dim=1)
+        return hidden
+
+    def get_states(self, inputs, lstm_state, done, tracks=None):
+        batch_size = lstm_state[0].shape[1]
+        image, location, message = inputs
+
+        hidden = self.encode_inputs(image, location, message)
+        hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
+        done = done.reshape((-1, batch_size))
+
+        new_hidden = []
+        for h, d in zip(hidden, done):
+            h, lstm_state = self.lstm(
+                h.unsqueeze(0),
+                (
+                    (1.0 - d).view(1, -1, 1) * lstm_state[0],
+                    (1.0 - d).view(1, -1, 1) * lstm_state[1],
+                ),
+            )
+            new_hidden.append(h)
+
+        new_hidden = torch.flatten(torch.cat(new_hidden), 0, 1)
+        return new_hidden, lstm_state
+
+    def get_action_and_logprob(self, inputs, lstm_state, done, action=None, message=None, tracks=None):
+        hidden, lstm_state = self.get_states(inputs, lstm_state, done, tracks)
+
+        action_logits = self.actor(hidden)
+        action_dist = Categorical(logits=action_logits)
+        if action is None:
+            action = action_dist.sample()
+
+        message_logits = self.message_head(hidden)
+        message_dist = Categorical(logits=message_logits)
+        if message is None:
+            message = message_dist.sample()
+
+        return (
+            action,
+            action_dist.log_prob(action),
+            action_dist.entropy(),
+            message,
+            message_dist.log_prob(message),
+            message_dist.entropy(),
+            lstm_state,
+        )
+
+    def evaluate_actions(self, inputs, lstm_state, done, action, message, tracks=None):
+        hidden, lstm_state = self.get_states(inputs, lstm_state, done, tracks)
+
+        action_logits = self.actor(hidden)
+        action_dist = Categorical(logits=action_logits)
+
+        message_logits = self.message_head(hidden)
+        message_dist = Categorical(logits=message_logits)
+
+        return (
+            action_dist.log_prob(action),
+            action_dist.entropy(),
+            message_dist.log_prob(message),
+            message_dist.entropy(),
+            lstm_state,
+        )
+
+class CentralizedCritic(nn.Module):
+    """
+    Shared centralized critic.
+    Input:
+        joint_obs:      [B, A, C, H, W]
+        joint_locs:     [B, A, 2]
+        joint_messages: [B, A]
+    Output:
+        value:          [B]
+    """
+    def __init__(
+        self,
+        num_agents,
+        num_channels=1,
+        image_size=3,
+        n_words=16,
+        embedding_size=16,
+        d_model=128,
+        grid_size=5,
+    ):
+        super().__init__()
+        self.num_agents = num_agents
+        self.grid_size = grid_size
+        self.embedding_size = embedding_size
+        self.image_feat_dim = 32
+        self.loc_dim = 8
+
+        self.visual_encoder = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(image_size * image_size * num_channels, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, self.image_feat_dim),
+            nn.ReLU(),
+        )
+
+        self.location_encoder = nn.Sequential(
+            nn.Linear(2, self.loc_dim),
+            nn.ReLU(),
+        )
+
+        self.message_encoder = nn.Sequential(
+            nn.Embedding(n_words, embedding_size),
+            nn.Linear(embedding_size, embedding_size),
+            nn.ReLU(),
+        )
+
+        per_agent_dim = self.image_feat_dim + self.loc_dim + embedding_size
+        joint_dim = num_agents * per_agent_dim
+
+        self.value_net = nn.Sequential(
+            layer_init(nn.Linear(joint_dim, 256)),
+            nn.ReLU(),
+            layer_init(nn.Linear(256, 256)),
+            nn.ReLU(),
+            layer_init(nn.Linear(256, 1), std=1.0),
+        )
+
+    def forward(self, joint_obs, joint_locs, joint_messages):
+        B, A, C, H, W = joint_obs.shape
+        assert A == self.num_agents
+
+        obs_flat = joint_obs.reshape(B * A, C, H, W)
+        loc_flat = joint_locs.reshape(B * A, 2) / self.grid_size
+        msg_flat = joint_messages.reshape(B * A).long()
+
+        obs_feat = self.visual_encoder(obs_flat)
+        loc_feat = self.location_encoder(loc_flat)
+        msg_feat = self.message_encoder(msg_flat).view(B * A, -1)
+
+        feat = torch.cat([obs_feat, loc_feat, msg_feat], dim=-1)
+        feat = feat.view(B, A, -1).reshape(B, -1)
+
+        value = self.value_net(feat).squeeze(-1)
+        return value
