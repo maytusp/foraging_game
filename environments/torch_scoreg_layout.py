@@ -43,16 +43,17 @@ AAAAAAA
 """
 
 simple_layout_9x9 = """
-AAAAAAAAA
+WWAAAAAWW
 FFFFFFFFF
-FFFWWWFFF
-.........
-WW.....WW
-.........
-FFFWWWFFF
 FFFFFFFFF
-AAAAAAAAA
+WW..W..WW
+WW..W..WW
+WW..W..WW
+FFFFFFFFF
+FFFFFFFFF
+WWAAAAAWW
 """
+
 
 
 simple_layout_13x13 = """
