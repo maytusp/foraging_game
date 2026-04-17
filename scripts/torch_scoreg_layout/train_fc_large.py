@@ -88,7 +88,7 @@ class Args:
     num_foods: int = 2
     grid_size: int = 5
     max_steps: int = 30
-    communication_steps: int= 6
+    communication_steps: int= 5
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)

@@ -20,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring_large --seed 1 --comm_field 100 --num_networks 100 --no-agent-visible
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring_large --seed 1 --comm_field 100 --num_networks 128 --no-agent-visible
 
 @dataclass
 class Args:
@@ -86,7 +86,7 @@ class Args:
     num_foods: int = 2
     grid_size: int = 5
     max_steps: int = 30
-    communication_steps: int= 6
+    communication_steps: int= 5
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)

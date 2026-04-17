@@ -1,0 +1,14 @@
+Script directory: /mnt/iusers01/fatpou01/compsci01/n70579mp/scratch/emergent_language/foraging_game
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `target-kl` is annotated with type `<class 'float'>`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+wandb: Currently logged in as: maytusp to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run m2lzaydv
+wandb: Tracking run with wandb version 0.23.1
+wandb: Run data is saved locally in /net/scratch/n70579mp/emergent_language/foraging_game/wandb/run-20260416_110403-m2lzaydv
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run sp_pop_ppo_128net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100_seed3
+wandb: ⭐️ View project at https://wandb.ai/maytusp/scoreg_layout
+wandb: 🚀 View run at https://wandb.ai/maytusp/scoreg_layout/runs/m2lzaydv
+parsed seed: 3
+run_name: sp_pop_ppo_128net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100_seed3
+save_dir: checkpoints/torch_scoreg_layout/sp_pop_ppo_128net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/
