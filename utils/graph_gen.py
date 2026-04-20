@@ -102,6 +102,48 @@ def watts_strogatz_pairs(num_nodes: int, k: int = 4, p: float = 0.2):
     # Return as list of [u, v] with u < v
     return [[u, v] for (u, v) in sorted(edges)]
 
+
+def circular_clique_pairs(num_nodes: int, clique_size: int = 3):
+    """
+    Build a ring of disjoint local cliques.
+
+    Nodes are split into consecutive blocks of size `clique_size`, and each
+    block is made fully connected. Because adjacent blocks touch at the ring
+    boundary, the overall graph remains circular.
+
+    Example for `num_nodes=15, clique_size=3`:
+    - cliques: (0,1,2), (3,4,5), (6,7,8), ...
+    - bridge edges between neighboring cliques come from the ring itself,
+      such as (2,3), (5,6), ...
+
+    Returns:
+        List of [u, v] pairs with u < v and no duplicates.
+    """
+    if num_nodes < 2:
+        return []
+    if clique_size < 2:
+        raise ValueError("clique_size must be at least 2.")
+    if num_nodes % clique_size != 0:
+        raise ValueError(
+            "num_nodes must be divisible by clique_size for disjoint circular cliques."
+        )
+
+    edges = set()
+
+    for start in range(0, num_nodes, clique_size):
+        clique_nodes = list(range(start, start + clique_size))
+        for u, v in combinations(clique_nodes, 2):
+            edges.add((u, v))
+
+    # Connect the last node of each clique to the first node of the next clique.
+    num_cliques = num_nodes // clique_size
+    for clique_idx in range(num_cliques):
+        end_node = (clique_idx + 1) * clique_size - 1
+        next_start_node = ((clique_idx + 1) * clique_size) % num_nodes
+        edges.add(tuple(sorted((end_node, next_start_node))))
+
+    return [[u, v] for u, v in sorted(edges)]
+
 def optimized_small_world(num_nodes, k=None, max_edges=None):
     """
     Greedy small-world optimization: reduce path length under cost constraint.
@@ -216,8 +258,12 @@ def get_adjacency_matrix(connected_nodes, num_nodes):
     return adj_matrix
 
 possible_pairs_ws = watts_strogatz_pairs(15, k=4, p=0.1)
-# possible_pairs_opt = optimized_small_world(15, k=2, max_edges=30)
-
+ws_pairs_15 = watts_strogatz_pairs(15, k=4, p=0.1)
+ws_pairs_32 = watts_strogatz_pairs(32, k=4, p=0.1)
+ws_pairs_64 = watts_strogatz_pairs(64, k=4, p=0.1)
+opt_pairs_15 = optimized_small_world(15, k=2, max_edges=30)
+opt_pairs_32 = optimized_small_world(32, k=2, max_edges=128)
+opt_pairs_64 = optimized_small_world(64, k=2, max_edges=128)
 # possible_pairs_opt2 = optimized_small_worldv2(15, k=2, max_edges=30)
 # distances = compute_all_pairs_shortest_paths(15, possible_pairs_ws)
 # print(possible_pairs_ws)
@@ -230,11 +276,10 @@ WS_PAIRS_k4_p02 = [[0, 1], [0, 2], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [3, 5
 WS_PAIRS_k4_p0 = [[0, 1], [0, 2], [0, 13], [0, 14], [1, 2], [1, 3], [1, 14], [2, 3], [2, 4], [3, 4], [3, 5], [4, 5], [4, 6], [5, 6], [5, 7], [6, 7], [6, 8], [7, 8], [7, 9], [8, 9], [8, 10], [9, 10], [9, 11], [10, 11], [10, 12], [11, 12], [11, 13], [12, 13], [12, 14], [13, 14]]
 
 OPT_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 0], [0, 7], [0, 8], [1, 8], [1, 9], [2, 9], [2, 10], [3, 10], [3, 11], [4, 11], [4, 12], [5, 12], [5, 13], [6, 13], [6, 14], [7, 14]]
-CC_PAIRS =  [(3, 4), (12, 13), (0, 2), 
-            (8, 9), (9, 11), (0, 14), (13, 14), 
-            (6, 8), (4, 5), (5, 6), (0, 1), (9, 10), 
-            (1, 2), (10, 11), (6, 7), (3, 5), 
-            (12, 14), (2, 3), (11, 12), (7, 8)] # Circular Clique Network: Follows R4
+clq_pairs_15 = circular_clique_pairs(15, clique_size=3)  # Circular clique network
+clq_pairs_16 = circular_clique_pairs(16, clique_size=4)  # Circular clique network
+clq_pairs_64 = circular_clique_pairs(64, clique_size=4)
+
 SET_WS_PAIRS_k4_p02 = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS_k4_p02])
 SET_OPT_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])
 # print(f"Watt-Strogatz: {WS_PAIRS}")
