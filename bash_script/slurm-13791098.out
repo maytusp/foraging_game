@@ -8494,3 +8494,4 @@ wandb: 🚀 View run at https://wandb.ai/maytusp/scoreg_layout/runs/6nbrklap
 parsed seed: 1
 run_name: sp_pop_ppo_3net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100_seed1
 save_dir: checkpoints/torch_scoreg_layout/sp_pop_ppo_3net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/
+[2026-04-17T14:46:51.127] error: *** JOB 13791098 ON node883 CANCELLED AT 2026-04-17T14:46:51 DUE to SIGNAL Terminated ***

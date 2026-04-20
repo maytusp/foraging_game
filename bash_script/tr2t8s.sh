@@ -15,14 +15,14 @@ echo "Script directory: $SCRIPT_DIR"
 
 source activate habitat
 
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 8 --seed 1 --total-timesteps 1000000000
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 3 --seed 1 --total-timesteps 600000000
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 2 --seed 1 --total-timesteps 400000000
+# python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 8 --seed 1 --total-timesteps 1000000000
+# python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 3 --seed 1 --total-timesteps 600000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 2 --seed 1 --total-timesteps 300000000
 
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 8 --seed 2 --total-timesteps 1000000000
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 3 --seed 2 --total-timesteps 600000000
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 2 --seed 2 --total-timesteps 400000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 8 --seed 2 --total-timesteps 500000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 3 --seed 2 --total-timesteps 300000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 2 --seed 2 --total-timesteps 300000000
 
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 8 --seed 3 --total-timesteps 1000000000
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 3 --seed 3 --total-timesteps 600000000
-python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 2 --seed 3 --total-timesteps 400000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 8 --seed 3 --total-timesteps 500000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 3 --seed 3 --total-timesteps 300000000
+python -m scripts.torch_scoreg_layout.train --comm_field 100 --image_size 3 --no-agent-visible --num_networks 2 --seed 3 --total-timesteps 300000000
