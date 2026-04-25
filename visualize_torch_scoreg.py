@@ -106,13 +106,14 @@ def run_human_play(
     screen, font = init_pygame(env.cfg.grid_size)
     clock = pygame.time.Clock()
     layout_phase_switched = False
-    final_layout = simple_layout_7x7
+    final_layout = simple_layout_5x5
     for ep in range(num_episodes):
         frames = []
         running = True
-        if (not layout_phase_switched) and (ep >= 3):
+        if (not layout_phase_switched) and (ep >= 5):
             print(f"[Phase Switch]")
             env.set_layout(final_layout, reset_now=True)
+            env.set_food_spawn_on_agent_cells(True)
             layout_phase_switched = True
         for step in range(max_steps):
             if not running:
@@ -177,12 +178,12 @@ if __name__ == "__main__":
 
     cfg = EnvConfig(
         grid_size=5,
-        image_size=5,
-        comm_field=5,
+        image_size=3,
+        comm_field=100,
         num_agents=2,
         num_foods=2,
-        num_walls=20,
-        max_steps=50,
+        num_walls=0,
+        max_steps=10,
         agent_visible=True,
         food_energy_fully_visible=False,
         mode="train",
@@ -191,11 +192,11 @@ if __name__ == "__main__":
     )
     # num_envs=1 for interactive play
     env = TorchForagingEnv(cfg, device=device, num_envs=1)
-
+    env.set_food_spawn_on_agent_cells(False)
     run_human_play(
         env,
-        num_episodes=5,
-        max_steps=200,
+        num_episodes=10,
+        max_steps=10,
         visualize=True,
         human_play=True,
         save_videos=True,
