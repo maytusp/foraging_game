@@ -19,6 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
+from utils.graph_gen import clq_pairs_64
 from models.pickup_models import PPOLSTMCommAgent
 # CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring_large --seed 1 --comm_field 100 --num_networks 128 --no-agent-visible
 
@@ -29,7 +30,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Foraging-Single-v1"
     """the id of the environment"""
-    total_timesteps: int = int(3e9)
+    total_timesteps: int = int(2e9)
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     else:
         sp_prefix = ""
 
-    model_name = f"{sp_prefix}ring_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}clq_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -279,7 +280,7 @@ if __name__ == "__main__":
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    possible_pairs = [[i,(i+1) % args.num_networks] for i in range(args.num_networks)]
+    possible_pairs = clq_pairs_64
     if args.self_play_option:
         print("ADD SELF PAIRS")
         possible_pairs += [[a,a] for a in range(args.num_networks)]

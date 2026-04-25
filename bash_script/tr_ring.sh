@@ -1,7 +1,7 @@
 #!/bin/bash --login
-#SBATCH -p gpuA              # A100 GPUs
+#SBATCH -p gpuL             # A100 GPUs
 #SBATCH -G 1                  # 1 GPU
-#SBATCH -t 1-0                # Wallclock limit (1-0 is 1 day, 4-0 is the max permitted)
+#SBATCH -t 4-0                # Wallclock limit (1-0 is 1 day, 4-0 is the max permitted)
 #SBATCH -n 1                  # One Slurm task
 #SBATCH -c 12                  # 8 CPU cores available to the host code.
                               # Can use up to 12 CPUs with an A100 GPU.
@@ -15,4 +15,5 @@ echo "Script directory: $SCRIPT_DIR"
 
 source activate habitat
 
-python -m scripts.torch_scoreg_layout.train_ring_large --comm_field 100 --no-agent-visible --num_networks 128 --seed 1 --no-self-play-option
+python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 64 --seed 2 --no-self-play-option --total-timesteps 2500000000
+python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 64 --seed 3 --no-self-play-option --total-timesteps 2500000000

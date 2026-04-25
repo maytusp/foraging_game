@@ -62,6 +62,7 @@ class EnvConfig:
     reward_scale: float = 1.0
     use_compile: bool = True
     ascii_layout: Optional[str] = None
+    food_spawn_on_agent_cells: bool = True
 
 class TorchForagingEnv:
     """
@@ -313,7 +314,8 @@ class TorchForagingEnv:
                     # `A` marks agent spawn cells, but foods may also use those
                     # cells as long as the cell is not currently occupied.
                     agent_spawn[y, x] = True
-                    food_spawn[y, x] = True
+                    if self.cfg.food_spawn_on_agent_cells:
+                        food_spawn[y, x] = True
                 elif ch == "F":
                     food_spawn[y, x] = True
                 else:
@@ -428,6 +430,18 @@ class TorchForagingEnv:
         """
         self.cfg.ascii_layout = ascii_layout
         self._set_layout(ascii_layout)
+
+        if reset_now:
+            full_mask = torch.ones((self.B,), dtype=torch.bool, device=self.device)
+            self._reset_indices(full_mask)
+
+    def set_food_spawn_on_agent_cells(self, enabled: bool, reset_now: bool = False):
+        """
+        Control whether food can spawn on `A` layout cells.
+        Existing episodes are left untouched unless reset_now=True.
+        """
+        self.cfg.food_spawn_on_agent_cells = bool(enabled)
+        self._set_layout(self.cfg.ascii_layout)
 
         if reset_now:
             full_mask = torch.ones((self.B,), dtype=torch.bool, device=self.device)

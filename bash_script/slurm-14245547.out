@@ -1,0 +1,1132 @@
+Script directory: /mnt/iusers01/fatpou01/compsci01/n70579mp/scratch/emergent_language/foraging_game
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Traceback (most recent call last):
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 511, in <module>
+    main()
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 444, in main
+    args = tyro.cli(Args)
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_cli.py", line 281, in cli
+    out = run_with_args_from_cli()
+  File "<string>", line 36, in __init__
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 111, in __post_init__
+    self.model_step = self.num_nets_to_model_step[self.num_networks]
+KeyError: 6
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Traceback (most recent call last):
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 511, in <module>
+    main()
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 444, in main
+    args = tyro.cli(Args)
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_cli.py", line 281, in cli
+    out = run_with_args_from_cli()
+  File "<string>", line 36, in __init__
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 111, in __post_init__
+    self.model_step = self.num_nets_to_model_step[self.num_networks]
+KeyError: 6
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Traceback (most recent call last):
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 511, in <module>
+    main()
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 444, in main
+    args = tyro.cli(Args)
+  File "/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_cli.py", line 281, in cli
+    out = run_with_args_from_cli()
+  File "<string>", line 36, in __init__
+  File "/net/scratch/n70579mp/emergent_language/foraging_game/scripts/torch_scoreg_layout/prepare_ls_traj.py", line 111, in __post_init__
+    self.model_step = self.num_nets_to_model_step[self.num_networks]
+KeyError: 6
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_16net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_0_step_793600000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_1_step_793600000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_2_step_793600000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_3_step_793600000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_4_step_793600000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_5_step_793600000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_6_step_793600000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_7_step_793600000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_8_step_793600000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_9_step_793600000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_10_step_793600000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_11_step_793600000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_12_step_793600000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_13_step_793600000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_14_step_793600000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_15_step_793600000.pt
+Preparing trajectories for 16 pairs in batch
+[1/16] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[2/16] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[3/16] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[4/16] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[5/16] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[6/16] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[7/16] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[8/16] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[9/16] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[10/16] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[11/16] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[12/16] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[13/16] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[14/16] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[15/16] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[16/16] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+Done. Total time: 24.03 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_16net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_0_step_793600000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_1_step_793600000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_2_step_793600000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_3_step_793600000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_4_step_793600000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_5_step_793600000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_6_step_793600000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_7_step_793600000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_8_step_793600000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_9_step_793600000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_10_step_793600000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_11_step_793600000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_12_step_793600000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_13_step_793600000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_14_step_793600000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_15_step_793600000.pt
+Preparing trajectories for 16 pairs in batch
+[1/16] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[2/16] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[3/16] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[4/16] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[5/16] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[6/16] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[7/16] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[8/16] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[9/16] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[10/16] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[11/16] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[12/16] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[13/16] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[14/16] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[15/16] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[16/16] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+Done. Total time: 26.27 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_16net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_0_step_793600000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_1_step_793600000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_2_step_793600000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_3_step_793600000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_4_step_793600000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_5_step_793600000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_6_step_793600000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_7_step_793600000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_8_step_793600000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_9_step_793600000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_10_step_793600000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_11_step_793600000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_12_step_793600000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_13_step_793600000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_14_step_793600000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_16net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_15_step_793600000.pt
+Preparing trajectories for 16 pairs in batch
+[1/16] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[2/16] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[3/16] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[4/16] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[5/16] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[6/16] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[7/16] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[8/16] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[9/16] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[10/16] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[11/16] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[12/16] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[13/16] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[14/16] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[15/16] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[16/16] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_16net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+Done. Total time: 25.58 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_32net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_0_step_1484800000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_1_step_1484800000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_2_step_1484800000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_3_step_1484800000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_4_step_1484800000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_5_step_1484800000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_6_step_1484800000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_7_step_1484800000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_8_step_1484800000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_9_step_1484800000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_10_step_1484800000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_11_step_1484800000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_12_step_1484800000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_13_step_1484800000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_14_step_1484800000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_15_step_1484800000.pt
+Loaded agent 16 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_16_step_1484800000.pt
+Loaded agent 17 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_17_step_1484800000.pt
+Loaded agent 18 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_18_step_1484800000.pt
+Loaded agent 19 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_19_step_1484800000.pt
+Loaded agent 20 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_20_step_1484800000.pt
+Loaded agent 21 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_21_step_1484800000.pt
+Loaded agent 22 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_22_step_1484800000.pt
+Loaded agent 23 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_23_step_1484800000.pt
+Loaded agent 24 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_24_step_1484800000.pt
+Loaded agent 25 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_25_step_1484800000.pt
+Loaded agent 26 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_26_step_1484800000.pt
+Loaded agent 27 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_27_step_1484800000.pt
+Loaded agent 28 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_28_step_1484800000.pt
+Loaded agent 29 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_29_step_1484800000.pt
+Loaded agent 30 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_30_step_1484800000.pt
+Loaded agent 31 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_31_step_1484800000.pt
+Preparing trajectories for 32 pairs in batch
+[1/32] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[2/32] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[3/32] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[4/32] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[5/32] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[6/32] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[7/32] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[8/32] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[9/32] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[10/32] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[11/32] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[12/32] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[13/32] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[14/32] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[15/32] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[16/32] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[17/32] running pair 16-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/16-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[18/32] running pair 17-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/17-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[19/32] running pair 18-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/18-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[20/32] running pair 19-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/19-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[21/32] running pair 20-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/20-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[22/32] running pair 21-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/21-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[23/32] running pair 22-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/22-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[24/32] running pair 23-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/23-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[25/32] running pair 24-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/24-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[26/32] running pair 25-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/25-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[27/32] running pair 26-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/26-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[28/32] running pair 27-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/27-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[29/32] running pair 28-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/28-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[30/32] running pair 29-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/29-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[31/32] running pair 30-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/30-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[32/32] running pair 31-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/31-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+Done. Total time: 51.63 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_32net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_0_step_1484800000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_1_step_1484800000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_2_step_1484800000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_3_step_1484800000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_4_step_1484800000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_5_step_1484800000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_6_step_1484800000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_7_step_1484800000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_8_step_1484800000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_9_step_1484800000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_10_step_1484800000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_11_step_1484800000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_12_step_1484800000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_13_step_1484800000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_14_step_1484800000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_15_step_1484800000.pt
+Loaded agent 16 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_16_step_1484800000.pt
+Loaded agent 17 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_17_step_1484800000.pt
+Loaded agent 18 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_18_step_1484800000.pt
+Loaded agent 19 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_19_step_1484800000.pt
+Loaded agent 20 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_20_step_1484800000.pt
+Loaded agent 21 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_21_step_1484800000.pt
+Loaded agent 22 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_22_step_1484800000.pt
+Loaded agent 23 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_23_step_1484800000.pt
+Loaded agent 24 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_24_step_1484800000.pt
+Loaded agent 25 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_25_step_1484800000.pt
+Loaded agent 26 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_26_step_1484800000.pt
+Loaded agent 27 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_27_step_1484800000.pt
+Loaded agent 28 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_28_step_1484800000.pt
+Loaded agent 29 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_29_step_1484800000.pt
+Loaded agent 30 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_30_step_1484800000.pt
+Loaded agent 31 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_31_step_1484800000.pt
+Preparing trajectories for 32 pairs in batch
+[1/32] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[2/32] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[3/32] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[4/32] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[5/32] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[6/32] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[7/32] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[8/32] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[9/32] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[10/32] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[11/32] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[12/32] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[13/32] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[14/32] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[15/32] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[16/32] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[17/32] running pair 16-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/16-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[18/32] running pair 17-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/17-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[19/32] running pair 18-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/18-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[20/32] running pair 19-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/19-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[21/32] running pair 20-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/20-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[22/32] running pair 21-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/21-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[23/32] running pair 22-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/22-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[24/32] running pair 23-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/23-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[25/32] running pair 24-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/24-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[26/32] running pair 25-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/25-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[27/32] running pair 26-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/26-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[28/32] running pair 27-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/27-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[29/32] running pair 28-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/28-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[30/32] running pair 29-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/29-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[31/32] running pair 30-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/30-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[32/32] running pair 31-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/31-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+Done. Total time: 52.13 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_32net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_0_step_1484800000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_1_step_1484800000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_2_step_1484800000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_3_step_1484800000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_4_step_1484800000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_5_step_1484800000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_6_step_1484800000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_7_step_1484800000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_8_step_1484800000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_9_step_1484800000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_10_step_1484800000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_11_step_1484800000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_12_step_1484800000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_13_step_1484800000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_14_step_1484800000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_15_step_1484800000.pt
+Loaded agent 16 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_16_step_1484800000.pt
+Loaded agent 17 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_17_step_1484800000.pt
+Loaded agent 18 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_18_step_1484800000.pt
+Loaded agent 19 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_19_step_1484800000.pt
+Loaded agent 20 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_20_step_1484800000.pt
+Loaded agent 21 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_21_step_1484800000.pt
+Loaded agent 22 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_22_step_1484800000.pt
+Loaded agent 23 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_23_step_1484800000.pt
+Loaded agent 24 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_24_step_1484800000.pt
+Loaded agent 25 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_25_step_1484800000.pt
+Loaded agent 26 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_26_step_1484800000.pt
+Loaded agent 27 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_27_step_1484800000.pt
+Loaded agent 28 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_28_step_1484800000.pt
+Loaded agent 29 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_29_step_1484800000.pt
+Loaded agent 30 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_30_step_1484800000.pt
+Loaded agent 31 from checkpoints/torch_scoreg_layout/sp_pop_ppo_32net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_31_step_1484800000.pt
+Preparing trajectories for 32 pairs in batch
+[1/32] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[2/32] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[3/32] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[4/32] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[5/32] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[6/32] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[7/32] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[8/32] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[9/32] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[10/32] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[11/32] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[12/32] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[13/32] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[14/32] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[15/32] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[16/32] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[17/32] running pair 16-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/16-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[18/32] running pair 17-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/17-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[19/32] running pair 18-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/18-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[20/32] running pair 19-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/19-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[21/32] running pair 20-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/20-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[22/32] running pair 21-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/21-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[23/32] running pair 22-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/22-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[24/32] running pair 23-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/23-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[25/32] running pair 24-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/24-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[26/32] running pair 25-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/25-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[27/32] running pair 26-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/26-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[28/32] running pair 27-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/27-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[29/32] running pair 28-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/28-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[30/32] running pair 29-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/29-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[31/32] running pair 30-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/30-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[32/32] running pair 31-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_32net_invisible/31-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+Done. Total time: 52.11 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_64net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_0_step_1792000000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_1_step_1792000000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_2_step_1792000000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_3_step_1792000000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_4_step_1792000000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_5_step_1792000000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_6_step_1792000000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_7_step_1792000000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_8_step_1792000000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_9_step_1792000000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_10_step_1792000000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_11_step_1792000000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_12_step_1792000000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_13_step_1792000000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_14_step_1792000000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_15_step_1792000000.pt
+Loaded agent 16 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_16_step_1792000000.pt
+Loaded agent 17 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_17_step_1792000000.pt
+Loaded agent 18 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_18_step_1792000000.pt
+Loaded agent 19 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_19_step_1792000000.pt
+Loaded agent 20 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_20_step_1792000000.pt
+Loaded agent 21 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_21_step_1792000000.pt
+Loaded agent 22 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_22_step_1792000000.pt
+Loaded agent 23 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_23_step_1792000000.pt
+Loaded agent 24 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_24_step_1792000000.pt
+Loaded agent 25 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_25_step_1792000000.pt
+Loaded agent 26 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_26_step_1792000000.pt
+Loaded agent 27 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_27_step_1792000000.pt
+Loaded agent 28 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_28_step_1792000000.pt
+Loaded agent 29 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_29_step_1792000000.pt
+Loaded agent 30 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_30_step_1792000000.pt
+Loaded agent 31 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_31_step_1792000000.pt
+Loaded agent 32 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_32_step_1792000000.pt
+Loaded agent 33 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_33_step_1792000000.pt
+Loaded agent 34 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_34_step_1792000000.pt
+Loaded agent 35 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_35_step_1792000000.pt
+Loaded agent 36 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_36_step_1792000000.pt
+Loaded agent 37 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_37_step_1792000000.pt
+Loaded agent 38 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_38_step_1792000000.pt
+Loaded agent 39 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_39_step_1792000000.pt
+Loaded agent 40 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_40_step_1792000000.pt
+Loaded agent 41 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_41_step_1792000000.pt
+Loaded agent 42 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_42_step_1792000000.pt
+Loaded agent 43 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_43_step_1792000000.pt
+Loaded agent 44 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_44_step_1792000000.pt
+Loaded agent 45 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_45_step_1792000000.pt
+Loaded agent 46 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_46_step_1792000000.pt
+Loaded agent 47 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_47_step_1792000000.pt
+Loaded agent 48 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_48_step_1792000000.pt
+Loaded agent 49 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_49_step_1792000000.pt
+Loaded agent 50 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_50_step_1792000000.pt
+Loaded agent 51 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_51_step_1792000000.pt
+Loaded agent 52 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_52_step_1792000000.pt
+Loaded agent 53 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_53_step_1792000000.pt
+Loaded agent 54 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_54_step_1792000000.pt
+Loaded agent 55 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_55_step_1792000000.pt
+Loaded agent 56 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_56_step_1792000000.pt
+Loaded agent 57 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_57_step_1792000000.pt
+Loaded agent 58 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_58_step_1792000000.pt
+Loaded agent 59 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_59_step_1792000000.pt
+Loaded agent 60 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_60_step_1792000000.pt
+Loaded agent 61 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_61_step_1792000000.pt
+Loaded agent 62 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_62_step_1792000000.pt
+Loaded agent 63 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_63_step_1792000000.pt
+Preparing trajectories for 64 pairs in batch
+[1/64] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[2/64] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[3/64] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[4/64] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[5/64] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[6/64] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[7/64] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[8/64] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[9/64] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[10/64] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[11/64] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[12/64] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[13/64] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[14/64] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[15/64] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[16/64] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[17/64] running pair 16-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/16-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[18/64] running pair 17-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/17-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[19/64] running pair 18-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/18-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[20/64] running pair 19-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/19-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[21/64] running pair 20-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/20-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[22/64] running pair 21-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/21-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[23/64] running pair 22-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/22-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[24/64] running pair 23-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/23-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[25/64] running pair 24-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/24-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[26/64] running pair 25-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/25-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[27/64] running pair 26-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/26-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[28/64] running pair 27-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/27-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[29/64] running pair 28-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/28-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[30/64] running pair 29-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/29-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[31/64] running pair 30-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/30-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[32/64] running pair 31-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/31-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[33/64] running pair 32-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/32-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[34/64] running pair 33-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/33-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[35/64] running pair 34-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/34-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[36/64] running pair 35-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/35-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[37/64] running pair 36-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/36-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[38/64] running pair 37-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/37-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[39/64] running pair 38-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/38-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[40/64] running pair 39-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/39-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[41/64] running pair 40-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/40-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[42/64] running pair 41-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/41-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[43/64] running pair 42-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/42-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[44/64] running pair 43-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/43-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[45/64] running pair 44-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/44-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[46/64] running pair 45-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/45-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[47/64] running pair 46-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/46-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[48/64] running pair 47-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/47-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[49/64] running pair 48-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/48-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[50/64] running pair 49-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/49-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[51/64] running pair 50-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/50-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[52/64] running pair 51-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/51-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[53/64] running pair 52-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/52-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[54/64] running pair 53-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/53-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[55/64] running pair 54-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/54-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[56/64] running pair 55-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/55-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[57/64] running pair 56-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/56-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[58/64] running pair 57-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/57-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[59/64] running pair 58-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/58-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[60/64] running pair 59-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/59-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[61/64] running pair 60-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/60-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[62/64] running pair 61-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/61-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[63/64] running pair 62-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/62-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[64/64] running pair 63-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/63-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+Done. Total time: 91.33 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_64net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_0_step_1792000000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_1_step_1792000000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_2_step_1792000000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_3_step_1792000000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_4_step_1792000000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_5_step_1792000000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_6_step_1792000000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_7_step_1792000000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_8_step_1792000000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_9_step_1792000000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_10_step_1792000000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_11_step_1792000000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_12_step_1792000000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_13_step_1792000000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_14_step_1792000000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_15_step_1792000000.pt
+Loaded agent 16 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_16_step_1792000000.pt
+Loaded agent 17 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_17_step_1792000000.pt
+Loaded agent 18 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_18_step_1792000000.pt
+Loaded agent 19 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_19_step_1792000000.pt
+Loaded agent 20 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_20_step_1792000000.pt
+Loaded agent 21 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_21_step_1792000000.pt
+Loaded agent 22 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_22_step_1792000000.pt
+Loaded agent 23 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_23_step_1792000000.pt
+Loaded agent 24 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_24_step_1792000000.pt
+Loaded agent 25 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_25_step_1792000000.pt
+Loaded agent 26 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_26_step_1792000000.pt
+Loaded agent 27 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_27_step_1792000000.pt
+Loaded agent 28 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_28_step_1792000000.pt
+Loaded agent 29 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_29_step_1792000000.pt
+Loaded agent 30 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_30_step_1792000000.pt
+Loaded agent 31 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_31_step_1792000000.pt
+Loaded agent 32 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_32_step_1792000000.pt
+Loaded agent 33 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_33_step_1792000000.pt
+Loaded agent 34 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_34_step_1792000000.pt
+Loaded agent 35 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_35_step_1792000000.pt
+Loaded agent 36 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_36_step_1792000000.pt
+Loaded agent 37 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_37_step_1792000000.pt
+Loaded agent 38 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_38_step_1792000000.pt
+Loaded agent 39 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_39_step_1792000000.pt
+Loaded agent 40 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_40_step_1792000000.pt
+Loaded agent 41 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_41_step_1792000000.pt
+Loaded agent 42 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_42_step_1792000000.pt
+Loaded agent 43 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_43_step_1792000000.pt
+Loaded agent 44 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_44_step_1792000000.pt
+Loaded agent 45 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_45_step_1792000000.pt
+Loaded agent 46 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_46_step_1792000000.pt
+Loaded agent 47 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_47_step_1792000000.pt
+Loaded agent 48 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_48_step_1792000000.pt
+Loaded agent 49 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_49_step_1792000000.pt
+Loaded agent 50 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_50_step_1792000000.pt
+Loaded agent 51 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_51_step_1792000000.pt
+Loaded agent 52 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_52_step_1792000000.pt
+Loaded agent 53 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_53_step_1792000000.pt
+Loaded agent 54 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_54_step_1792000000.pt
+Loaded agent 55 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_55_step_1792000000.pt
+Loaded agent 56 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_56_step_1792000000.pt
+Loaded agent 57 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_57_step_1792000000.pt
+Loaded agent 58 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_58_step_1792000000.pt
+Loaded agent 59 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_59_step_1792000000.pt
+Loaded agent 60 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_60_step_1792000000.pt
+Loaded agent 61 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_61_step_1792000000.pt
+Loaded agent 62 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_62_step_1792000000.pt
+Loaded agent 63 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_63_step_1792000000.pt
+Preparing trajectories for 64 pairs in batch
+[1/64] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[2/64] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[3/64] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[4/64] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[5/64] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[6/64] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[7/64] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[8/64] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[9/64] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[10/64] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[11/64] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[12/64] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[13/64] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[14/64] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[15/64] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[16/64] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[17/64] running pair 16-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/16-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[18/64] running pair 17-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/17-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[19/64] running pair 18-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/18-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[20/64] running pair 19-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/19-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[21/64] running pair 20-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/20-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[22/64] running pair 21-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/21-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[23/64] running pair 22-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/22-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[24/64] running pair 23-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/23-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[25/64] running pair 24-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/24-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[26/64] running pair 25-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/25-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[27/64] running pair 26-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/26-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[28/64] running pair 27-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/27-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[29/64] running pair 28-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/28-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[30/64] running pair 29-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/29-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[31/64] running pair 30-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/30-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[32/64] running pair 31-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/31-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[33/64] running pair 32-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/32-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[34/64] running pair 33-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/33-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[35/64] running pair 34-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/34-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[36/64] running pair 35-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/35-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[37/64] running pair 36-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/36-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[38/64] running pair 37-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/37-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[39/64] running pair 38-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/38-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[40/64] running pair 39-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/39-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[41/64] running pair 40-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/40-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[42/64] running pair 41-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/41-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[43/64] running pair 42-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/42-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[44/64] running pair 43-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/43-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[45/64] running pair 44-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/44-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[46/64] running pair 45-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/45-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[47/64] running pair 46-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/46-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[48/64] running pair 47-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/47-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[49/64] running pair 48-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/48-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[50/64] running pair 49-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/49-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[51/64] running pair 50-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/50-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[52/64] running pair 51-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/51-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[53/64] running pair 52-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/52-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[54/64] running pair 53-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/53-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[55/64] running pair 54-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/54-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[56/64] running pair 55-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/55-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[57/64] running pair 56-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/56-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[58/64] running pair 57-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/57-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[59/64] running pair 58-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/58-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[60/64] running pair 59-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/59-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[61/64] running pair 60-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/60-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[62/64] running pair 61-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/61-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[63/64] running pair 62-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/62-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[64/64] running pair 63-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/63-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+Done. Total time: 90.77 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_64net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_0_step_1792000000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_1_step_1792000000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_2_step_1792000000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_3_step_1792000000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_4_step_1792000000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_5_step_1792000000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_6_step_1792000000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_7_step_1792000000.pt
+Loaded agent 8 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_8_step_1792000000.pt
+Loaded agent 9 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_9_step_1792000000.pt
+Loaded agent 10 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_10_step_1792000000.pt
+Loaded agent 11 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_11_step_1792000000.pt
+Loaded agent 12 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_12_step_1792000000.pt
+Loaded agent 13 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_13_step_1792000000.pt
+Loaded agent 14 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_14_step_1792000000.pt
+Loaded agent 15 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_15_step_1792000000.pt
+Loaded agent 16 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_16_step_1792000000.pt
+Loaded agent 17 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_17_step_1792000000.pt
+Loaded agent 18 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_18_step_1792000000.pt
+Loaded agent 19 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_19_step_1792000000.pt
+Loaded agent 20 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_20_step_1792000000.pt
+Loaded agent 21 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_21_step_1792000000.pt
+Loaded agent 22 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_22_step_1792000000.pt
+Loaded agent 23 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_23_step_1792000000.pt
+Loaded agent 24 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_24_step_1792000000.pt
+Loaded agent 25 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_25_step_1792000000.pt
+Loaded agent 26 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_26_step_1792000000.pt
+Loaded agent 27 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_27_step_1792000000.pt
+Loaded agent 28 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_28_step_1792000000.pt
+Loaded agent 29 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_29_step_1792000000.pt
+Loaded agent 30 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_30_step_1792000000.pt
+Loaded agent 31 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_31_step_1792000000.pt
+Loaded agent 32 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_32_step_1792000000.pt
+Loaded agent 33 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_33_step_1792000000.pt
+Loaded agent 34 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_34_step_1792000000.pt
+Loaded agent 35 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_35_step_1792000000.pt
+Loaded agent 36 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_36_step_1792000000.pt
+Loaded agent 37 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_37_step_1792000000.pt
+Loaded agent 38 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_38_step_1792000000.pt
+Loaded agent 39 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_39_step_1792000000.pt
+Loaded agent 40 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_40_step_1792000000.pt
+Loaded agent 41 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_41_step_1792000000.pt
+Loaded agent 42 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_42_step_1792000000.pt
+Loaded agent 43 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_43_step_1792000000.pt
+Loaded agent 44 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_44_step_1792000000.pt
+Loaded agent 45 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_45_step_1792000000.pt
+Loaded agent 46 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_46_step_1792000000.pt
+Loaded agent 47 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_47_step_1792000000.pt
+Loaded agent 48 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_48_step_1792000000.pt
+Loaded agent 49 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_49_step_1792000000.pt
+Loaded agent 50 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_50_step_1792000000.pt
+Loaded agent 51 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_51_step_1792000000.pt
+Loaded agent 52 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_52_step_1792000000.pt
+Loaded agent 53 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_53_step_1792000000.pt
+Loaded agent 54 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_54_step_1792000000.pt
+Loaded agent 55 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_55_step_1792000000.pt
+Loaded agent 56 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_56_step_1792000000.pt
+Loaded agent 57 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_57_step_1792000000.pt
+Loaded agent 58 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_58_step_1792000000.pt
+Loaded agent 59 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_59_step_1792000000.pt
+Loaded agent 60 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_60_step_1792000000.pt
+Loaded agent 61 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_61_step_1792000000.pt
+Loaded agent 62 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_62_step_1792000000.pt
+Loaded agent 63 from checkpoints/torch_scoreg_layout/sp_pop_ppo_64net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_63_step_1792000000.pt
+Preparing trajectories for 64 pairs in batch
+[1/64] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[2/64] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[3/64] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[4/64] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[5/64] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[6/64] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[7/64] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[8/64] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[9/64] running pair 8-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/8-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[10/64] running pair 9-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/9-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[11/64] running pair 10-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/10-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[12/64] running pair 11-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/11-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[13/64] running pair 12-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/12-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[14/64] running pair 13-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/13-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[15/64] running pair 14-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/14-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[16/64] running pair 15-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/15-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[17/64] running pair 16-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/16-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[18/64] running pair 17-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/17-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[19/64] running pair 18-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/18-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[20/64] running pair 19-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/19-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[21/64] running pair 20-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/20-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[22/64] running pair 21-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/21-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[23/64] running pair 22-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/22-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[24/64] running pair 23-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/23-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[25/64] running pair 24-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/24-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[26/64] running pair 25-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/25-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[27/64] running pair 26-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/26-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[28/64] running pair 27-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/27-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[29/64] running pair 28-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/28-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[30/64] running pair 29-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/29-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[31/64] running pair 30-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/30-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[32/64] running pair 31-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/31-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[33/64] running pair 32-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/32-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[34/64] running pair 33-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/33-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[35/64] running pair 34-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/34-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[36/64] running pair 35-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/35-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[37/64] running pair 36-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/36-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[38/64] running pair 37-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/37-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[39/64] running pair 38-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/38-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[40/64] running pair 39-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/39-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[41/64] running pair 40-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/40-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[42/64] running pair 41-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/41-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[43/64] running pair 42-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/42-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[44/64] running pair 43-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/43-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[45/64] running pair 44-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/44-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[46/64] running pair 45-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/45-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[47/64] running pair 46-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/46-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[48/64] running pair 47-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/47-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[49/64] running pair 48-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/48-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[50/64] running pair 49-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/49-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[51/64] running pair 50-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/50-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[52/64] running pair 51-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/51-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[53/64] running pair 52-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/52-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[54/64] running pair 53-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/53-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[55/64] running pair 54-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/54-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[56/64] running pair 55-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/55-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[57/64] running pair 56-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/56-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[58/64] running pair 57-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/57-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[59/64] running pair 58-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/58-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[60/64] running pair 59-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/59-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[61/64] running pair 60-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/60-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[62/64] running pair 61-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/61-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[63/64] running pair 62-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/62-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[64/64] running pair 63-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_64net_invisible/63-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+Done. Total time: 94.10 sec

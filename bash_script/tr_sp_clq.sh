@@ -1,5 +1,5 @@
 #!/bin/bash --login
-#SBATCH -p gpuL              # A100 GPUs
+#SBATCH -p gpuL             # A100 GPUs
 #SBATCH -G 1                  # 1 GPU
 #SBATCH -t 3-0                # Wallclock limit (1-0 is 1 day, 4-0 is the max permitted)
 #SBATCH -n 1                  # One Slurm task
@@ -15,6 +15,6 @@ echo "Script directory: $SCRIPT_DIR"
 
 source activate habitat
 
-# python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 64 --seed 1 --self-play-option --total-timesteps 2500000000
-# python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 64 --seed 2 --self-play-option --total-timesteps 2500000000
-python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 64 --seed 3 --self-play-option --total-timesteps 2500000000
+# python -m scripts.torch_scoreg_layout.train_clq --comm_field 100 --no-agent-visible --num_networks 64 --seed 1 --self-play-option --total-timesteps 2500000000
+# python -m scripts.torch_scoreg_layout.train_clq --comm_field 100 --no-agent-visible --num_networks 64 --seed 2 --self-play-option --total-timesteps 2500000000
+python -m scripts.torch_scoreg_layout.train_clq --comm_field 100 --no-agent-visible --num_networks 64 --seed 3 --self-play-option --total-timesteps 2500000000

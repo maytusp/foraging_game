@@ -52,7 +52,7 @@ class Args:
     max_steps: int = 30
     n_words: int = 5
     d_model: int = 128
-    communication_steps: int = 6
+    communication_steps: int = 5
 
     agent_visible: bool = False
     fully_visible_score: bool = False

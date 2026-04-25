@@ -51,7 +51,7 @@ def extract_data_for_ls(log_data):
     attribute_data = []
     scores = {"agent0": [], "agent1": []}
     item_locs = {"agent0": [], "agent1": []}
-    communication_steps = 6
+    communication_steps = 5
 
     for episode_id, data in log_data.items():
         log_s_messages = data["log_s_messages"]
@@ -78,7 +78,7 @@ def extract_data_for_topsim(log_data):
     attribute_data = []
     scores = {"agent0": [], "agent1": []}
     item_locs = {"agent0": [], "agent1": []}
-    communication_steps = 6 # only consider the first 6 steps of communication, since that's the mode episode length for most models, and topsim requires all episodes to have the same length
+    communication_steps = 5 # only consider the first 6 steps of communication, since that's the mode episode length for most models, and topsim requires all episodes to have the same length
 
     for episode_id, data in log_data.items():
         log_s_messages = data["log_s_messages"]
@@ -121,18 +121,28 @@ def get_comp_scores(message_data, attribute_data, num_networks):
     topsim_list = []
     posdis_list = []
     max_eval_episodes=1000
+
+    def get_sender_pair(sender):
+        candidate_pairs = [f"{sender}-{receiver}", f"{sender}-0"]
+        for pair in candidate_pairs:
+            if pair in message_data:
+                return pair
+        raise KeyError(f"No loaded message data for sender {sender}. Tried: {candidate_pairs}")
+
     if num_networks > 2:
         for sender in sender_list:
-            extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
-            extracted_attribute.append(attribute_data[f"{sender}-{receiver}"])
+            pair = get_sender_pair(sender)
+            extracted_message.append(np.array(message_data[pair]["agent0"]))
+            extracted_attribute.append(attribute_data[pair])
             n_samples = min(extracted_message[sender].shape[0], n_samples)
     else:
         for sender in sender_list:
             receiver_map = {0:1, 1:0}
             receiver = receiver_map[sender]
             # in case of XP n_pop=2, agent cannot successfully play with itself, we need to gather info when it plays with its partner
-            extracted_message.append(np.array(message_data[f"{sender}-{receiver}"]["agent0"]))
-            extracted_attribute.append(attribute_data[f"{sender}-{receiver}"])
+            pair = get_sender_pair(sender)
+            extracted_message.append(np.array(message_data[pair]["agent0"]))
+            extracted_attribute.append(attribute_data[pair])
             n_samples = min(extracted_message[sender].shape[0], n_samples)
 
 
@@ -230,62 +240,103 @@ def load_score(filename):
     return scores
 
 
+def plot_population_metric(population_sizes, xp_sp_means, xp_sp_stds, ylabel, filename, saved_fig_dir, loc="best"):
+    plt.rcParams.update({
+        "font.size": 18,
+        "axes.labelsize": 20,
+        "axes.titlesize": 20,
+        "xtick.labelsize": 18,
+        "ytick.labelsize": 18,
+        "legend.fontsize": 18,
+    })
+    plt.figure(figsize=(6, 5))
+
+    population_sizes = np.array(population_sizes)
+    xp_sp_means = np.array(xp_sp_means)
+    xp_sp_stds = np.array(xp_sp_stds)
+
+    sns.lineplot(x=population_sizes, y=xp_sp_means, marker="s", label="XP+SP")
+    plt.fill_between(population_sizes, xp_sp_means - xp_sp_stds, xp_sp_means + xp_sp_stds, alpha=0.2)
+
+    # XP is intentionally omitted for now because those models are still training.
+    plt.xlabel("Population Size")
+    plt.ylabel(ylabel)
+    plt.xticks(population_sizes)
+    plt.legend(loc=loc)
+    plt.tight_layout()
+    plt.savefig(os.path.join(saved_fig_dir, filename))
+    plt.close()
+
+
+def plot_population_metrics(population_stats, saved_fig_dir):
+    os.makedirs(saved_fig_dir, exist_ok=True)
+    population_sizes = population_stats["population_size"]
+
+    plot_population_metric(
+        population_sizes,
+        population_stats["ls_mean"],
+        population_stats["ls_std"],
+        "Language Similarity",
+        "xpsp_langsim_vs_pop.png",
+        saved_fig_dir,
+    )
+    plot_population_metric(
+        population_sizes,
+        population_stats["topsim_mean"],
+        population_stats["topsim_std"],
+        "Topographic Similarity",
+        "xpsp_topsim_vs_pop.png",
+        saved_fig_dir,
+    )
+    plot_population_metric(
+        population_sizes,
+        population_stats["posdis_mean"],
+        population_stats["posdis_std"],
+        "Positional Disentanglement",
+        "xpsp_posdis_vs_pop.png",
+        saved_fig_dir,
+        loc="upper right",
+    )
+
+
 if __name__ == "__main__":
-
-
-    checkpoints_dict = {
-                        # "dec_ppo_invisible" : {"seed1":204800000, "seed2":204800000, "seed3":204800000},
-                        # "pop_ppo_3net": {"seed1": 256000000, "seed2": 256000000, "seed3": 256000000}, # vis-com condition
-                        # "pop_ppo_3net_invisible": {'seed1': 256000000, 'seed2': 256000000, 'seed3':256000000},
-                        # "pop_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-                        # "pop_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
-                        # "pop_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
-                        # "pop_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
-                        # "dec_sp_ppo_invisible" : {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-                        # "pop_sp_ppo_3net_invisible": {'seed1': 204800000, 'seed2': 204800000, 'seed3':204800000},
-                        # "pop_sp_ppo_6net_invisible": {'seed1': 460800000, 'seed2': 460800000, 'seed3':460800000},
-                        # "pop_sp_ppo_9net_invisible": {'seed1': 512000000, 'seed2': 512000000, 'seed3':512000000},
-                        # "pop_sp_ppo_12net_invisible": {'seed1': 768000000, 'seed2': 768000000, 'seed3':768000000},
-                        # "pop_sp_ppo_15net_invisible": {'seed1': 819200000, 'seed2': 819200000, 'seed3':819200000},
-                        # "fc_ppo_100net_invisible": {'seed1': None, 'seed2': None, 'seed3':None},
-                        "pop_mappo_2net_invisible": {'seed1': None, 'seed2': None, 'seed3':None},
-                        }
     model2numnet = {
-        "dec_ppo_invisible": 2,
-        "pop_ppo_3net_invisible": 3,
-        "pop_ppo_3net": 3, # vis-com condition
-        "pop_ppo_6net_invisible": 6,
-        "pop_ppo_9net_invisible": 9,
-        "pop_ppo_12net_invisible": 12,
-        "pop_ppo_15net_invisible": 15,
-        "dec_sp_ppo_invisible": 2,
-        "pop_sp_ppo_3net_invisible": 3,
-        "pop_sp_ppo_6net_invisible": 6,
-        "pop_sp_ppo_9net_invisible": 9,
-        "pop_sp_ppo_12net_invisible": 12,
-        "pop_sp_ppo_15net_invisible": 15,
-        "fc_ppo_100net_invisible": 100,
-        "pop_mappo_2net_invisible": 2,
+        "sp_pop_ppo_2net_invisible": 2,
+        "sp_pop_ppo_3net_invisible": 3,
+        "sp_pop_ppo_8net_invisible": 8,
+        "sp_pop_ppo_16net_invisible": 16,
+        "sp_pop_ppo_32net_invisible": 32,
+        "sp_pop_ppo_64net_invisible": 64,
+
     }
     compute_topsim = True
     cbar = False
-    for model_name in checkpoints_dict.keys():
+    population_stats = {
+        "population_size": [],
+        "ls_mean": [],
+        "ls_std": [],
+        "topsim_mean": [],
+        "topsim_std": [],
+        "posdis_mean": [],
+        "posdis_std": [],
+    }
+    for model_name in model2numnet.keys():
         num_networks = model2numnet[model_name]
         avg_similarity_mat = np.zeros((num_networks,num_networks))
         avg_sr_mat = np.zeros((num_networks,num_networks))
         per_agent_topsim = []
         per_agent_posdis = []
-        for seed in range(1,2):
-            ckpt_name = checkpoints_dict[model_name][f"seed{seed}"]
+        seed_ls = []
+        seed_topsim = []
+        seed_posdis = []
+        for seed in range(1,4):
             combination_name = "grid5_img3_ni2_nw5_ms30_comm_field100"
-            if ckpt_name is not None:
-                combination_name += f"_{ckpt_name}"
 
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"plots/population/fc/sr_lang_sim"
             saved_score_dir = f"../../logs/vary_n_pop/torch_100net/sr_lang_sim/{model_name}/{combination_name}_seed{seed}"
-            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.pdf")
-            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.pdf")
+            saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
+            saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
             os.makedirs(saved_fig_dir, exist_ok=True)
             os.makedirs(saved_score_dir, exist_ok=True)
             mode = "test"
@@ -315,6 +366,7 @@ if __name__ == "__main__":
 
 
             similarity_mat, avg_sim = get_similarity(message_data, num_networks)
+            seed_ls.append(avg_sim)
             print(f"Similarity score: {avg_sim} \n matrix: {similarity_mat}")
 
             # plot_heatmap(similarity_mat, saved_fig_path_langsim)
@@ -322,16 +374,17 @@ if __name__ == "__main__":
             
             if compute_topsim:
                 avg_topsim, avg_posdis, topsim_list, posdis_list = get_comp_scores(message_data_topsim, attribute_data_topsim, num_networks)
+                seed_topsim.append(avg_topsim)
+                seed_posdis.append(avg_posdis)
                 per_agent_topsim += topsim_list
                 per_agent_posdis += posdis_list
-                # np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat, 
-                #                                                         avg_sim=avg_sim, 
-                #                                                         avg_topsim=avg_topsim, 
-                #                                                         avg_posdis=avg_posdis,
-                #                                                         per_agent_topsim=per_agent_topsim,
-                #                                                         per_agent_posdis=per_agent_posdis,
-                #                                                         sr_mat=sr_mat,
-                #                                                         ic=ic)
+                np.savez(os.path.join(saved_score_dir, "sim_scores.npz"), similarity_mat=similarity_mat,
+                                                                        avg_sim=avg_sim,
+                                                                        avg_topsim=avg_topsim,
+                                                                        avg_posdis=avg_posdis,
+                                                                        topsim_list=topsim_list,
+                                                                        posdis_list=posdis_list,
+                                                                        sr_mat=sr_mat)
             avg_similarity_mat += similarity_mat
             avg_sr_mat += sr_mat
         print(f"Average topsim across all agents: {np.mean(per_agent_topsim)}, SE: {np.std(per_agent_topsim) / np.sqrt(len(per_agent_topsim))}")
@@ -342,3 +395,13 @@ if __name__ == "__main__":
                                             avg_sr_mat=avg_sr_mat)
         plot_heatmap(avg_similarity_mat, saved_fig_path_langsim, cbar, vmin=0.2, vmax=0.6)
         plot_heatmap(avg_sr_mat, saved_fig_path_sr, cbar, vmin=0.3, vmax=1.0)
+
+        population_stats["population_size"].append(num_networks)
+        population_stats["ls_mean"].append(np.mean(seed_ls))
+        population_stats["ls_std"].append(np.std(seed_ls))
+        population_stats["topsim_mean"].append(np.mean(seed_topsim))
+        population_stats["topsim_std"].append(np.std(seed_topsim))
+        population_stats["posdis_mean"].append(np.mean(seed_posdis))
+        population_stats["posdis_std"].append(np.std(seed_posdis))
+
+    plot_population_metrics(population_stats, os.path.join(saved_fig_dir, "population_metrics"))

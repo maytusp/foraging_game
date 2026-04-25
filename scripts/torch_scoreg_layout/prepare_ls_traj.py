@@ -20,7 +20,31 @@ from environments.torch_scoreg_layout import (
 )
 from models.pickup_models import PPOLSTMCommAgent
 
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.prepare_ls_traj --num-networks 100 --model-name pop_ppo_100net_invisible --seed 1 --no-all-pairs --comm-field 100 --model-step 1382400000
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --num-networks 100 --model-name pop_ppo_100net_invisible --seed 1 --no-all-pairs --comm-field 100 --model-step 1382400000
+
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 2 --model-name sp_pop_ppo_2net_invisible --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 2 --model-name sp_pop_ppo_2net_invisible --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 2 --model-name sp_pop_ppo_2net_invisible --seed 3
+
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 3 --model-name sp_pop_ppo_3net_invisible --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 3 --model-name sp_pop_ppo_3net_invisible --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 3 --model-name sp_pop_ppo_3net_invisible --seed 3
+
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 8 --model-name sp_pop_ppo_8net_invisible --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 8 --model-name sp_pop_ppo_8net_invisible --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 8 --model-name sp_pop_ppo_8net_invisible --seed 3
+
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 16 --model-name sp_pop_ppo_16net_invisible --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 16 --model-name sp_pop_ppo_16net_invisible --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 16 --model-name sp_pop_ppo_16net_invisible --seed 3
+
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 32 --model-name sp_pop_ppo_32net_invisible --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 32 --model-name sp_pop_ppo_32net_invisible --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 32 --model-name sp_pop_ppo_32net_invisible --seed 3
+
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 64 --model-name sp_pop_ppo_64net_invisible --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 64 --model-name sp_pop_ppo_64net_invisible --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 64 --model-name sp_pop_ppo_64net_invisible --seed 3
 @dataclass
 class Args:
     seed: int = 1
@@ -76,12 +100,12 @@ class Args:
     def __post_init__(self):
         if self.num_nets_to_model_step is None:
             self.num_nets_to_model_step = {
-                3: 204800000,
-                6: 460800000,
-                9: 512000000,
-                12: 768000000,
-                15: 819200000,
-                100: 1382400000,
+                2: 281600000,
+                3: 281600000,
+                8: 486400000,
+                16: 793600000,
+                32: 1484800000,
+                64: 1792000000,
             }
         if self.model_step is None:
             self.model_step = self.num_nets_to_model_step[self.num_networks]

@@ -1,0 +1,97 @@
+Script directory: /mnt/iusers01/fatpou01/compsci01/n70579mp/scratch/emergent_language/foraging_game
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_8net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_0_step_486400000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_1_step_486400000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_2_step_486400000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_3_step_486400000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_4_step_486400000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_5_step_486400000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_6_step_486400000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/agent_7_step_486400000.pt
+Preparing trajectories for 8 pairs in batch
+[1/8] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[2/8] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[3/8] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[4/8] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[5/8] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[6/8] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[7/8] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+[8/8] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed1/mode_test/normal/trajectory.pkl
+Done. Total time: 23.60 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_8net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_0_step_486400000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_1_step_486400000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_2_step_486400000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_3_step_486400000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_4_step_486400000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_5_step_486400000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_6_step_486400000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/agent_7_step_486400000.pt
+Preparing trajectories for 8 pairs in batch
+[1/8] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[2/8] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[3/8] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[4/8] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[5/8] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[6/8] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[7/8] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+[8/8] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed2/mode_test/normal/trajectory.pkl
+Done. Total time: 22.69 sec
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: sp_pop_ppo_8net_invisible
+Combination name: grid5_img3_ni2_nw5_ms30_comm_field100
+Init bank: logs/init_bank/grid5x5_ni2.npz
+Loaded agent 0 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_0_step_486400000.pt
+Loaded agent 1 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_1_step_486400000.pt
+Loaded agent 2 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_2_step_486400000.pt
+Loaded agent 3 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_3_step_486400000.pt
+Loaded agent 4 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_4_step_486400000.pt
+Loaded agent 5 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_5_step_486400000.pt
+Loaded agent 6 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_6_step_486400000.pt
+Loaded agent 7 from checkpoints/torch_scoreg_layout/sp_pop_ppo_8net_invisible/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/agent_7_step_486400000.pt
+Preparing trajectories for 8 pairs in batch
+[1/8] running pair 0-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/0-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[2/8] running pair 1-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/1-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[3/8] running pair 2-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/2-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[4/8] running pair 3-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/3-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[5/8] running pair 4-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/4-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[6/8] running pair 5-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/5-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[7/8] running pair 6-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/6-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+[8/8] running pair 7-0
+Saved trajectory to logs/vary_n_pop/torch_100net/langsim/sp_pop_ppo_8net_invisible/7-0/grid5_img3_ni2_nw5_ms30_comm_field100/seed3/mode_test/normal/trajectory.pkl
+Done. Total time: 22.70 sec
