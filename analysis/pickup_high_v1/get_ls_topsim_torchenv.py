@@ -78,7 +78,7 @@ def extract_data_for_topsim(log_data):
     attribute_data = []
     scores = {"agent0": [], "agent1": []}
     item_locs = {"agent0": [], "agent1": []}
-    communication_steps = 5 # only consider the first 6 steps of communication, since that's the mode episode length for most models, and topsim requires all episodes to have the same length
+    communication_steps = 6 # only consider the first 6 steps of communication, since that's the mode episode length for most models, and topsim requires all episodes to have the same length
 
     for episode_id, data in log_data.items():
         log_s_messages = data["log_s_messages"]
@@ -301,12 +301,18 @@ def plot_population_metrics(population_stats, saved_fig_dir):
 
 if __name__ == "__main__":
     model2numnet = {
-        "sp_pop_ppo_2net_invisible": 2,
-        "sp_pop_ppo_3net_invisible": 3,
-        "sp_pop_ppo_8net_invisible": 8,
-        "sp_pop_ppo_16net_invisible": 16,
-        "sp_pop_ppo_32net_invisible": 32,
-        "sp_pop_ppo_64net_invisible": 64,
+        # "pop_ppo_2net_invisible": 2,
+        "pop_ppo_3net_invisible": 3,
+        # "pop_ppo_8net_invisible": 8,
+        # "pop_ppo_16net_invisible": 16,
+        # "pop_ppo_32net_invisible": 32,
+        # "pop_ppo_64net_invisible": 64,
+        # "sp_pop_ppo_2net_invisible": 2,
+        # "sp_pop_ppo_3net_invisible": 3,
+        # "sp_pop_ppo_8net_invisible": 8,
+        # "sp_pop_ppo_16net_invisible": 16,
+        # "sp_pop_ppo_32net_invisible": 32,
+        # "sp_pop_ppo_64net_invisible": 64,
 
     }
     compute_topsim = True
@@ -330,11 +336,11 @@ if __name__ == "__main__":
         seed_topsim = []
         seed_posdis = []
         for seed in range(1,4):
-            combination_name = "grid5_img3_ni2_nw5_ms30_comm_field100"
+            combination_name = "grid5_img3_ni2_nw4_ms30-15-8_comm_field100"
 
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"plots/population/fc/sr_lang_sim"
-            saved_score_dir = f"../../logs/vary_n_pop/torch_100net/sr_lang_sim/{model_name}/{combination_name}_seed{seed}"
+            saved_score_dir = f"../../logs/vary_n_pop/layout2/sr_lang_sim/{model_name}/{combination_name}_seed{seed}"
             saved_fig_path_langsim = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_similarity.png")
             saved_fig_path_sr = os.path.join(saved_fig_dir, f"{model_name}_{combination_name}_seed{seed}_sr.png")
             os.makedirs(saved_fig_dir, exist_ok=True)
@@ -357,7 +363,7 @@ if __name__ == "__main__":
                 row, col = pair.split("-")
                 row, col = int(row), int(col)
                 print(f"loading network pair {pair}")
-                log_file_path[pair] =  f"../../logs/vary_n_pop/torch_100net/langsim/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
+                log_file_path[pair] =  f"../../logs/vary_n_pop/layout2/langsim/{model_name}/{pair}/{combination_name}/seed{seed}/mode_{mode}/normal/trajectory.pkl"
             
                 log_data = load_trajectory(log_file_path[pair])
 

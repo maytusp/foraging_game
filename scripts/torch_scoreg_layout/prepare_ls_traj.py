@@ -63,8 +63,8 @@ class Args:
     image_size: int = 3
     comm_field: int = 5
     N_i: int = 2
-    max_steps: int = 30
-    n_words: int = 5
+    max_steps: int = 8
+    n_words: int = 4
     d_model: int = 128
     communication_steps: int = 6
 
@@ -74,7 +74,7 @@ class Args:
     mode: str = "test"
 
     # save
-    save_root: str = "logs/vary_n_pop/torch_100net/langsim"
+    save_root: str = "logs/vary_n_pop/layout2/langsim"
 
     # initial-state bank
     init_bank_path: str = "logs/init_bank/grid5x5_ni2.npz"
@@ -92,7 +92,7 @@ class Args:
     zero_memory: bool = False
 
     # naming
-    ckpt_root: str = "checkpoints/torch_scoreg_layout"
+    ckpt_root: str = "checkpoints/torch_scoreg_layout2"
     ascii_layout_name: str = "simple_layout_5x5"
 
     num_nets_to_model_step: dict[int, int] = None
@@ -109,7 +109,7 @@ class Args:
             }
         if self.model_step is None:
             self.model_step = self.num_nets_to_model_step[self.num_networks]
-
+# scratch/emergent_language/foraging_game/checkpoints/torch_scoreg_layout2/pop_ppo_3net_invisible/grid5_img3_ni2_nw4_ms30-15-8_comm_field100/seed1/agent_0_step_281600000.pt
 
 def set_seed(seed: int, deterministic: bool = True):
     random.seed(seed)
@@ -145,7 +145,7 @@ def resolve_layout(args: Args):
 def build_combination_name(args: Args) -> str:
     return (
         f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}"
-        f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
+        f"_nw{args.n_words}_ms30-15-8_comm_field{args.comm_field}"
     )
 
 

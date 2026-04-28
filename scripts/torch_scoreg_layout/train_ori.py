@@ -62,7 +62,7 @@ class Args:
     # Populations
     num_networks: int = 2
     reset_iteration: int = 1
-    self_play_option: bool = True
+    self_play_option: bool = False
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -126,7 +126,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "scoreg_layout"
+    wandb_project_name: str = "scoreg_layout2"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -171,13 +171,13 @@ if __name__ == "__main__":
         model_name += "_wospeedrw"
     if args.ablate_message:
         model_name += "_nocom"
-
+    
     train_combination_name = (
         f"grid{args.grid_size}_img{args.image_size}_ni{args.num_foods}"
-        f"_nw{args.n_words}_ms{args.max_steps}-{args.mid_max_steps}-{args.final_max_steps}_comm_field{args.comm_field}"
+        f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
     )
 
-    save_dir = f"checkpoints/torch_scoreg_layout/{model_name}/{train_combination_name}/seed{args.seed}/"
+    save_dir = f"checkpoints/torch_scoreg_layout2/{model_name}/{train_combination_name}/seed{args.seed}/"
     os.makedirs(save_dir, exist_ok=True)
 
     run_name = f"{model_name}/{train_combination_name}_seed{args.seed}"
@@ -197,7 +197,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/scoreg_layout/{run_name}")
+    writer = SummaryWriter(f"runs/scoreg_layout2/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -317,12 +317,12 @@ if __name__ == "__main__":
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
     # Start training
     for iteration in range(1, args.num_iterations + 1):
-        scheduled_steps = scheduled_max_steps(global_step, args.total_timesteps, args)
-        if scheduled_steps != current_max_steps:
-            print(f"[Max Steps Schedule] global_step={global_step}: max_steps {current_max_steps} -> {scheduled_steps}")
-            current_max_steps = scheduled_steps
-            set_env_max_steps(envs, current_max_steps)
-            writer.add_scalar("charts/max_steps", current_max_steps, global_step)
+        # scheduled_steps = scheduled_max_steps(global_step, args.total_timesteps, args)
+        # if scheduled_steps != current_max_steps:
+        #     print(f"[Max Steps Schedule] global_step={global_step}: max_steps {current_max_steps} -> {scheduled_steps}")
+        #     current_max_steps = scheduled_steps
+        #     set_env_max_steps(envs, current_max_steps)
+        #     writer.add_scalar("charts/max_steps", current_max_steps, global_step)
         scheduled_food_spawn = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
         if scheduled_food_spawn != current_food_spawn_on_agent_cells:
             print(
@@ -368,22 +368,6 @@ if __name__ == "__main__":
             next_obs, next_locs, _ = envs._obs_core()
 
         for step in range(0, args.num_steps):
-            scheduled_steps = scheduled_max_steps(global_step, args.total_timesteps, args)
-            if scheduled_steps != current_max_steps:
-                print(f"[Max Steps Schedule] global_step={global_step}: max_steps {current_max_steps} -> {scheduled_steps}")
-                current_max_steps = scheduled_steps
-                set_env_max_steps(envs, current_max_steps)
-                writer.add_scalar("charts/max_steps", current_max_steps, global_step)
-            scheduled_food_spawn = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
-            if scheduled_food_spawn != current_food_spawn_on_agent_cells:
-                print(
-                    f"[Food Spawn Schedule] global_step={global_step}: "
-                    f"food_spawn_on_agent_cells {current_food_spawn_on_agent_cells} -> {scheduled_food_spawn}"
-                )
-                current_food_spawn_on_agent_cells = scheduled_food_spawn
-                envs.set_food_spawn_on_agent_cells(current_food_spawn_on_agent_cells)
-                writer.add_scalar("charts/food_spawn_on_agent_cells", float(current_food_spawn_on_agent_cells), global_step)
-
             global_step += args.num_envs
 
             action = {}
