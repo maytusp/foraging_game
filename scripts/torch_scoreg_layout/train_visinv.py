@@ -85,7 +85,7 @@ class Args:
     mid_max_steps: int = 15
     final_max_steps: int = 8
     food_spawn_on_agent_cells: bool = False
-    communication_steps: int = 100
+    communication_steps: int = 8
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)

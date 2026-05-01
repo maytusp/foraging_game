@@ -20,8 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring_large --seed 1 --comm_field 100 --num_networks 128 --no-agent-visible
-
+# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 100 --seed 3 --no-self-play-option --total-timesteps 2000000000
 @dataclass
 class Args:
     seed: int = 4
@@ -80,13 +79,13 @@ class Args:
 
     log_every: int = 32
     d_model: int = 128
-    n_words: int = 5
+    n_words: int = 4
     image_size: int = 3
     comm_field: int = 100
     num_foods: int = 2
     grid_size: int = 5
     max_steps: int = 30
-    communication_steps: int= 5
+    communication_steps: int= 100
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
@@ -127,7 +126,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "scoreg_layout"
+    wandb_project_name: str = "scoreg_layout2"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -136,6 +135,8 @@ class Args:
 
 
 
+def scheduled_food_spawn_on_agent_cells(global_step, total_timesteps):
+    return global_step >= total_timesteps * 0.5
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -161,7 +162,7 @@ if __name__ == "__main__":
         f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
     )
 
-    save_dir = f"checkpoints/torch_scoreg_layout/{model_name}/{train_combination_name}/seed{args.seed}/"
+    save_dir = f"checkpoints/torch_scoreg_layout2/{model_name}/{train_combination_name}/seed{args.seed}/"
     os.makedirs(save_dir, exist_ok=True)
 
     run_name = f"{model_name}/{train_combination_name}_seed{args.seed}"
@@ -277,6 +278,9 @@ if __name__ == "__main__":
         )
     start_time = time.time()
     global_step = 0
+    current_food_spawn_on_agent_cells = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
+    envs.set_food_spawn_on_agent_cells(current_food_spawn_on_agent_cells)
+    writer.add_scalar("charts/food_spawn_on_agent_cells", float(current_food_spawn_on_agent_cells), global_step)
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
     possible_pairs = [[i,(i+1) % args.num_networks] for i in range(args.num_networks)]
@@ -298,6 +302,16 @@ if __name__ == "__main__":
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
     # Start training
     for iteration in range(1, args.num_iterations + 1):
+        scheduled_food_spawn = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
+        if scheduled_food_spawn != current_food_spawn_on_agent_cells:
+            print(
+                f"[Food Spawn Schedule] global_step={global_step}: "
+                f"food_spawn_on_agent_cells {current_food_spawn_on_agent_cells} -> {scheduled_food_spawn}"
+            )
+            current_food_spawn_on_agent_cells = scheduled_food_spawn
+            envs.set_food_spawn_on_agent_cells(current_food_spawn_on_agent_cells)
+            writer.add_scalar("charts/food_spawn_on_agent_cells", float(current_food_spawn_on_agent_cells), global_step)
+
         if iteration % args.reset_iteration == 0:
             # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
             for i in range(num_agents):

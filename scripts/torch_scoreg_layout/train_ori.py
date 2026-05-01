@@ -317,12 +317,6 @@ if __name__ == "__main__":
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
     # Start training
     for iteration in range(1, args.num_iterations + 1):
-        # scheduled_steps = scheduled_max_steps(global_step, args.total_timesteps, args)
-        # if scheduled_steps != current_max_steps:
-        #     print(f"[Max Steps Schedule] global_step={global_step}: max_steps {current_max_steps} -> {scheduled_steps}")
-        #     current_max_steps = scheduled_steps
-        #     set_env_max_steps(envs, current_max_steps)
-        #     writer.add_scalar("charts/max_steps", current_max_steps, global_step)
         scheduled_food_spawn = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
         if scheduled_food_spawn != current_food_spawn_on_agent_cells:
             print(
