@@ -16,6 +16,6 @@ echo "Script directory: $SCRIPT_DIR"
 source activate habitat
 
 # XP
-# python -m scripts.torch_scoreg_layout.train_ori --comm_field 100 --image_size 3 --no-agent-visible --num_networks 100 --no-self_play_option --seed 1 --total-timesteps 3000000000
+python -m scripts.torch_scoreg_layout.train_ori --comm_field 100 --image_size 3 --no-agent-visible --num_networks 60 --no-self_play_option --seed 2 --total-timesteps 1800000000
 # XPSP
-# python -m scripts.torch_scoreg_layout.train_ori --comm_field 100 --image_size 3 --no-agent-visible --num_networks 100 --self_play_option --seed 1 --total-timesteps 2000000000
+python -m scripts.torch_scoreg_layout.train_ori --comm_field 100 --image_size 3 --no-agent-visible --num_networks 60 --self_play_option --seed 2 --total-timesteps 1800000000

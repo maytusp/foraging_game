@@ -279,6 +279,7 @@ OPT_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8,
 clq_pairs_15 = circular_clique_pairs(15, clique_size=3)  # Circular clique network
 clq_pairs_16 = circular_clique_pairs(16, clique_size=4)  # Circular clique network
 clq_pairs_64 = circular_clique_pairs(64, clique_size=4)
+clq_pairs_100 = circular_clique_pairs(100, clique_size=4)  # Circular clique network
 
 SET_WS_PAIRS_k4_p02 = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS_k4_p02])
 SET_OPT_PAIRS_SET = set([f"{pair[0]}-{pair[1]}" for pair in OPT_PAIRS])

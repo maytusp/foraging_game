@@ -1,5 +1,0 @@
-Script directory: /mnt/iusers01/fatpou01/compsci01/n70579mp/scratch/emergent_language/foraging_game
-/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `target-kl` is annotated with type `<class 'float'>`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
-  warnings.warn(message)
-wandb: Currently logged in as: maytusp to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-[2026-04-26T05:08:43.349] error: *** JOB 14298482 ON node868 CANCELLED AT 2026-04-26T05:08:43 DUE to SIGNAL Terminated ***
