@@ -18,12 +18,12 @@ pickup_temporal_avg_accuracy_dict_emb = {'spawn time': [0.2916666666666667, 0.27
 # ScoreG (GPU, new, 4 vertical positions instead of 2)
 pickup_high_avg_accuracy_dict_token ={'score': [0.26, 0.22333333333333333, 0.24333333333333335, 0.24666666666666667, 0.26666666666666666, 0.22, 0.24666666666666667, 0.18, 0.22666666666666666], 'vertical position': [0.31666666666666665, 0.31666666666666665, 0.29333333333333333, 0.25666666666666665, 0.29333333333333333, 0.2966666666666667, 0.31, 0.25666666666666665, 0.26], 'horizontal position': [0.31333333333333335, 0.3, 0.3466666666666667, 0.21666666666666667, 0.25333333333333335, 0.25, 0.25, 0.22333333333333333, 0.27]}
 pickup_high_avg_accuracy_dict_emb = {'score': [0.36, 0.38333333333333336, 0.35333333333333333, 0.36, 0.42, 0.36333333333333334, 0.3466666666666667, 0.24666666666666667, 0.36333333333333334], 'vertical position': [0.31333333333333335, 0.36333333333333334, 0.20666666666666667, 0.31, 0.3566666666666667, 0.31, 0.39666666666666667, 0.27, 0.34], 'horizontal position': [0.3333333333333333, 0.30666666666666664, 0.32, 0.3233333333333333, 0.3566666666666667, 0.31666666666666665, 0.32666666666666666, 0.2966666666666667, 0.30333333333333334]}
-# Define your chance levels
+# Define chance levels
 chance_levels = {
     'pickup_high': {
         'score': 0.1,
         'horizontal position': 0.20,
-        'vertical position': 0.50
+        'vertical position': 0.25
     },
     'pickup_temporal': {
         'spawn time': 0.167,
@@ -41,105 +41,126 @@ variable_display_names = {
     'vertical position': 'V-Pos'
 }
 
-# Create records
+
+input_display_names = {
+    'emb': 'Msg Embedding',
+    'token': 'Integer Msg',
+}
+
+
+eval_tasks = ['pickup_high', 'pickup_temporal']
+task_titles = {
+    'pickup_high': 'Pickup High Score',
+    'pickup_temporal': 'Pickup Temporal Order',
+}
+variable_orders = {
+    'pickup_high': ['Score', 'V-Pos', 'H-Pos'],
+    'pickup_temporal': ['Time', 'V-Pos', 'H-Pos'],
+}
+
+
 records = []
-for task_type in ['pickup_high', 'pickup_temporal']:
-    for input_type, label in [('emb', 'Msg Embedding'), ('token', ' Integer Msg')]:
+for task_type in eval_tasks:
+    for input_type, input_label in input_display_names.items():
         acc_dict = globals()[f'{task_type}_avg_accuracy_dict_{input_type}']
         for var, accs in acc_dict.items():
-            records.append({
-                'Task': task_type,
-                'TaskLabel': task_type.replace('_', ' ').title(),
-                'Variable': variable_display_names.get(var, var.title()),
-                'Input': label,
-                'Mean': np.mean(accs),
-                'Std': np.std(accs),
-                'Chance': chance_levels[task_type][var]
-            })
+            for run_id, acc in enumerate(accs):
+                records.append({
+                    'Task': task_type,
+                    'TaskLabel': task_titles[task_type],
+                    'Variable': variable_display_names.get(var, var.title()),
+                    'Input': input_label,
+                    'Run': run_id,
+                    'Accuracy': acc,
+                    'Chance': chance_levels[task_type][var],
+                })
 
 df = pd.DataFrame(records)
-df['Group'] = df['TaskLabel'] + '\n' + df['Variable']
-sns.set(style="whitegrid")
 
 
+sns.set_theme(
+    context="talk",
+    style="whitegrid",
+    palette="colorblind",
+    rc={
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "figure.dpi": 140,
+        "savefig.dpi": 300,
+        "axes.titleweight": "bold",
+        "font.size": 24,
+        "axes.labelsize": 26,
+        "xtick.labelsize": 24,
+        "ytick.labelsize": 24,
+        "legend.fontsize": 19,
+        "legend.title_fontsize": 20,
+    },
+)
+palette = sns.color_palette("colorblind", n_colors=len(input_display_names))
+os.makedirs("plots/decoding", exist_ok=True)
 
-task_order = ['pickup_high', 'pickup_temporal']
-task_titles = {'pickup_high': 'Pickup High Score', 'pickup_temporal': 'Pickup Temporal Order'}
-# Load the Paired palette
-original_palette = sns.color_palette("Paired")
-color_palette = original_palette[2:] + original_palette[:2] # Green
-
-for i, task in enumerate(task_order):
-    # ax = axes[i]
-    # Create FacetGrid-style subplots
-
-    plt.figure(figsize=(6, 6))
-    plt.rcParams.update({
-        'font.size': 24,
-        'axes.labelsize': 24,
-        'axes.titlesize': 24,
-        'xtick.labelsize': 24,
-        'ytick.labelsize': 24,
-        'legend.fontsize': 24
-    })
+for task in eval_tasks:
     subdf = df[df['Task'] == task].copy()
-    subdf['X'] = subdf['Variable']
-    # Draw barplot without error bars
-    ax = sns.barplot(
+    order = variable_orders[task]
+
+    fig, ax = plt.subplots(figsize=(5.2, 5.2))
+    sns.barplot(
         data=subdf,
-        x="X", y="Mean", hue="Input",
-        palette=color_palette, ci=None,
-        errorbar=None
+        x="Variable",
+        y="Accuracy",
+        hue="Input",
+        order=order,
+        hue_order=list(input_display_names.values()),
+        palette=palette,
+        ci="sd",
+        capsize=0.12,
+        errwidth=1.4,
+        edgecolor="0.25",
+        linewidth=0.8,
+        alpha=0.9,
+        ax=ax,
     )
-    # Compute correct positions for error bars
-    # Match each patch (bar) to a Mean/Std
-    patches = ax.patches
-    means = subdf['Mean'].values
-    stds = subdf['Std'].values
 
-    # Only take visible bars (exclude legend handles etc.)
-    visible_patches = [p for p in patches if p.get_height() > 0]
+    for xtick, variable in zip(ax.get_xticks(), order):
+        chance = subdf[subdf['Variable'] == variable]['Chance'].iloc[0]
+        ax.hlines(
+            y=chance,
+            xmin=xtick - 0.42,
+            xmax=xtick + 0.42,
+            color="#C44E52",
+            linestyle=(0, (4, 3)),
+            linewidth=1.6,
+            zorder=4,
+        )
 
-    # Ensure lengths match
-    assert len(visible_patches) == len(means), \
-        f"Expected {len(means)} bars, but found {len(visible_patches)}"
-
-    # Plot each error bar
-    for patch, mean, std in zip(visible_patches, means, stds):
-        x = patch.get_x() + patch.get_width() / 2.
-        ax.errorbar(x, mean, yerr=std, fmt='none', c='black', capsize=5, linewidth=1)
-                
-    # Fix the chance lines: add one line per variable across both bars (Token + Emb)
-    variables = subdf['Variable'].unique()
-    x_ticks = ax.get_xticks()
-    for xtick, var in zip(x_ticks, variables):
-        chance = subdf[subdf['Variable'] == var]['Chance'].iloc[0]
-        # Adjust x range slightly to match the width of grouped bars
-        ax.hlines(y=chance, xmin=xtick - 0.4, xmax=xtick + 0.4, 
-                  color='red', linestyle='--', linewidth=1)
+    handles, labels = ax.get_legend_handles_labels()
+    deduped = dict(zip(labels, handles))
+    chance_handle = Line2D(
+        [0], [0],
+        color="#C44E52",
+        linestyle=(0, (4, 3)),
+        linewidth=1.6,
+        label="Chance",
+    )
+    legend_handles = [deduped[label] for label in input_display_names.values()] + [chance_handle]
+    legend_labels = list(input_display_names.values()) + ["Chance"]
 
     ax.set_title("")
-    ax.set_xlabel('')
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=15)
+    ax.set_xlabel("")
+    ax.set_ylabel("Decoding accuracy")
     ax.set_ylim(0, 1)
-    ax.set_ylabel('Accuracy')
-    if i == 0:
-        ax.legend_.remove()
-    else:
+    ax.tick_params(axis="x", rotation=12)
+    ax.legend(
+        legend_handles,
+        legend_labels,
+        loc="upper right",
+        frameon=True,
+        title="Input",
+        borderpad=0.6,
+    )
+    sns.despine(ax=ax)
 
-        # Create legend handles (Input types from seaborn)
-        handles, labels = ax.get_legend_handles_labels()
-
-        # Add red dashed line for chance level
-        chance_handle = Line2D([0], [0], color='red', linestyle='--', linewidth=1, label='Chance Level')
-        handles.append(chance_handle)
-        labels.append('Chance Level')
-
-        # Add legend to top right of each subplot
-        ax.legend(handles, labels, loc='upper right', frameon=True, fontsize=20, title='Input Type')
-
-    # plt.suptitle('Decoding Accuracy per Task and Variable', y=1.05)
-    plt.tight_layout()
-    os.makedirs("plots/decoding", exist_ok=True)
-    plt.savefig(f"plots/decoding/acc_{task}.png")
+    fig.tight_layout()
+    fig.savefig(f"plots/decoding/acc_{task}.png", bbox_inches="tight")
+    fig.savefig(f"plots/decoding/acc_{task}.pdf", bbox_inches="tight")
     plt.close()

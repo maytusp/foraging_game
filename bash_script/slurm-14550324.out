@@ -1,0 +1,7 @@
+Script directory: /mnt/iusers01/fatpou01/compsci01/n70579mp/scratch/emergent_language/foraging_game
+/mnt/iusers01/fatpou01/compsci01/n70579mp/.conda/envs/habitat/lib/python3.9/site-packages/tyro/_parsers.py:353: UserWarning: The field `num-nets-to-model-step` is annotated with type `dict[int, int]`, but the default value `None` has type `<class 'NoneType'>`. We'll try to handle this gracefully, but it may cause unexpected behavior.
+  warnings.warn(message)
+Using device: cuda
+Model name: pop_ppo_100net_invisible
+Combination name: grid5_img3_ni2_nw4_ms30_comm_field100
+[2026-05-05T05:31:02.407] error: *** JOB 14550324 ON node886 CANCELLED AT 2026-05-05T05:31:02 DUE to SIGNAL Terminated ***

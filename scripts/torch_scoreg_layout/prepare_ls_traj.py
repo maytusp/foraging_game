@@ -265,8 +265,13 @@ def run_pair_episodes_batched(
     food_energy = envs.food_energy.detach().cpu().numpy()
     score_visible_to_agent = envs.score_visible_to_agent.detach().cpu().numpy()
 
-    # logs [T, B, A]
+    # logs [T, B, A] and message embeddings [T, B, E, A]
     log_s_messages = torch.full((args.max_steps, B, num_agents), -1, dtype=torch.int64, device=device)
+    log_s_message_embs = torch.zeros(
+        (args.max_steps, B, receiver_agent.embedding_size, num_agents),
+        dtype=torch.float32,
+        device=device,
+    )
     log_rewards = torch.zeros((args.max_steps, B, num_agents), device=device)
 
     alive = torch.ones(B, dtype=torch.bool, device=device)
@@ -310,6 +315,13 @@ def run_pair_episodes_batched(
         # record only still-alive envs
         alive_idx = alive.nonzero(as_tuple=False).squeeze(1)
         log_s_messages[ep_step, alive_idx] = s_messages[alive_idx]
+        # Message sent by agent 0 is received/encoded by agent 1, and vice versa.
+        log_s_message_embs[ep_step, alive_idx, :, 0] = receiver_agent.message_encoder(
+            s_messages[alive_idx, 0].long()
+        )
+        log_s_message_embs[ep_step, alive_idx, :, 1] = sender_agent.message_encoder(
+            s_messages[alive_idx, 1].long()
+        )
 
         (next_obs, next_locs, msg_masks), all_rewards, all_terminations, all_truncations, infos = envs.step(
             acts_BA, auto_reset=True
@@ -344,8 +356,9 @@ def run_pair_episodes_batched(
             next_r_messages[idx] = 0
 
     # convert to per-episode dict matching old format
-    log_s_messages_np = log_s_messages.detach().cpu().numpy()   # [T,B,A]
-    log_rewards_np = log_rewards.detach().cpu().numpy()         # [T,B,A]
+    log_s_messages_np = log_s_messages.detach().cpu().numpy()       # [T,B,A]
+    log_s_message_embs_np = log_s_message_embs.detach().cpu().numpy() # [T,B,E,A]
+    log_rewards_np = log_rewards.detach().cpu().numpy()             # [T,B,A]
     first_done_step_np = first_done_step.detach().cpu().numpy()
 
     log_data = {}
@@ -361,6 +374,7 @@ def run_pair_episodes_batched(
 
         # keep full padded arrays exactly like before
         ep_log_s_messages = log_s_messages_np[:, b, :]
+        ep_log_s_message_embs = log_s_message_embs_np[:, b, :, :]
         ep_log_rewards = log_rewards_np[:, b, :]
 
         log_target_food_dict = {
@@ -377,6 +391,7 @@ def run_pair_episodes_batched(
         log_data[f"episode_{ep_id}"] = {
             "episode_id": ep_id,
             "log_s_messages": ep_log_s_messages,
+            "log_s_message_embs": ep_log_s_message_embs,
             "log_rewards": ep_log_rewards,
             "who_see_target": who_see_target,
             "log_target_food_dict": log_target_food_dict,

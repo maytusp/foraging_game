@@ -4,6 +4,7 @@ cd ..
 SCRIPT_DIR="$(pwd)"
 echo "Script directory: $SCRIPT_DIR"
 
+python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --num-networks 3 --model-name pop_ppo_3net_invisible --model-step 99993600 --ckpt-root checkpoints/torch_scoreg_layout2 --save-root logs/decode/scoreg/ --total-episodes 5000 --seed 2
 
 # EVAL
 python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --num-networks 30 --model-name pop_ppo_30net_invisible --model-step 1499996160 --seed 1
