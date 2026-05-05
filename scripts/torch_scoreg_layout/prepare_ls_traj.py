@@ -20,31 +20,6 @@ from environments.torch_scoreg_layout import (
 )
 from models.pickup_models import PPOLSTMCommAgent
 
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --num-networks 100 --model-name pop_ppo_100net_invisible --seed 1 --no-all-pairs --comm-field 100 --model-step 1382400000
-
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 2 --model-name sp_pop_ppo_2net_invisible --seed 1
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 2 --model-name sp_pop_ppo_2net_invisible --seed 2
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 2 --model-name sp_pop_ppo_2net_invisible --seed 3
-
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 3 --model-name sp_pop_ppo_3net_invisible --seed 1
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 3 --model-name sp_pop_ppo_3net_invisible --seed 2
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 3 --model-name sp_pop_ppo_3net_invisible --seed 3
-
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 8 --model-name sp_pop_ppo_8net_invisible --seed 1
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 8 --model-name sp_pop_ppo_8net_invisible --seed 2
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 8 --model-name sp_pop_ppo_8net_invisible --seed 3
-
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 16 --model-name sp_pop_ppo_16net_invisible --seed 1
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 16 --model-name sp_pop_ppo_16net_invisible --seed 2
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 16 --model-name sp_pop_ppo_16net_invisible --seed 3
-
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 32 --model-name sp_pop_ppo_32net_invisible --seed 1
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 32 --model-name sp_pop_ppo_32net_invisible --seed 2
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 32 --model-name sp_pop_ppo_32net_invisible --seed 3
-
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 64 --model-name sp_pop_ppo_64net_invisible --seed 1
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 64 --model-name sp_pop_ppo_64net_invisible --seed 2
-# python -m scripts.torch_scoreg_layout.prepare_ls_traj --no-all-pairs --comm-field 100 --num-networks 64 --model-name sp_pop_ppo_64net_invisible --seed 3
 @dataclass
 class Args:
     seed: int = 1
@@ -61,12 +36,12 @@ class Args:
     total_episodes: int = 1000
     grid_size: int = 5
     image_size: int = 3
-    comm_field: int = 5
+    comm_field: int = 100
     N_i: int = 2
-    max_steps: int = 8
+    max_steps: int = 30
     n_words: int = 4
     d_model: int = 128
-    communication_steps: int = 6
+    communication_steps: int = 100
 
     agent_visible: bool = False
     fully_visible_score: bool = False
@@ -92,7 +67,7 @@ class Args:
     zero_memory: bool = False
 
     # naming
-    ckpt_root: str = "checkpoints/torch_scoreg_layout2"
+    ckpt_root: str = "checkpoints/scoreg"
     ascii_layout_name: str = "simple_layout_5x5"
 
     num_nets_to_model_step: dict[int, int] = None
@@ -100,12 +75,9 @@ class Args:
     def __post_init__(self):
         if self.num_nets_to_model_step is None:
             self.num_nets_to_model_step = {
-                2: 281600000,
-                3: 281600000,
-                8: 486400000,
-                16: 793600000,
-                32: 1484800000,
-                64: 1792000000,
+                30: 1499996160,
+                60: 1499996160,
+                100: 1996800000,
             }
         if self.model_step is None:
             self.model_step = self.num_nets_to_model_step[self.num_networks]
@@ -145,7 +117,7 @@ def resolve_layout(args: Args):
 def build_combination_name(args: Args) -> str:
     return (
         f"grid{args.grid_size}_img{args.image_size}_ni{args.N_i}"
-        f"_nw{args.n_words}_ms30-15-8_comm_field{args.comm_field}"
+        f"_nw{args.n_words}_ms30_comm_field{args.comm_field}"
     )
 
 
@@ -421,6 +393,27 @@ def save_pair_outputs(
     args: Args,
     model_name: str,
 ):
+    episode_rewards = []
+    episode_lengths = []
+
+    for episode_data in pair_log_data.values():
+        log_rewards = episode_data["log_rewards"]
+        log_s_messages = episode_data["log_s_messages"]
+
+        episode_rewards.append(float(np.sum(log_rewards[:, 0])))
+
+        end_idxs = np.where(log_s_messages[:, 0] == -1)[0]
+        if end_idxs.size == 0:
+            episode_lengths.append(log_s_messages.shape[0])
+        else:
+            episode_lengths.append(int(end_idxs[0]))
+
+    episode_rewards = np.array(episode_rewards, dtype=np.float32)
+    episode_lengths = np.array(episode_lengths, dtype=np.float32)
+    success_rate = float(np.mean(episode_rewards > 0.0))
+    average_reward = float(np.mean(episode_rewards))
+    average_length = float(np.mean(episode_lengths))
+
     combination_name = build_combination_name(args)
     pair_name = f"{sender_id}-{receiver_id}"
     save_dir = os.path.join(
@@ -437,7 +430,13 @@ def save_pair_outputs(
     with open(os.path.join(save_dir, "trajectory.pkl"), "wb") as f:
         pickle.dump(pair_log_data, f)
 
+    with open(os.path.join(save_dir, "score.txt"), "w") as f:
+        print(f"Success Rate: {success_rate}", file=f)
+        print(f"Average Reward {average_reward}", file=f)
+        print(f"Average Length: {average_length}", file=f)
+
     print(f"Saved trajectory to {os.path.join(save_dir, 'trajectory.pkl')}")
+    print(f"Saved score to {os.path.join(save_dir, 'score.txt')}")
 
 
 def main():

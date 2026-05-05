@@ -20,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=1 python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 100 --seed 3 --no-self-play-option --total-timesteps 2000000000
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 100 --seed 3 --self-play-option --total-timesteps 2000000000
 @dataclass
 class Args:
     seed: int = 4

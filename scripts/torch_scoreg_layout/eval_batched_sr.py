@@ -20,11 +20,7 @@ import tyro
 from environments.torch_scoreg_layout import (
     EnvConfig,
     TorchForagingEnv,
-    simple_layout_5x5,
-    simple_layout_7x7,
-    simple_layout_9x9,
-    simple_layout_13x13,
-    simple_layout_17x17,
+    simple_layout_5x5
     
 )
 from models.pickup_models import PPOLSTMCommAgent
@@ -43,14 +39,14 @@ class Args:
     auto_model_name: bool = False
 
     # env / rollout
-    total_episodes: int = 1000
+    total_episodes: int = 256
     batch_num_envs: int = 256
     grid_size: int = 5
     image_size: int = 3
     comm_field: int = 100
     N_i: int = 2
     max_steps: int = 30
-    n_words: int = 5
+    n_words: int = 4
     d_model: int = 128
     communication_steps: int = 5
 
@@ -60,7 +56,7 @@ class Args:
     mode: str = "test"
 
     # save
-    save_root: str = "logs/vary_n_pop/torch_100net/sr_batched"
+    save_root: str = "logs/vary_n_pop/layout2/sr/"
 
     # pair protocol
     fixed_receiver: int = 0
@@ -75,7 +71,7 @@ class Args:
     zero_memory: bool = False
 
     # naming
-    ckpt_root: str = "checkpoints/torch_scoreg_layout"
+    ckpt_root: str = "checkpoints/scoreg"
     ascii_layout_name: str = "simple_layout_5x5"
 
     num_nets_to_model_step: dict[int, int] = None
@@ -119,10 +115,6 @@ def resolve_model_name(args: Args) -> str:
 def resolve_layout(args: Args):
     layout_map = {
         "simple_layout_5x5": simple_layout_5x5,
-        "simple_layout_7x7": simple_layout_7x7,
-        "simple_layout_9x9": simple_layout_9x9,
-        "simple_layout_13x13": simple_layout_13x13,
-        "simple_layout_17x17": simple_layout_17x17,
     }
     if args.ascii_layout_name not in layout_map:
         raise ValueError(f"Unknown ascii_layout_name: {args.ascii_layout_name}")

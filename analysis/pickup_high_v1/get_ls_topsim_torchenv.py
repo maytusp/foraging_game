@@ -12,6 +12,9 @@ from language_analysis import Disent, TopographicSimilarity
 import os
 from collections import Counter
 
+N_WORDS = 4
+TOPSIM_PAD_TOKEN = N_WORDS
+
 # Load the .pkl file
 def load_trajectory(file_path):
     with open(file_path, "rb") as f:
@@ -44,56 +47,55 @@ def get_mode_episode_length(log_data) -> int:
     mode_length = counts.most_common(1)[0][0]
     return mode_length
 
+
+def get_mode_target_episode_length(log_data) -> int:
+    lengths = []
+    for episode_id, data in log_data.items():
+        if data["who_see_target"] == 0:
+            lengths.append(get_episode_length(data["log_s_messages"]))
+    if not lengths:
+        raise ValueError("No target-visible episodes found for TopSim/PosDis.")
+    counts = Counter(lengths)
+    return counts.most_common(1)[0][0]
+
+
+def pad_message(message, target_length, pad_token):
+    if len(message) >= target_length:
+        return message[:target_length]
+    return np.pad(
+        message,
+        (0, target_length - len(message)),
+        mode="constant",
+        constant_values=pad_token,
+    )
+
 def extract_data_for_ls(log_data):
-    # Message length is the mode of the episode length
-    mode_length = get_mode_episode_length(log_data)
     message_data = {"agent0": [], "agent1": []}
-    attribute_data = []
-    scores = {"agent0": [], "agent1": []}
-    item_locs = {"agent0": [], "agent1": []}
-    communication_steps = 5
 
     for episode_id, data in log_data.items():
         log_s_messages = data["log_s_messages"]
-        log_rewards = data["log_rewards"]
         who_see_target = data["who_see_target"]
-        target_score = data["log_target_food_dict"]["score"]
-        target_loc = data["log_target_food_dict"]["location"]       # (2,)
-        distractor_score = data["log_distractor_food_dict"]["score"][0]
-        distractor_loc = data["log_distractor_food_dict"]["location"][0]  # (2,)
-        # Compute this episode's actual length
         ep_len = get_episode_length(log_s_messages)
-
-
-        if ep_len >= communication_steps and who_see_target == 0:
-            messages = log_s_messages[:communication_steps, 0].flatten()
-            message_data["agent0"].append(messages)
+        messages = log_s_messages[:ep_len, 0].flatten()
+        message_data["agent0"].append(messages)
         
     return message_data
 
-def extract_data_for_topsim(log_data):
-    # Message length is the mode of the episode length
-    mode_length = get_mode_episode_length(log_data)
+def extract_data_for_topsim(log_data, pad_token=TOPSIM_PAD_TOKEN):
+    mode_length = get_mode_target_episode_length(log_data)
     message_data = {"agent0": [], "agent1": []}
     attribute_data = []
-    scores = {"agent0": [], "agent1": []}
-    item_locs = {"agent0": [], "agent1": []}
-    communication_steps = 6 # only consider the first 6 steps of communication, since that's the mode episode length for most models, and topsim requires all episodes to have the same length
 
     for episode_id, data in log_data.items():
         log_s_messages = data["log_s_messages"]
-        log_rewards = data["log_rewards"]
         who_see_target = data["who_see_target"]
         target_score = data["log_target_food_dict"]["score"]
         target_loc = data["log_target_food_dict"]["location"]       # (2,)
-        distractor_score = data["log_distractor_food_dict"]["score"][0]
-        distractor_loc = data["log_distractor_food_dict"]["location"][0]  # (2,)
-        # Compute this episode's actual length
         ep_len = get_episode_length(log_s_messages)
 
-        # This is only for topsim and posdis, since we need to align messages and attributes at each time step. For similarity, we can keep all episodes and pad messages to the same length.
-        if ep_len >= communication_steps and who_see_target == 0:
-            messages = log_s_messages[:communication_steps, 0].flatten()
+        if ep_len <= mode_length+2 and who_see_target == 0:
+            messages = log_s_messages[:ep_len, 0].flatten()
+            messages = pad_message(messages, mode_length+2, pad_token)
             message_data["agent0"].append(messages)
             extract_attribute = [target_score, target_loc[0], target_loc[1]]
             attribute_data.append(extract_attribute)
@@ -301,18 +303,14 @@ def plot_population_metrics(population_stats, saved_fig_dir):
 
 if __name__ == "__main__":
     model2numnet = {
-        # "pop_ppo_2net_invisible": 2,
-        "pop_ppo_3net_invisible": 3,
-        # "pop_ppo_8net_invisible": 8,
-        # "pop_ppo_16net_invisible": 16,
-        # "pop_ppo_32net_invisible": 32,
-        # "pop_ppo_64net_invisible": 64,
-        # "sp_pop_ppo_2net_invisible": 2,
-        # "sp_pop_ppo_3net_invisible": 3,
-        # "sp_pop_ppo_8net_invisible": 8,
-        # "sp_pop_ppo_16net_invisible": 16,
-        # "sp_pop_ppo_32net_invisible": 32,
-        # "sp_pop_ppo_64net_invisible": 64,
+        "pop_ppo_30net_invisible": 30,
+        "sp_pop_ppo_30net_invisible": 30,
+
+        "pop_ppo_60net_invisible": 60,
+        "sp_pop_ppo_60net_invisible": 60,
+
+        "pop_ppo_100net_invisible": 100,
+        "sp_pop_ppo_100net_invisible": 100,
 
     }
     compute_topsim = True
@@ -336,7 +334,7 @@ if __name__ == "__main__":
         seed_topsim = []
         seed_posdis = []
         for seed in range(1,4):
-            combination_name = "grid5_img3_ni2_nw4_ms30-15-8_comm_field100"
+            combination_name = "grid5_img3_ni2_nw4_ms30_comm_field100"
 
             print(f"{model_name}/{combination_name}")
             saved_fig_dir = f"plots/population/fc/sr_lang_sim"
