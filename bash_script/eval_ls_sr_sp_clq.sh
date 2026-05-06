@@ -16,10 +16,10 @@ echo "Script directory: $SCRIPT_DIR"
 source activate habitat
 
 
-# LS
-python -m scripts.torch_scoreg_layout.prepare_ls_struct --no-all-pairs --num-networks 100 --model-name sp_clq_ppo_100net_invisible --model-step 1996800000 --seed 1
-python -m scripts.torch_scoreg_layout.prepare_ls_struct --no-all-pairs --num-networks 100 --model-name sp_clq_ppo_100net_invisible --model-step 1996800000 --seed 2
-python -m scripts.torch_scoreg_layout.prepare_ls_struct --no-all-pairs --num-networks 100 --model-name sp_clq_ppo_100net_invisible --model-step 1996800000 --seed 3
+# # LS
+# python -m scripts.torch_scoreg_layout.prepare_ls_struct --no-all-pairs --num-networks 100 --model-name sp_clq_ppo_100net_invisible --model-step 1996800000 --seed 1
+# python -m scripts.torch_scoreg_layout.prepare_ls_struct --no-all-pairs --num-networks 100 --model-name sp_clq_ppo_100net_invisible --model-step 1996800000 --seed 2
+# python -m scripts.torch_scoreg_layout.prepare_ls_struct --no-all-pairs --num-networks 100 --model-name sp_clq_ppo_100net_invisible --model-step 1996800000 --seed 3
 
 
 # SR

@@ -19,9 +19,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
-from utils.graph_gen import clq_pairs_64
+from utils.graph_gen import ws_pairs_100
 from models.pickup_models import PPOLSTMCommAgent
-# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring_large --seed 1 --comm_field 100 --num_networks 128 --no-agent-visible
 
 @dataclass
 class Args:
@@ -128,7 +127,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "scoreg_layout"
+    wandb_project_name: str = "scoreg_layout2"
     """the wandb's project name"""
     wandb_entity: str = "maytusp"
     """the entity (team) of wandb's project"""
@@ -149,7 +148,7 @@ if __name__ == "__main__":
     else:
         sp_prefix = ""
 
-    model_name = f"{sp_prefix}clq_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}ws_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -162,7 +161,7 @@ if __name__ == "__main__":
         f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
     )
 
-    save_dir = f"checkpoints/torch_scoreg_layout/{model_name}/{train_combination_name}/seed{args.seed}/"
+    save_dir = f"checkpoints/torch_scoreg_layout2/{model_name}/{train_combination_name}/seed{args.seed}/"
     os.makedirs(save_dir, exist_ok=True)
 
     run_name = f"{model_name}/{train_combination_name}_seed{args.seed}"
@@ -182,7 +181,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/scoreg_layout/{run_name}")
+    writer = SummaryWriter(f"runs/scoreg_layout2/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -280,7 +279,7 @@ if __name__ == "__main__":
     global_step = 0
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    possible_pairs = clq_pairs_64
+    possible_pairs = ws_pairs_100
     if args.self_play_option:
         print("ADD SELF PAIRS")
         possible_pairs += [[a,a] for a in range(args.num_networks)]

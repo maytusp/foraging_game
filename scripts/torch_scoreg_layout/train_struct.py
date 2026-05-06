@@ -7,6 +7,7 @@ import os
 import random
 import time
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import torch
@@ -20,6 +21,7 @@ from torch.utils.tensorboard import SummaryWriter
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
 from models.pickup_models import PPOLSTMCommAgent
+from utils.graph_gen import clq_pairs_100, ws_pairs_100, opt_pairs_100
 # CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_ring --comm_field 100 --no-agent-visible --num_networks 100 --seed 3 --self-play-option --total-timesteps 2000000000
 @dataclass
 class Args:
@@ -66,6 +68,8 @@ class Args:
     num_networks: int = 2
     reset_iteration: int = 1
     self_play_option: bool = False
+    social_network: Literal["ring", "clq", "ws", "opt", "fc"] = "ring"
+    """social network topology used to sample training pairs"""
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -149,7 +153,7 @@ if __name__ == "__main__":
     else:
         sp_prefix = ""
 
-    model_name = f"{sp_prefix}ring_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}{args.social_network}_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
@@ -283,10 +287,31 @@ if __name__ == "__main__":
     writer.add_scalar("charts/food_spawn_on_agent_cells", float(current_food_spawn_on_agent_cells), global_step)
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    possible_pairs = [[i,(i+1) % args.num_networks] for i in range(args.num_networks)]
+    if args.social_network == "ring":
+        possible_pairs = [[i, (i + 1) % args.num_networks] for i in range(args.num_networks)]
+    elif args.social_network == "fc":
+        possible_pairs = [
+            [i, j]
+            for i in range(args.num_networks)
+            for j in range(args.num_networks)
+            if i != j
+        ]
+    else:
+        if args.num_networks != 100:
+            raise ValueError(
+                f"social_network={args.social_network!r} uses a precomputed 100-network graph; "
+                f"set --num-networks 100, or add a matching pair list."
+            )
+        possible_pairs_by_network = {
+            "clq": clq_pairs_100,
+            "ws": ws_pairs_100,
+            "opt": opt_pairs_100,
+        }
+        possible_pairs = list(possible_pairs_by_network[args.social_network])
     if args.self_play_option:
         print("ADD SELF PAIRS")
         possible_pairs += [[a,a] for a in range(args.num_networks)]
+    selected_networks = random.sample(possible_pairs, 1)[0]
 
     
     # --- log performance ---

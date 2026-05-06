@@ -72,8 +72,8 @@ from graph_gen import *
 
 # Optimized Network (k=2, edges=30)
 # --- Parameters ---
-n_nodes = 32
-possible_pairs_ws = opt_pairs_32
+n_nodes = 100
+possible_pairs_ws = ws_pair_100
 # --- Create Graph from possible_pairs_ws ---
 small_world_graph = nx.Graph()
 small_world_graph.add_nodes_from(range(1, n_nodes + 1))  # nodes indexed from 1
@@ -90,7 +90,7 @@ plt.figure(figsize=(6, 6))
 nx.draw(small_world_graph, pos_octagon_ws, with_labels=False, node_size=20, node_color='lightcoral', font_size=10, font_weight='bold', edge_color='lightcoral', width=1.5)
 plt.title(f"Watts–Strogatz Small-World Network ({n_nodes} Nodes)")
 plt.axis('equal')
-plt.savefig("opt_network.pdf")
+plt.savefig("ws100.png")
 plt.show()
 
 

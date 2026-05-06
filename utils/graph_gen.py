@@ -172,14 +172,14 @@ def optimized_small_world(num_nodes, k=None, max_edges=None):
             cost = 1.0 / (1 + gain)
             ratio = gain / cost
             if ratio > best_gain:
-                print(f"new ratio of {u,v} {ratio}")
-                print(f"best_gain {best_gain}")
+                # print(f"new ratio of {u,v} {ratio}")
+                # print(f"best_gain {best_gain}")
                 best_gain = ratio
                 best_edge = (u, v)
         
         if best_edge:
-            print(f"{best_edge}")
-            print(f"ratio {ratio}")
+            # print(f"{best_edge}")
+            # print(f"ratio {ratio}")
             edges.append(list(best_edge))
         else:
             break
@@ -259,11 +259,15 @@ def get_adjacency_matrix(connected_nodes, num_nodes):
 
 possible_pairs_ws = watts_strogatz_pairs(15, k=4, p=0.1)
 ws_pairs_15 = watts_strogatz_pairs(15, k=4, p=0.1)
-ws_pairs_32 = watts_strogatz_pairs(32, k=4, p=0.1)
+# ws_pairs_32 = watts_strogatz_pairs(32, k=4, p=0.1)
 ws_pairs_64 = watts_strogatz_pairs(64, k=4, p=0.1)
+ws_pairs_100 = watts_strogatz_pairs(100, k=4, p=0.1)
+
 opt_pairs_15 = optimized_small_world(15, k=2, max_edges=30)
-opt_pairs_32 = optimized_small_world(32, k=2, max_edges=128)
+# opt_pairs_32 = optimized_small_world(32, k=2, max_edges=128)
 opt_pairs_64 = optimized_small_world(64, k=2, max_edges=128)
+opt_pairs_100 = optimized_small_world(100, k=2, max_edges=200)
+
 # possible_pairs_opt2 = optimized_small_worldv2(15, k=2, max_edges=30)
 # distances = compute_all_pairs_shortest_paths(15, possible_pairs_ws)
 # print(possible_pairs_ws)
@@ -279,6 +283,7 @@ OPT_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8,
 clq_pairs_15 = circular_clique_pairs(15, clique_size=3)  # Circular clique network
 clq_pairs_16 = circular_clique_pairs(16, clique_size=4)  # Circular clique network
 clq_pairs_64 = circular_clique_pairs(64, clique_size=4)
+print(f"clq_pairs_64 {clq_pairs_64}")
 clq_pairs_100 = circular_clique_pairs(100, clique_size=4)  # Circular clique network
 
 SET_WS_PAIRS_k4_p02 = set([f"{pair[0]}-{pair[1]}" for pair in WS_PAIRS_k4_p02])
