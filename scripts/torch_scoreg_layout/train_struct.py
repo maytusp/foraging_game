@@ -136,6 +136,8 @@ class Args:
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
+    checkpoint_root: str = "checkpoints/torch_scoreg_layout2"
+    """root directory for model checkpoints"""
 
 
 
@@ -166,7 +168,7 @@ if __name__ == "__main__":
         f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
     )
 
-    save_dir = f"checkpoints/torch_scoreg_layout2/{model_name}/{train_combination_name}/seed{args.seed}/"
+    save_dir = os.path.join(args.checkpoint_root, model_name, train_combination_name, f"seed{args.seed}")
     os.makedirs(save_dir, exist_ok=True)
 
     run_name = f"{model_name}/{train_combination_name}_seed{args.seed}"

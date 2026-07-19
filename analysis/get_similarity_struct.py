@@ -332,6 +332,35 @@ def plot_heatmap(matrix: np.ndarray, saved_fig_path: Path, vmin: float, vmax: fl
     plt.close()
 
 
+def print_ls_matrix_debug(
+    model_name: str,
+    seed: int,
+    similarity_mat: np.ndarray,
+    avg_sim: float | None,
+):
+    diagonal = np.diag(similarity_mat)
+    max_diag_error = float(np.nanmax(np.abs(diagonal - 1.0)))
+    non_one_diag = np.where(~np.isclose(diagonal, 1.0, rtol=1e-6, atol=1e-6))[0]
+
+    print("\nSelected LS matrix debug")
+    print(f"model: {model_name}")
+    print(f"seed: {seed}")
+    print(f"shape: {similarity_mat.shape}")
+    print(f"lower-triangle avg LS, excluding diagonal: {avg_sim}")
+    print(f"diagonal min/max: {np.nanmin(diagonal):.8f} / {np.nanmax(diagonal):.8f}")
+    print(f"max |diagonal - 1.0|: {max_diag_error:.8g}")
+    if non_one_diag.size:
+        print(f"diagonal entries not close to 1.0: {non_one_diag.tolist()}")
+    else:
+        print("all diagonal entries are close to 1.0")
+
+    with np.printoptions(precision=4, suppress=True, linewidth=200, threshold=np.inf):
+        print("diagonal:")
+        print(diagonal)
+        print("LS matrix:")
+        print(similarity_mat)
+
+
 def plot_model_comparison(
     avg_matrix_by_model: dict[str, np.ndarray],
     saved_fig_path: Path,
@@ -606,6 +635,25 @@ def parse_args() -> argparse.Namespace:
             "sim_scores.npz, or skip SR."
         ),
     )
+    parser.add_argument(
+        "--print-ls-matrix",
+        action="store_true",
+        help="Print one selected LS matrix, its diagonal, and diagonal-vs-1.0 diagnostics.",
+    )
+    parser.add_argument(
+        "--print-ls-model",
+        default=None,
+        help=(
+            "Model name to print when --print-ls-matrix is set. Defaults to the first "
+            "model for the selected graph structure."
+        ),
+    )
+    parser.add_argument(
+        "--print-ls-seed",
+        type=int,
+        default=SEEDS[0],
+        help="Seed to print when --print-ls-matrix is set.",
+    )
     return parser.parse_args()
 
 
@@ -677,6 +725,8 @@ def main():
     ls_distance_by_model = {}
     sr_distance_by_model = {}
     summary_rows = []
+    printed_ls_matrix = False
+    print_ls_model = args.print_ls_model or MODEL_NAMES[0]
 
     for model_name in MODEL_NAMES:
         seed_similarity_mats = []
@@ -731,6 +781,16 @@ def main():
                     )
                 print(f"{model_name} seed{seed} loaded avg language similarity: {avg_sim}")
 
+            if (
+                args.print_ls_matrix
+                and not printed_ls_matrix
+                and args.ls_mode != "skip"
+                and model_name == print_ls_model
+                and seed == args.print_ls_seed
+            ):
+                print_ls_matrix_debug(model_name, seed, similarity_mat, avg_sim)
+                printed_ls_matrix = True
+
             if args.sr_mode == "compute":
                 sr_mat = load_sr_mat(model_name, seed)
                 graph_distances, sr_by_distance = average_score_by_graph_distance(sr_mat, distance_mat)
@@ -780,7 +840,7 @@ def main():
                     sr_by_distance,
                 )
 
-        if processed_seeds:
+        if processed_seeds and (args.ls_mode == "compute" or args.sr_mode == "compute"):
             save_model_seed_cache(
                 model_name,
                 processed_seeds,
@@ -860,6 +920,12 @@ def main():
         np.savez(
             SCORE_ROOT / model_name / f"{COMBINATION_NAME}_avg_sim_sr_mat.npz",
             **avg_scores,
+        )
+
+    if args.print_ls_matrix and not printed_ls_matrix:
+        print(
+            "\nWarning: no LS matrix was printed. Check --ls-mode, --print-ls-model, "
+            f"and --print-ls-seed. Requested model={print_ls_model}, seed={args.print_ls_seed}."
         )
 
     if avg_similarity_by_model:

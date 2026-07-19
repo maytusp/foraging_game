@@ -21,7 +21,7 @@ from scripts.torch_scoreg_layout.prepare_ls_traj import (
     save_pair_outputs,
     set_seed,
 )
-from utils.graph_gen import clq_pairs_100, clq_pairs_64, ws_pairs_64, ws_pair_100, opt_pairs_64, opt_pairs_100
+from utils.graph_gen import clq_pairs_100, clq_pairs_64, ws_pairs_64, ws_pairs_100, opt_pairs_64, opt_pairs_100
 
 
 @dataclass
@@ -85,12 +85,12 @@ def get_pair_list(args: Args) -> list[tuple[int, int]]:
                 "graph_structure='ws_pairs_64' requires num_networks=64"
             )
         pairs = [tuple(pair) for pair in ws_pairs_64]
-    elif args.graph_structure == "ws_pair_100":
+    elif args.graph_structure == "ws_pairs_100":
         if args.num_networks != 100:
             raise ValueError(
-                "graph_structure='ws_pair_100' requires num_networks=100"
+                "graph_structure='ws_pairs_100' requires num_networks=100"
             )
-        pairs = [tuple(pair) for pair in ws_pair_100]
+        pairs = [tuple(pair) for pair in ws_pairs_100]
     elif args.graph_structure == "opt_pairs_64":
         if args.num_networks != 64:
             raise ValueError(

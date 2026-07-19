@@ -15,4 +15,4 @@ echo "Script directory: $SCRIPT_DIR"
 
 source activate habitat
 
-python -m scripts.torch_scoreg_layout.train_struct --social-network ws --comm_field 100 --no-agent-visible --num_networks 100 --seed 1 --no-self-play-option --total-timesteps 1200000000
+python -m scripts.torch_scoreg_layout.train_struct --social-network ws --comm_field 100 --no-agent-visible --num_networks 100 --seed 1 --no-self-play-option --total-timesteps 1200000000 --checkpoint-root checkpoints/scoreg
