@@ -174,14 +174,58 @@ class PPOLSTMCommAgentWithSilence(PPOLSTMCommAgent):
             msg_log_prob = message_probs.log_prob(shifted_message)
             msg_entropy = message_probs.entropy()
 
-        return (action, 
-                action_probs.log_prob(action), 
-                action_probs.entropy(), 
-                message, 
-                msg_log_prob, 
-                msg_entropy, 
-                self.critic(hidden), 
+        return (action,
+                action_probs.log_prob(action),
+                action_probs.entropy(),
+                message,
+                msg_log_prob,
+                msg_entropy,
+                self.critic(hidden),
                 lstm_state)
+
+
+class PPOLSTMCommAgentNoLoc(PPOLSTMCommAgent):
+    '''
+    Ablation: no localisation. The privileged location input (agent's own absolute
+    grid position) is not fed to the network. The input tuple stays
+    [image, location, message] so training/eval code is unchanged, but location is ignored.
+    '''
+    def __init__(self, num_actions, grid_size=5, n_words=16, embedding_size=16, num_channels=1, image_size=3, d_model=128):
+        super().__init__(num_actions, grid_size, n_words, embedding_size, num_channels, image_size, d_model)
+        del self.location_encoder
+        self.lstm = nn.LSTM(self.image_feat_dim+self.embedding_size, d_model)
+        for name, param in self.lstm.named_parameters():
+            if "bias" in name:
+                nn.init.constant_(param, 0)
+            elif "weight" in name:
+                nn.init.orthogonal_(param, 1.0)
+
+    def get_states(self, input, lstm_state, done, tracks=None):
+        batch_size = lstm_state[0].shape[1]
+        image, location, message = input # location is intentionally unused
+        image_feat = self.visual_encoder(image / 255.0) # (L*B, feat_dim)
+        message_feat = self.message_encoder(message) # (L*B,1)
+        message_feat = message_feat.view(-1, self.embedding_size)
+
+        hidden = torch.cat((image_feat, message_feat), axis=1)
+        # LSTM logic
+        hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
+        done = done.reshape((-1, batch_size))
+        if tracks is not None:
+            tracks = tracks.reshape((-1, batch_size))
+        new_hidden = []
+        for h, d in zip(hidden, done):
+            h, lstm_state = self.lstm(
+                h.unsqueeze(0),
+                (
+                    (1.0 - d).view(1, -1, 1) * lstm_state[0],
+                    (1.0 - d).view(1, -1, 1) * lstm_state[1],
+                ),
+            )
+            new_hidden += [h]
+        new_hidden = torch.flatten(torch.cat(new_hidden), 0, 1)
+        return new_hidden, lstm_state
+
 
 class TransformerBlock(nn.Module):
     """

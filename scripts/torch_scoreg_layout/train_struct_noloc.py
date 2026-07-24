@@ -1,4 +1,7 @@
-# Created: 24 Aug 2025
+# Created: 24 Jul 2026
+# Ablation of train_struct.py: no localisation. Agents are trained with PPOLSTMCommAgentNoLoc,
+# which does not receive the privileged location input (agent's own absolute grid position).
+# Used to test whether the item's location is still decodable from messages without a global frame.
 # The code is for training agents with separated networks during training and execution (no parameter sharing)
 # Fully Decentralise Training and Decentralise Execution
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_atari_lstmpy
@@ -7,6 +10,7 @@ import os
 import random
 import time
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import torch
@@ -19,9 +23,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 from environments.torch_scoreg_layout import TorchForagingEnv, EnvConfig, simple_layout_5x5
 from utils.process_data import *
-from utils.graph_gen import ws_pairs_100
-from models.pickup_models import PPOLSTMCommAgent
-
+from models.pickup_models import PPOLSTMCommAgentNoLoc
+from utils.graph_gen import clq_pairs_100, ws_pairs_100, opt_pairs_100
+# CUDA_VISIBLE_DEVICES=0 python -m scripts.torch_scoreg_layout.train_struct_noloc --comm_field 100 --no-agent-visible --num_networks 100 --seed 3 --self-play-option --total-timesteps 2000000000
 @dataclass
 class Args:
     seed: int = 4
@@ -67,6 +71,8 @@ class Args:
     num_networks: int = 2
     reset_iteration: int = 1
     self_play_option: bool = False
+    social_network: Literal["ring", "clq", "ws", "opt", "fc"] = "ring"
+    """social network topology used to sample training pairs"""
     
     """
     By default, agent0 and agent1 uses network0 and network1
@@ -80,13 +86,13 @@ class Args:
 
     log_every: int = 32
     d_model: int = 128
-    n_words: int = 5
+    n_words: int = 4
     image_size: int = 3
     comm_field: int = 100
     num_foods: int = 2
     grid_size: int = 5
     max_steps: int = 30
-    communication_steps: int= 5
+    communication_steps: int= 100
 
     # use for changing layout
     warmup_steps: int = int(total_timesteps * 0.1)
@@ -133,9 +139,13 @@ class Args:
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
+    checkpoint_root: str = "checkpoints/torch_scoreg_layout2"
+    """root directory for model checkpoints"""
 
 
 
+def scheduled_food_spawn_on_agent_cells(global_step, total_timesteps):
+    return global_step >= total_timesteps * 0.5
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -148,20 +158,21 @@ if __name__ == "__main__":
     else:
         sp_prefix = ""
 
-    model_name = f"{sp_prefix}ws_ppo_{args.num_networks}net"
+    model_name = f"{sp_prefix}{args.social_network}_ppo_{args.num_networks}net"
     if not args.agent_visible:
         model_name += "_invisible"
     if not args.time_pressure:
         model_name += "_wospeedrw"
     if args.ablate_message:
         model_name += "_nocom"
+    model_name += "_noloc" # this script always trains the no-localisation ablation
 
     train_combination_name = (
         f"grid{args.grid_size}_img{args.image_size}_ni{args.num_foods}"
         f"_nw{args.n_words}_ms{args.max_steps}_comm_field{args.comm_field}"
     )
 
-    save_dir = f"checkpoints/torch_scoreg_layout2/{model_name}/{train_combination_name}/seed{args.seed}/"
+    save_dir = os.path.join(args.checkpoint_root, model_name, train_combination_name, f"seed{args.seed}")
     os.makedirs(save_dir, exist_ok=True)
 
     run_name = f"{model_name}/{train_combination_name}_seed{args.seed}"
@@ -181,7 +192,7 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/scoreg_layout2/{run_name}")
+    writer = SummaryWriter(f"runs/scoreg_layout/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -243,7 +254,7 @@ if __name__ == "__main__":
     swap_agent = {0:1, 1:0}
 
     for network_id in range(args.num_networks):
-        agents[network_id] = PPOLSTMCommAgent(
+        agents[network_id] = PPOLSTMCommAgentNoLoc(
                                     d_model=args.d_model,
                                     num_actions=num_actions, 
                                     grid_size=args.grid_size, 
@@ -277,12 +288,36 @@ if __name__ == "__main__":
         )
     start_time = time.time()
     global_step = 0
+    current_food_spawn_on_agent_cells = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
+    envs.set_food_spawn_on_agent_cells(current_food_spawn_on_agent_cells)
+    writer.add_scalar("charts/food_spawn_on_agent_cells", float(current_food_spawn_on_agent_cells), global_step)
     initial_lstm_state = {}
     possible_networks = [i for i in range(args.num_networks)]
-    possible_pairs = ws_pairs_100
+    if args.social_network == "ring":
+        possible_pairs = [[i, (i + 1) % args.num_networks] for i in range(args.num_networks)]
+    elif args.social_network == "fc":
+        possible_pairs = [
+            [i, j]
+            for i in range(args.num_networks)
+            for j in range(args.num_networks)
+            if i != j
+        ]
+    else:
+        if args.num_networks != 100:
+            raise ValueError(
+                f"social_network={args.social_network!r} uses a precomputed 100-network graph; "
+                f"set --num-networks 100, or add a matching pair list."
+            )
+        possible_pairs_by_network = {
+            "clq": clq_pairs_100,
+            "ws": ws_pairs_100,
+            "opt": opt_pairs_100,
+        }
+        possible_pairs = list(possible_pairs_by_network[args.social_network])
     if args.self_play_option:
         print("ADD SELF PAIRS")
         possible_pairs += [[a,a] for a in range(args.num_networks)]
+    selected_networks = random.sample(possible_pairs, 1)[0]
 
     
     # --- log performance ---
@@ -298,6 +333,16 @@ if __name__ == "__main__":
     LOG_EVERY_EPISODES = getattr(args, "log_every_episodes", args.num_envs)  # tune as you like
     # Start training
     for iteration in range(1, args.num_iterations + 1):
+        scheduled_food_spawn = scheduled_food_spawn_on_agent_cells(global_step, args.total_timesteps)
+        if scheduled_food_spawn != current_food_spawn_on_agent_cells:
+            print(
+                f"[Food Spawn Schedule] global_step={global_step}: "
+                f"food_spawn_on_agent_cells {current_food_spawn_on_agent_cells} -> {scheduled_food_spawn}"
+            )
+            current_food_spawn_on_agent_cells = scheduled_food_spawn
+            envs.set_food_spawn_on_agent_cells(current_food_spawn_on_agent_cells)
+            writer.add_scalar("charts/food_spawn_on_agent_cells", float(current_food_spawn_on_agent_cells), global_step)
+
         if iteration % args.reset_iteration == 0:
             # we have to reset lstm state even the agent has not completed the episode becuase we sample new neural networks (agents) every iteration
             for i in range(num_agents):
